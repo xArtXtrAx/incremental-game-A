@@ -1,10 +1,12 @@
 export const CLICK_UPGRADE_BASE_COST = 10
 export const GENERATOR_BASE_COST = 25
+export const RESONANCE_BASE_COST = 120
 export const SPHERE_CLICK_CAPACITY = 5000
 export const GAME_STORAGE_KEY = 'incremental-game-a:save:v1'
 
 const CLICK_UPGRADE_GROWTH = 1.7
 const GENERATOR_GROWTH = 1.8
+const RESONANCE_GROWTH = 2.2
 const SAVE_VERSION = 1
 
 export type GameState = {
@@ -12,6 +14,7 @@ export type GameState = {
   manualClicks: number
   clickLevel: number
   generatorLevel: number
+  resonanceLevel: number
 }
 
 export type GameAction =
@@ -19,6 +22,7 @@ export type GameAction =
   | { type: 'tick' }
   | { type: 'buy-click-upgrade' }
   | { type: 'buy-generator' }
+  | { type: 'buy-resonance' }
   | { type: 'reset' }
 
 export const initialGameState: GameState = {
@@ -26,6 +30,7 @@ export const initialGameState: GameState = {
   manualClicks: 0,
   clickLevel: 0,
   generatorLevel: 0,
+  resonanceLevel: 0,
 }
 
 type StoredGame = {
@@ -58,6 +63,10 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
       candidate.generatorLevel,
       fallback.generatorLevel,
     ),
+    resonanceLevel: getSafeInteger(
+      candidate.resonanceLevel,
+      fallback.resonanceLevel,
+    ),
   }
 }
 
@@ -65,8 +74,15 @@ export function getClickPower(level: number) {
   return level + 1
 }
 
-export function getEnergyPerSecond(generatorLevel: number) {
-  return generatorLevel
+export function getResonanceMultiplier(resonanceLevel: number) {
+  return resonanceLevel + 1
+}
+
+export function getEnergyPerSecond(
+  generatorLevel: number,
+  resonanceLevel: number,
+) {
+  return generatorLevel * getResonanceMultiplier(resonanceLevel)
 }
 
 export function getClickUpgradeCost(level: number) {
@@ -75,6 +91,10 @@ export function getClickUpgradeCost(level: number) {
 
 export function getGeneratorCost(level: number) {
   return getScaledCost(GENERATOR_BASE_COST, GENERATOR_GROWTH, level)
+}
+
+export function getResonanceCost(level: number) {
+  return getScaledCost(RESONANCE_BASE_COST, RESONANCE_GROWTH, level)
 }
 
 export function getSphereFillPercentage(manualClicks: number) {
@@ -132,7 +152,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       }
 
     case 'tick': {
-      const production = getEnergyPerSecond(state.generatorLevel)
+      const production = getEnergyPerSecond(
+        state.generatorLevel,
+        state.resonanceLevel,
+      )
 
       if (production === 0) {
         return state
@@ -169,6 +192,20 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         energy: state.energy - cost,
         generatorLevel: state.generatorLevel + 1,
+      }
+    }
+
+    case 'buy-resonance': {
+      const cost = getResonanceCost(state.resonanceLevel)
+
+      if (state.generatorLevel === 0 || state.energy < cost) {
+        return state
+      }
+
+      return {
+        ...state,
+        energy: state.energy - cost,
+        resonanceLevel: state.resonanceLevel + 1,
       }
     }
 
