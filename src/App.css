@@ -1,0 +1,119 @@
+.game-screen {
+  min-height: 100vh;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+}
+
+.game-panel {
+  width: min(100%, 520px);
+  min-height: 520px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  text-align: center;
+  border: 1px solid rgba(69, 170, 255, 0.2);
+  border-radius: 28px;
+  background: rgba(6, 14, 35, 0.78);
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.45),
+    inset 0 0 30px rgba(0, 119, 255, 0.05);
+  backdrop-filter: blur(14px);
+}
+
+.game-panel h1 {
+  margin: 0;
+  font-size: clamp(2rem, 5vw, 3rem);
+  color: #f4f9ff;
+}
+
+.instructions {
+  margin: 12px 0 40px;
+  color: rgba(220, 235, 255, 0.75);
+}
+
+.click-button {
+  width: 150px;
+  height: 150px;
+  padding: 0;
+  border: 3px solid #55c7ff;
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      circle at 35% 30%,
+      #82ddff 0%,
+      #1678d8 38%,
+      #073474 68%,
+      #031735 100%
+    );
+  color: white;
+  font-size: 1.4rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  cursor: pointer;
+  user-select: none;
+  box-shadow:
+    0 0 10px rgba(0, 195, 255, 0.85),
+    0 0 24px rgba(0, 166, 255, 0.75),
+    0 0 45px rgba(0, 102, 255, 0.55),
+    inset 0 4px 10px rgba(255, 255, 255, 0.3),
+    inset 0 -12px 20px rgba(0, 10, 50, 0.75);
+  animation: neon-pulse 3.2s ease-in-out infinite;
+}
+
+.click-button:hover {
+  filter: brightness(1.12);
+}
+
+.click-button:focus-visible {
+  outline: 3px solid white;
+  outline-offset: 7px;
+}
+
+.click-counter {
+  min-width: 170px;
+  margin-top: 42px;
+  padding: 14px 24px;
+  border: 1px solid rgba(83, 182, 255, 0.2);
+  border-radius: 18px;
+  background: rgba(3, 12, 30, 0.7);
+}
+
+.click-counter span {
+  display: block;
+  color: #7fcaff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.click-counter strong {
+  display: block;
+  margin-top: 4px;
+  color: white;
+  font-size: 2.2rem;
+}
+
+@keyframes neon-pulse {
+  0%,
+  100% {
+    box-shadow:
+      0 0 8px rgba(0, 195, 255, 0.65),
+      0 0 18px rgba(0, 166, 255, 0.55),
+      0 0 34px rgba(0, 102, 255, 0.4),
+      inset 0 4px 10px rgba(255, 255, 255, 0.3),
+      inset 0 -12px 20px rgba(0, 10, 50, 0.75);
+  }
+
+  50% {
+    box-shadow:
+      0 0 16px rgba(105, 220, 255, 1),
+      0 0 35px rgba(0, 195, 255, 0.95),
+      0 0 65px rgba(0, 102, 255, 0.8),
+      inset 0 4px 12px rgba(255, 255, 255, 0.38),
+      inset 0 -12px 20px rgba(0, 10, 50, 0.75);
+  }
+}
