@@ -91,15 +91,7 @@ export function SapphireGem({
           <SapphireFallback />
         </motion.span>
       )}
-      <motion.span
-        className="sapphire-gem-glint"
-        animate={{ x: ['-140%', '170%'], opacity: [0, 0.72, 0] }}
-        transition={{
-          duration: energized ? 1.2 : 3.8,
-          repeat: Infinity,
-          repeatDelay: 1.4,
-        }}
-      />
+      <span className="sapphire-gem-glint" />
     </motion.span>
   )
 }
