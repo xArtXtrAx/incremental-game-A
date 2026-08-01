@@ -1,11 +1,13 @@
 import { useEffect, useReducer, useRef, useState } from 'react'
 import './App.css'
 import './ProposalA.css'
+import './PrestigeSapphire.css'
 import {
   GameCore,
   type ClickBurst,
   type EnergyBurst,
   type OverloadBurst,
+  type PrestigeAnnouncement,
 } from './GameCore'
 import { UpgradesPanel } from './UpgradesPanelCompact'
 import {
@@ -15,13 +17,16 @@ import {
   getClickOutcome,
   getClickPower,
   getEnergyPerSecond,
+  getNextSapphireMultiplier,
   getOverloadMultiplier,
   getOverloadRemainingSeconds,
   getPressureBonusPercent,
+  getSapphireMultiplier,
   initialGameState,
   isOverloadActive,
   loadGameState,
   saveGameState,
+  SPHERE_CLICK_CAPACITY,
 } from './game'
 
 type MobileView = 'core' | 'upgrades'
@@ -36,19 +41,27 @@ function App() {
   const [clockNow, setClockNow] = useState(() => Date.now())
   const [resetArmed, setResetArmed] = useState(false)
   const [mobileView, setMobileView] = useState<MobileView>('core')
+  const [sapphireBirthId, setSapphireBirthId] = useState(0)
+  const [isCrystallizing, setIsCrystallizing] = useState(false)
+  const [prestigeAnnouncement, setPrestigeAnnouncement] =
+    useState<PrestigeAnnouncement | null>(null)
   const nextBurstId = useRef(0)
   const nextCavitationId = useRef(0)
   const nextOverloadId = useRef(0)
+  const previousClicks = useRef(game.manualClicks)
+  const crystallizeTimers = useRef<number[]>([])
 
   const overloadActive = isOverloadActive(game.overloadUntil, clockNow)
   const overloadMultiplier = overloadActive
     ? getOverloadMultiplier(game.overloadLevel)
     : 1
+  const sapphireMultiplier = getSapphireMultiplier(game.prestigeCount)
   const clickPower = getClickPower(
     game.clickLevel,
     game.manualClicks,
     game.pressureLevel,
     overloadMultiplier,
+    sapphireMultiplier,
   )
   const production = getEnergyPerSecond(
     game.generatorLevel,
@@ -56,6 +69,7 @@ function App() {
     game.manualClicks,
     game.pressureLevel,
     overloadMultiplier,
+    sapphireMultiplier,
   )
   const autoclickRate = getAutoclickRate(game.autoclickLevel)
   const pressureBonus = getPressureBonusPercent(
@@ -92,6 +106,17 @@ function App() {
   useEffect(() => saveGameState(game), [game])
 
   useEffect(() => {
+    if (
+      previousClicks.current < SPHERE_CLICK_CAPACITY &&
+      game.manualClicks >= SPHERE_CLICK_CAPACITY
+    ) {
+      setSapphireBirthId((current) => current + 1)
+    }
+
+    previousClicks.current = game.manualClicks
+  }, [game.manualClicks])
+
+  useEffect(() => {
     if (!resetArmed) {
       return
     }
@@ -100,7 +125,18 @@ function App() {
     return () => window.clearTimeout(id)
   }, [resetArmed])
 
+  useEffect(
+    () => () => {
+      crystallizeTimers.current.forEach((timer) => window.clearTimeout(timer))
+    },
+    [],
+  )
+
   function handleClick() {
+    if (isCrystallizing) {
+      return
+    }
+
     const now = Date.now()
     const outcome = getClickOutcome(game, now)
     const burstId = nextBurstId.current++
@@ -136,17 +172,49 @@ function App() {
     }
   }
 
+  function handleCrystallize() {
+    if (
+      isCrystallizing ||
+      game.manualClicks < SPHERE_CLICK_CAPACITY
+    ) {
+      return
+    }
+
+    crystallizeTimers.current.forEach((timer) => window.clearTimeout(timer))
+    crystallizeTimers.current = []
+    setIsCrystallizing(true)
+
+    const nextPrestigeCount = game.prestigeCount + 1
+    const nextMultiplier = getNextSapphireMultiplier(game.prestigeCount)
+
+    crystallizeTimers.current.push(
+      window.setTimeout(() => {
+        dispatch({ type: 'crystallize' })
+        setPrestigeAnnouncement({
+          prestigeCount: nextPrestigeCount,
+          multiplier: nextMultiplier,
+        })
+      }, 1100),
+      window.setTimeout(() => setIsCrystallizing(false), 1760),
+      window.setTimeout(() => setPrestigeAnnouncement(null), 3300),
+    )
+  }
+
   function handleReset() {
     if (!resetArmed) {
       setResetArmed(true)
       return
     }
 
+    crystallizeTimers.current.forEach((timer) => window.clearTimeout(timer))
+    crystallizeTimers.current = []
     clearSavedGame()
     dispatch({ type: 'reset' })
     setBursts([])
     setCavitationBurst(null)
     setOverloadBurst(null)
+    setPrestigeAnnouncement(null)
+    setIsCrystallizing(false)
     setResetArmed(false)
   }
 
@@ -158,7 +226,7 @@ function App() {
             <p className="eyebrow">Prototipo incremental</p>
             <h1>Incremental Game A</h1>
             <p className="instructions">
-              El núcleo permanece visible mientras navegas por evoluciones compactas.
+              Llena el núcleo, cristaliza su energía y fortalece el zafiro permanente.
             </p>
           </div>
 
@@ -190,6 +258,14 @@ function App() {
                 {overloadActive
                   ? `×${format.format(overloadMultiplier)} · ${overloadRemaining.toFixed(1)} s`
                   : `${game.overloadCharge}`}
+              </strong>
+            </div>
+            <div className={`summary-item sapphire-summary${game.prestigeCount > 0 ? ' is-active' : ''}`}>
+              <span>Zafiro</span>
+              <strong>
+                {game.prestigeCount > 0
+                  ? `×${format.format(sapphireMultiplier)} · P${game.prestigeCount}`
+                  : 'Sin cristalizar'}
               </strong>
             </div>
           </div>
@@ -226,7 +302,11 @@ function App() {
               bursts={bursts}
               cavitationBurst={cavitationBurst}
               overloadBurst={overloadBurst}
+              sapphireBirthId={sapphireBirthId}
+              isCrystallizing={isCrystallizing}
+              prestigeAnnouncement={prestigeAnnouncement}
               onClick={handleClick}
+              onCrystallize={handleCrystallize}
             />
           </div>
 
