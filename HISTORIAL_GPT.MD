@@ -13,6 +13,7 @@
 - Diseño vigente: interfaz compacta con núcleo fijo, resumen superior, pestañas de evoluciones y tarjetas expandibles.
 - El contador interno `manualClicks` representa ahora **clics del núcleo**: incluye clics del jugador y pulsos del autoclicker.
 - El marcador circular de cavitación está restaurado: cada segmento representa un clic de carga y se ilumina alrededor de la esfera.
+- Al dispararse la cavitación, el anillo muestra brevemente todos sus segmentos encendidos antes de volver a carga cero.
 
 ## 2. Forma de trabajo acordada
 
@@ -70,7 +71,7 @@
 - Requisito: 500 clics y al menos un microgenerador.
 - Costo inicial: 2,000.
 - Crecimiento de costo: ×2.6.
-- Marcador visual: anillo interior de segmentos luminosos alrededor de la esfera; cada clic carga un segmento y el anillo se reinicia al descargar.
+- Marcador visual: anillo interior de segmentos luminosos alrededor de la esfera; cada clic carga un segmento y, al completar el ciclo, el anillo se ilumina por completo durante la descarga antes de reiniciarse.
 
 ### Evolución 06 — Válvula de sobrecarga
 
@@ -142,6 +143,7 @@ Características:
 - Cuando hay varios autoclics en un mismo segundo, se procesan secuencialmente para respetar cambios de presión, descargas y activación de sobrecarga.
 - El autoclicker no es energía pasiva: ejecuta la misma lógica de un clic del núcleo.
 - La posición radial de cada segmento está separada de su animación Motion para evitar que las transformaciones se sobrescriban y el anillo desaparezca.
+- La carga lógica de cavitación se reinicia inmediatamente al descargar, pero la capa visual usa el estado temporal de descarga para mostrar el anillo completo durante el efecto.
 
 ## 7. Validaciones realizadas
 
@@ -154,6 +156,7 @@ Características:
 - Límite de 20 clic/s.
 - Migración de guardados previos.
 - Restauración del anillo de cavitación y convivencia con el anillo exterior de sobrecarga.
+- Visualización del último segmento y del anillo completo durante la descarga de cavitación.
 - Se recomienda confirmar siempre en el equipo local:
 
 ```powershell
