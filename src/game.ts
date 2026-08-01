@@ -1,12 +1,16 @@
 export const CLICK_UPGRADE_BASE_COST = 10
 export const GENERATOR_BASE_COST = 25
 export const RESONANCE_BASE_COST = 120
+export const PRESSURE_BASE_COST = 500
+export const PRESSURE_REQUIRED_CLICKS = 100
 export const SPHERE_CLICK_CAPACITY = 5000
 export const GAME_STORAGE_KEY = 'incremental-game-a:save:v1'
 
 const CLICK_UPGRADE_GROWTH = 1.7
 const GENERATOR_GROWTH = 1.8
 const RESONANCE_GROWTH = 2.2
+const PRESSURE_GROWTH = 2.4
+const PRESSURE_BONUS_PER_TIER = 2
 const SAVE_VERSION = 1
 
 export type GameState = {
@@ -15,6 +19,7 @@ export type GameState = {
   clickLevel: number
   generatorLevel: number
   resonanceLevel: number
+  pressureLevel: number
 }
 
 export type GameAction =
@@ -23,6 +28,7 @@ export type GameAction =
   | { type: 'buy-click-upgrade' }
   | { type: 'buy-generator' }
   | { type: 'buy-resonance' }
+  | { type: 'buy-pressure' }
   | { type: 'reset' }
 
 export const initialGameState: GameState = {
@@ -31,6 +37,7 @@ export const initialGameState: GameState = {
   clickLevel: 0,
   generatorLevel: 0,
   resonanceLevel: 0,
+  pressureLevel: 0,
 }
 
 type StoredGame = {
@@ -40,6 +47,16 @@ type StoredGame = {
 
 function getScaledCost(baseCost: number, growth: number, level: number) {
   return Math.ceil(baseCost * growth ** level)
+}
+
+function roundEnergy(value: number) {
+  return Math.round((value + Number.EPSILON) * 100) / 100
+}
+
+function getSafeNumber(value: unknown, fallback: number) {
+  return typeof value === 'number' && Number.isFinite(value) && value >= 0
+    ? roundEnergy(value)
+    : fallback
 }
 
 function getSafeInteger(value: unknown, fallback: number) {
@@ -56,7 +73,7 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
   const candidate = value as Partial<GameState>
 
   return {
-    energy: getSafeInteger(candidate.energy, fallback.energy),
+    energy: getSafeNumber(candidate.energy, fallback.energy),
     manualClicks: getSafeInteger(candidate.manualClicks, fallback.manualClicks),
     clickLevel: getSafeInteger(candidate.clickLevel, fallback.clickLevel),
     generatorLevel: getSafeInteger(
@@ -67,11 +84,43 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
       candidate.resonanceLevel,
       fallback.resonanceLevel,
     ),
+    pressureLevel: getSafeInteger(
+      candidate.pressureLevel,
+      fallback.pressureLevel,
+    ),
   }
 }
 
-export function getClickPower(level: number) {
-  return level + 1
+export function getSphereFillPercentage(manualClicks: number) {
+  return Math.min((manualClicks / SPHERE_CLICK_CAPACITY) * 100, 100)
+}
+
+export function getPressureTier(manualClicks: number) {
+  return Math.min(Math.floor(getSphereFillPercentage(manualClicks) / 10), 10)
+}
+
+export function getPressureBonusPercent(
+  manualClicks: number,
+  pressureLevel: number,
+) {
+  return getPressureTier(manualClicks) * PRESSURE_BONUS_PER_TIER * pressureLevel
+}
+
+export function getPressureMultiplier(
+  manualClicks: number,
+  pressureLevel: number,
+) {
+  return 1 + getPressureBonusPercent(manualClicks, pressureLevel) / 100
+}
+
+export function getClickPower(
+  level: number,
+  manualClicks = 0,
+  pressureLevel = 0,
+) {
+  return roundEnergy(
+    (level + 1) * getPressureMultiplier(manualClicks, pressureLevel),
+  )
 }
 
 export function getResonanceMultiplier(resonanceLevel: number) {
@@ -81,8 +130,14 @@ export function getResonanceMultiplier(resonanceLevel: number) {
 export function getEnergyPerSecond(
   generatorLevel: number,
   resonanceLevel: number,
+  manualClicks = 0,
+  pressureLevel = 0,
 ) {
-  return generatorLevel * getResonanceMultiplier(resonanceLevel)
+  return roundEnergy(
+    generatorLevel *
+      getResonanceMultiplier(resonanceLevel) *
+      getPressureMultiplier(manualClicks, pressureLevel),
+  )
 }
 
 export function getClickUpgradeCost(level: number) {
@@ -97,8 +152,8 @@ export function getResonanceCost(level: number) {
   return getScaledCost(RESONANCE_BASE_COST, RESONANCE_GROWTH, level)
 }
 
-export function getSphereFillPercentage(manualClicks: number) {
-  return Math.min((manualClicks / SPHERE_CLICK_CAPACITY) * 100, 100)
+export function getPressureCost(level: number) {
+  return getScaledCost(PRESSURE_BASE_COST, PRESSURE_GROWTH, level)
 }
 
 export function loadGameState(fallback: GameState): GameState {
@@ -144,17 +199,27 @@ export function clearSavedGame() {
 
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
-    case 'click':
+    case 'click': {
+      const nextManualClicks = state.manualClicks + 1
+      const clickPower = getClickPower(
+        state.clickLevel,
+        nextManualClicks,
+        state.pressureLevel,
+      )
+
       return {
         ...state,
-        energy: state.energy + getClickPower(state.clickLevel),
-        manualClicks: state.manualClicks + 1,
+        energy: roundEnergy(state.energy + clickPower),
+        manualClicks: nextManualClicks,
       }
+    }
 
     case 'tick': {
       const production = getEnergyPerSecond(
         state.generatorLevel,
         state.resonanceLevel,
+        state.manualClicks,
+        state.pressureLevel,
       )
 
       if (production === 0) {
@@ -163,7 +228,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        energy: state.energy + production,
+        energy: roundEnergy(state.energy + production),
       }
     }
 
@@ -176,7 +241,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        energy: state.energy - cost,
+        energy: roundEnergy(state.energy - cost),
         clickLevel: state.clickLevel + 1,
       }
     }
@@ -190,7 +255,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        energy: state.energy - cost,
+        energy: roundEnergy(state.energy - cost),
         generatorLevel: state.generatorLevel + 1,
       }
     }
@@ -204,8 +269,25 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
       return {
         ...state,
-        energy: state.energy - cost,
+        energy: roundEnergy(state.energy - cost),
         resonanceLevel: state.resonanceLevel + 1,
+      }
+    }
+
+    case 'buy-pressure': {
+      const cost = getPressureCost(state.pressureLevel)
+
+      if (
+        state.manualClicks < PRESSURE_REQUIRED_CLICKS ||
+        state.energy < cost
+      ) {
+        return state
+      }
+
+      return {
+        ...state,
+        energy: roundEnergy(state.energy - cost),
+        pressureLevel: state.pressureLevel + 1,
       }
     }
 
