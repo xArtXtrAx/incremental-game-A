@@ -9,7 +9,8 @@ export const PRESSURE_REQUIRED_CLICKS = 100
 export const CAVITATION_REQUIRED_CLICKS = 500
 export const AUTOCLICK_REQUIRED_CLICKS = 500
 export const SPHERE_CLICK_CAPACITY = 5000
-export const GAME_STORAGE_KEY = 'incremental-game-a:save:v1'
+export const GAME_STORAGE_KEY = 'incremental-game-a:save:prestige-test:v1'
+const STABLE_GAME_STORAGE_KEY = 'incremental-game-a:save:v1'
 
 const CLICK_UPGRADE_GROWTH = 1.7
 const GENERATOR_GROWTH = 1.8
@@ -444,7 +445,9 @@ export function getOverloadCost(level: number) {
 
 export function loadGameState(fallback: GameState): GameState {
   try {
-    const rawSave = window.localStorage.getItem(GAME_STORAGE_KEY)
+    const rawSave =
+      window.localStorage.getItem(GAME_STORAGE_KEY) ??
+      window.localStorage.getItem(STABLE_GAME_STORAGE_KEY)
 
     if (!rawSave) {
       return fallback
