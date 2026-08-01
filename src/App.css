@@ -165,24 +165,35 @@
 
 .liquid-wave {
   position: absolute;
-  top: -23px;
-  left: -58%;
-  width: 216%;
-  height: 44px;
-  border-radius: 44%;
-  transform-origin: 50% 50%;
+  left: -12%;
+  width: 124%;
+  height: 14px;
+  border-radius: 50%;
+  transform-origin: center;
+  pointer-events: none;
+  will-change: transform;
 }
 
 .liquid-wave-back {
-  background: rgba(4, 68, 145, 0.92);
-  animation: liquid-wave-spin 7.5s linear infinite reverse;
+  top: -8px;
+  opacity: 0.42;
+  background: rgba(3, 54, 126, 0.76);
+  filter: blur(1.2px);
+  animation: liquid-wave-back 5.2s ease-in-out infinite;
 }
 
 .liquid-wave-front {
-  top: -19px;
-  background: rgba(8, 101, 190, 0.72);
-  box-shadow: 0 -3px 12px rgba(32, 155, 230, 0.3);
-  animation: liquid-wave-spin 5.8s linear infinite;
+  top: -5px;
+  background:
+    linear-gradient(
+      180deg,
+      rgba(18, 126, 207, 0.84),
+      rgba(4, 71, 155, 0.94)
+    );
+  box-shadow:
+    0 -2px 8px rgba(34, 155, 229, 0.28),
+    inset 0 2px 4px rgba(93, 196, 244, 0.14);
+  animation: liquid-wave-front 4.1s ease-in-out infinite;
 }
 
 .liquid-bubble {
@@ -589,9 +600,37 @@
   }
 }
 
-@keyframes liquid-wave-spin {
-  to {
-    transform: rotate(360deg);
+@keyframes liquid-wave-back {
+  0%,
+  100% {
+    transform:
+      translate3d(-4px, 1px, 0)
+      scaleX(1.02)
+      rotate(-0.8deg);
+  }
+
+  50% {
+    transform:
+      translate3d(4px, -1px, 0)
+      scaleX(0.98)
+      rotate(0.8deg);
+  }
+}
+
+@keyframes liquid-wave-front {
+  0%,
+  100% {
+    transform:
+      translate3d(4px, 0, 0)
+      scaleX(0.98)
+      rotate(0.7deg);
+  }
+
+  50% {
+    transform:
+      translate3d(-4px, 1px, 0)
+      scaleX(1.02)
+      rotate(-0.7deg);
   }
 }
 
