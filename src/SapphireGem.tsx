@@ -1,11 +1,13 @@
-import { useId } from 'react'
+import { useCallback, useState } from 'react'
 import { motion } from 'motion/react'
+import { SapphireGem3D } from './SapphireGem3D'
 
 export type SapphireGemSize = 'core' | 'dock'
 
 type SapphireGemProps = {
   size?: SapphireGemSize
   energized?: boolean
+  prestigeCount?: number
   className?: string
 }
 
@@ -22,15 +24,45 @@ export function getSapphireName(prestigeCount: number) {
   return prestigeCount === 4 ? 'Zafiro astral' : 'Zafiro trascendente'
 }
 
+function SapphireFallback() {
+  return (
+    <svg viewBox="0 0 120 150" role="presentation">
+      <defs>
+        <linearGradient id="sapphire-fallback-upper" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0" stopColor="#d9fbff" />
+          <stop offset="0.35" stopColor="#49d9ff" />
+          <stop offset="1" stopColor="#0754bd" />
+        </linearGradient>
+        <linearGradient id="sapphire-fallback-lower" x1="0" y1="0" x2="0.8" y2="1">
+          <stop offset="0" stopColor="#1baeff" />
+          <stop offset="0.48" stopColor="#083fae" />
+          <stop offset="1" stopColor="#020d46" />
+        </linearGradient>
+      </defs>
+      <polygon
+        points="60,4 106,39 91,112 60,146 29,112 14,39"
+        fill="#075bd1"
+        stroke="#aef6ff"
+        strokeWidth="2"
+      />
+      <polygon points="60,4 60,58 14,39" fill="url(#sapphire-fallback-upper)" opacity="0.96" />
+      <polygon points="60,4 106,39 60,58" fill="#158be4" opacity="0.92" />
+      <polygon points="14,39 60,58 29,112" fill="#0879d8" opacity="0.88" />
+      <polygon points="106,39 91,112 60,58" fill="#0348ad" opacity="0.96" />
+      <polygon points="29,112 60,58 60,146" fill="url(#sapphire-fallback-lower)" opacity="0.95" />
+      <polygon points="60,58 91,112 60,146" fill="#021d72" opacity="0.95" />
+    </svg>
+  )
+}
+
 export function SapphireGem({
   size = 'dock',
   energized = false,
+  prestigeCount = 1,
   className = '',
 }: SapphireGemProps) {
-  const rawId = useId().replace(/:/g, '')
-  const upperGradient = `sapphire-upper-${rawId}`
-  const lowerGradient = `sapphire-lower-${rawId}`
-  const centerGradient = `sapphire-center-${rawId}`
+  const [webglUnavailable, setWebglUnavailable] = useState(false)
+  const handleUnavailable = useCallback(() => setWebglUnavailable(true), [])
 
   return (
     <motion.span
@@ -44,91 +76,26 @@ export function SapphireGem({
       aria-hidden="true"
     >
       <span className="sapphire-gem-halo" />
-      <motion.span
-        className="sapphire-gem-rotator"
-        animate={{ rotateY: 360, rotateZ: energized ? [0, 2, -2, 0] : 0 }}
-        transition={{
-          rotateY: {
-            duration: energized ? 3.5 : 7.5,
-            repeat: Infinity,
-            ease: 'linear',
-          },
-          rotateZ: { duration: 0.65, repeat: Infinity, ease: 'easeInOut' },
-        }}
-      >
-        <svg viewBox="0 0 120 150" role="presentation">
-          <defs>
-            <linearGradient id={upperGradient} x1="0" y1="0" x2="1" y2="1">
-              <stop offset="0" stopColor="#d9fbff" />
-              <stop offset="0.35" stopColor="#49d9ff" />
-              <stop offset="1" stopColor="#0754bd" />
-            </linearGradient>
-            <linearGradient id={lowerGradient} x1="0" y1="0" x2="0.8" y2="1">
-              <stop offset="0" stopColor="#1baeff" />
-              <stop offset="0.48" stopColor="#083fae" />
-              <stop offset="1" stopColor="#020d46" />
-            </linearGradient>
-            <radialGradient id={centerGradient} cx="42%" cy="30%" r="75%">
-              <stop offset="0" stopColor="#ecffff" />
-              <stop offset="0.28" stopColor="#63e9ff" />
-              <stop offset="0.72" stopColor="#075bd1" />
-              <stop offset="1" stopColor="#031148" />
-            </radialGradient>
-          </defs>
-
-          <polygon
-            points="60,4 106,39 91,112 60,146 29,112 14,39"
-            fill={`url(#${centerGradient})`}
-          />
-          <polygon
-            points="60,4 60,58 14,39"
-            fill={`url(#${upperGradient})`}
-            opacity="0.96"
-          />
-          <polygon points="60,4 106,39 60,58" fill="#158be4" opacity="0.92" />
-          <polygon points="14,39 60,58 29,112" fill="#0879d8" opacity="0.88" />
-          <polygon points="106,39 91,112 60,58" fill="#0348ad" opacity="0.96" />
-          <polygon
-            points="29,112 60,58 60,146"
-            fill={`url(#${lowerGradient})`}
-            opacity="0.95"
-          />
-          <polygon points="60,58 91,112 60,146" fill="#021d72" opacity="0.95" />
-          <polyline
-            points="60,4 106,39 91,112 60,146 29,112 14,39 60,4"
-            fill="none"
-            stroke="#aef6ff"
-            strokeWidth="2"
-            opacity="0.82"
-          />
-          <polyline
-            points="14,39 60,58 106,39 M60,4 60,146 M29,112 60,58 91,112"
-            fill="none"
-            stroke="#71ddff"
-            strokeWidth="1.2"
-            opacity="0.58"
-          />
-          <path
-            d="M34 32 L58 13"
-            stroke="white"
-            strokeWidth="5"
-            strokeLinecap="round"
-            opacity="0.72"
-          />
-          <path
-            d="M29 47 L45 59"
-            stroke="#d8fbff"
-            strokeWidth="2"
-            strokeLinecap="round"
-            opacity="0.55"
-          />
-        </svg>
-      </motion.span>
+      {!webglUnavailable ? (
+        <SapphireGem3D
+          energized={energized}
+          prestigeCount={prestigeCount}
+          onUnavailable={handleUnavailable}
+        />
+      ) : (
+        <motion.span
+          className="sapphire-gem-rotator"
+          animate={{ rotateY: 360 }}
+          transition={{ duration: 7.5, repeat: Infinity, ease: 'linear' }}
+        >
+          <SapphireFallback />
+        </motion.span>
+      )}
       <motion.span
         className="sapphire-gem-glint"
-        animate={{ x: ['-140%', '170%'], opacity: [0, 0.9, 0] }}
+        animate={{ x: ['-140%', '170%'], opacity: [0, 0.72, 0] }}
         transition={{
-          duration: energized ? 1.3 : 3.8,
+          duration: energized ? 1.2 : 3.8,
           repeat: Infinity,
           repeatDelay: 1.4,
         }}
@@ -142,9 +109,7 @@ export function SapphireDock({
   multiplier,
   energized = false,
 }: SapphireDockProps) {
-  if (prestigeCount <= 0) {
-    return null
-  }
+  if (prestigeCount <= 0) return null
 
   return (
     <motion.aside
@@ -155,7 +120,10 @@ export function SapphireDock({
       aria-label={`${getSapphireName(prestigeCount)}, multiplicador global por ${multiplier}`}
     >
       <div className="sapphire-dock-gem">
-        <SapphireGem energized={energized} />
+        <SapphireGem
+          energized={energized}
+          prestigeCount={prestigeCount}
+        />
       </div>
       <div className="sapphire-dock-copy">
         <span>{getSapphireName(prestigeCount)}</span>
