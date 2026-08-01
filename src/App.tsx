@@ -8,8 +8,14 @@ import {
 import { motion } from 'motion/react'
 import './App.css'
 import {
+  CAVITATION_REQUIRED_CLICKS,
   clearSavedGame,
   gameReducer,
+  getCavitationClicksRequired,
+  getCavitationCost,
+  getCavitationReward,
+  getCavitationSeconds,
+  getClickOutcome,
   getClickPower,
   getClickUpgradeCost,
   getEnergyPerSecond,
@@ -28,6 +34,11 @@ import {
 } from './game'
 
 type ClickBurst = {
+  id: number
+  amount: number
+}
+
+type CavitationBurst = {
   id: number
   amount: number
 }
@@ -59,8 +70,11 @@ function App() {
     loadGameState,
   )
   const [bursts, setBursts] = useState<ClickBurst[]>([])
+  const [cavitationBurst, setCavitationBurst] =
+    useState<CavitationBurst | null>(null)
   const [resetArmed, setResetArmed] = useState(false)
   const nextBurstId = useRef(0)
+  const nextCavitationBurstId = useRef(0)
 
   const sphereFillPercentage = getSphereFillPercentage(game.manualClicks)
   const sphereClicks = Math.min(game.manualClicks, SPHERE_CLICK_CAPACITY)
@@ -114,14 +128,40 @@ function App() {
     game.manualClicks,
     game.pressureLevel + 1,
   )
+  const cavitationThreshold = getCavitationClicksRequired(game.cavitationLevel)
+  const cavitationSeconds = getCavitationSeconds(game.cavitationLevel)
+  const cavitationReward = getCavitationReward(
+    game.generatorLevel,
+    game.resonanceLevel,
+    game.manualClicks,
+    game.pressureLevel,
+    game.cavitationLevel,
+  )
+  const nextCavitationLevel = game.cavitationLevel + 1
+  const nextCavitationThreshold = getCavitationClicksRequired(
+    nextCavitationLevel,
+  )
+  const nextCavitationSeconds = getCavitationSeconds(nextCavitationLevel)
+  const nextCavitationReward = getCavitationReward(
+    game.generatorLevel,
+    game.resonanceLevel,
+    game.manualClicks,
+    game.pressureLevel,
+    nextCavitationLevel,
+  )
   const clickUpgradeCost = getClickUpgradeCost(game.clickLevel)
   const generatorCost = getGeneratorCost(game.generatorLevel)
   const resonanceCost = getResonanceCost(game.resonanceLevel)
   const pressureCost = getPressureCost(game.pressureLevel)
+  const cavitationCost = getCavitationCost(game.cavitationLevel)
   const canBuyResonance =
     game.generatorLevel > 0 && game.energy >= resonanceCost
   const canBuyPressure =
     game.manualClicks >= PRESSURE_REQUIRED_CLICKS && game.energy >= pressureCost
+  const canBuyCavitation =
+    game.manualClicks >= CAVITATION_REQUIRED_CLICKS &&
+    game.generatorLevel > 0 &&
+    game.energy >= cavitationCost
   const nextPressureTierClicks = Math.min(
     (pressureTier + 1) * (SPHERE_CLICK_CAPACITY / 10),
     SPHERE_CLICK_CAPACITY,
@@ -134,6 +174,14 @@ function App() {
         )
       : 0
   const pressurePulseDuration = Math.max(2.8, 6 - game.pressureLevel * 0.4)
+  const cavitationProgress =
+    game.cavitationLevel > 0
+      ? game.cavitationCharge / cavitationThreshold
+      : 0
+  const cavitationSegments =
+    game.cavitationLevel > 0
+      ? Array.from({ length: cavitationThreshold }, (_, index) => index)
+      : []
   const sphereStyle: SphereStyle = {
     '--fill-level': `${sphereFillPercentage}%`,
     '--liquid-opacity': sphereClicks > 0 ? 1 : 0,
@@ -165,18 +213,13 @@ function App() {
 
   function handleClick() {
     const burstId = nextBurstId.current
-    const nextManualClicks = game.manualClicks + 1
-    const clickAmount = getClickPower(
-      game.clickLevel,
-      nextManualClicks,
-      game.pressureLevel,
-    )
+    const outcome = getClickOutcome(game)
     nextBurstId.current += 1
 
     dispatch({ type: 'click' })
     setBursts((currentBursts) => [
       ...currentBursts,
-      { id: burstId, amount: clickAmount },
+      { id: burstId, amount: outcome.clickEnergy },
     ])
 
     window.setTimeout(() => {
@@ -184,6 +227,21 @@ function App() {
         currentBursts.filter((burst) => burst.id !== burstId),
       )
     }, 850)
+
+    if (outcome.cavitationTriggered && outcome.cavitationEnergy > 0) {
+      const cavitationId = nextCavitationBurstId.current
+      nextCavitationBurstId.current += 1
+      setCavitationBurst({
+        id: cavitationId,
+        amount: outcome.cavitationEnergy,
+      })
+
+      window.setTimeout(() => {
+        setCavitationBurst((currentBurst) =>
+          currentBurst?.id === cavitationId ? null : currentBurst,
+        )
+      }, 1500)
+    }
   }
 
   function handleReset() {
@@ -195,6 +253,7 @@ function App() {
     clearSavedGame()
     dispatch({ type: 'reset' })
     setBursts([])
+    setCavitationBurst(null)
     setResetArmed(false)
   }
 
@@ -205,7 +264,7 @@ function App() {
           <p className="eyebrow">Prototipo incremental</p>
           <h1>Incremental Game A</h1>
           <p className="instructions">
-            Genera energía, llena el núcleo y transforma su presión en potencia.
+            Genera energía, llena el núcleo y libera descargas de cavitación.
           </p>
         </header>
 
@@ -218,6 +277,54 @@ function App() {
             </div>
 
             <div className="button-stage">
+              {game.cavitationLevel > 0 && (
+                <span
+                  aria-hidden="true"
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    zIndex: 1,
+                    width: 194,
+                    height: 194,
+                    marginTop: -97,
+                    marginLeft: -97,
+                    pointerEvents: 'none',
+                  }}
+                >
+                  {cavitationSegments.map((segment) => {
+                    const isCharged = segment < game.cavitationCharge
+                    const angle = (segment / cavitationThreshold) * 360
+
+                    return (
+                      <motion.span
+                        key={segment}
+                        initial={false}
+                        animate={{ opacity: isCharged ? 1 : 0.18 }}
+                        transition={{ duration: 0.16 }}
+                        style={{
+                          position: 'absolute',
+                          top: '50%',
+                          left: '50%',
+                          width: 3,
+                          height: 11,
+                          marginTop: -5.5,
+                          marginLeft: -1.5,
+                          borderRadius: 999,
+                          background: isCharged
+                            ? '#8ce8ff'
+                            : 'rgba(87, 164, 209, 0.48)',
+                          boxShadow: isCharged
+                            ? '0 0 7px rgba(70, 211, 255, 0.95)'
+                            : 'none',
+                          transform: `rotate(${angle}deg) translateY(-93px)`,
+                        }}
+                      />
+                    )
+                  })}
+                </span>
+              )}
+
               <motion.button
                 type="button"
                 className="click-button"
@@ -225,16 +332,28 @@ function App() {
                 onClick={handleClick}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.92 }}
-                aria-label={`Generar ${clickPower} de energía. Esfera en ${sphereFillPercentage.toFixed(1)} por ciento. Bonificación global de ${pressureBonusPercent} por ciento.`}
+                aria-label={`Generar ${clickPower} de energía. Esfera en ${sphereFillPercentage.toFixed(1)} por ciento. Bonificación global de ${pressureBonusPercent} por ciento. Carga de cavitación ${game.cavitationCharge} de ${cavitationThreshold}.`}
               >
-                <span className="sphere-liquid" aria-hidden="true">
+                <motion.span
+                  className="sphere-liquid"
+                  aria-hidden="true"
+                  animate={
+                    cavitationBurst
+                      ? {
+                          x: [0, -4, 4, -3, 3, 0],
+                          rotate: [0, -1.2, 1.2, -0.8, 0.8, 0],
+                        }
+                      : { x: 0, rotate: 0 }
+                  }
+                  transition={{ duration: 0.68, ease: 'easeOut' }}
+                >
                   <span className="liquid-body" />
                   <span className="liquid-wave liquid-wave-back" />
                   <span className="liquid-wave liquid-wave-front" />
                   <span className="liquid-bubble bubble-one" />
                   <span className="liquid-bubble bubble-two" />
                   <span className="liquid-bubble bubble-three" />
-                </span>
+                </motion.span>
                 <span className="sphere-depth" aria-hidden="true" />
                 <span
                   aria-hidden="true"
@@ -275,6 +394,30 @@ function App() {
                     />
                   ))}
                 </span>
+                {cavitationBurst && (
+                  <motion.span
+                    key={cavitationBurst.id}
+                    aria-hidden="true"
+                    initial={{ opacity: 0.9, scale: 0.18 }}
+                    animate={{
+                      opacity: [0.9, 0.58, 0],
+                      scale: [0.18, 0.82, 1.45],
+                    }}
+                    transition={{ duration: 0.82, ease: 'easeOut' }}
+                    style={{
+                      position: 'absolute',
+                      inset: 7,
+                      zIndex: 4,
+                      border: '2px solid rgba(164, 241, 255, 0.92)',
+                      borderRadius: '50%',
+                      background:
+                        'radial-gradient(circle, rgba(130, 226, 255, 0.42), rgba(0, 120, 255, 0.04) 58%, transparent 72%)',
+                      boxShadow:
+                        '0 0 32px rgba(63, 205, 255, 0.9), inset 0 0 22px rgba(128, 228, 255, 0.55)',
+                      pointerEvents: 'none',
+                    }}
+                  />
+                )}
                 <span className="sphere-shine" aria-hidden="true" />
                 <span className="button-label">
                   <strong>CLICK</strong>
@@ -316,6 +459,38 @@ function App() {
                   ))}
                 </div>
               ))}
+
+              {cavitationBurst && (
+                <motion.div
+                  key={cavitationBurst.id}
+                  role="status"
+                  initial={{ opacity: 0, scale: 0.72, y: 12 }}
+                  animate={{
+                    opacity: [0, 1, 1, 0],
+                    scale: [0.72, 1.08, 1],
+                    y: [12, -10, -24],
+                  }}
+                  transition={{ duration: 1.35, ease: 'easeOut' }}
+                  style={{
+                    position: 'absolute',
+                    top: 6,
+                    left: '50%',
+                    zIndex: 8,
+                    width: 220,
+                    marginLeft: -110,
+                    color: '#dffbff',
+                    fontSize: '0.8rem',
+                    fontWeight: 900,
+                    letterSpacing: '0.08em',
+                    textAlign: 'center',
+                    textShadow:
+                      '0 0 8px rgba(170, 242, 255, 1), 0 0 22px rgba(0, 174, 255, 0.95)',
+                    pointerEvents: 'none',
+                  }}
+                >
+                  DESCARGA +{numberFormatter.format(cavitationBurst.amount)}
+                </motion.div>
+              )}
             </div>
 
             <div className={`sphere-status${sphereIsFull ? ' is-full' : ''}`}>
@@ -326,6 +501,23 @@ function App() {
                   : `${sphereFillPercentage.toFixed(1)}% lleno · +${numberFormatter.format(pressureBonusPercent)}% global`}
               </strong>
             </div>
+
+            {game.cavitationLevel > 0 && (
+              <div
+                className="sphere-status"
+                style={{
+                  marginTop: -6,
+                  borderColor: 'rgba(85, 207, 255, 0.22)',
+                  background: `linear-gradient(90deg, rgba(0, 145, 221, ${0.08 + cavitationProgress * 0.12}), rgba(0, 42, 95, 0.08))`,
+                }}
+              >
+                <span>Cavitación</span>
+                <strong>
+                  {game.cavitationCharge}/{cavitationThreshold} · Próxima +
+                  {numberFormatter.format(cavitationReward)}
+                </strong>
+              </div>
+            )}
 
             <div className="stats-grid">
               <div className="stat-card">
@@ -466,6 +658,47 @@ function App() {
                   {game.manualClicks < PRESSURE_REQUIRED_CLICKS
                     ? `Requiere ${numberFormatter.format(PRESSURE_REQUIRED_CLICKS)} clics`
                     : `${numberFormatter.format(pressureCost)} energía`}
+                </strong>
+              </button>
+            </article>
+
+            <article className="upgrade-card">
+              <div className="upgrade-card-header">
+                <div>
+                  <span className="upgrade-number">Evolución 05</span>
+                  <h3>Cámara de cavitación</h3>
+                </div>
+                <span className="level-badge">Nivel {game.cavitationLevel}</span>
+              </div>
+              <p>
+                Los clics cargan la cámara. Al completarse, libera de inmediato
+                varios segundos de producción automática.
+              </p>
+              <div className="upgrade-effect">
+                <span style={{ display: 'block' }}>
+                  {game.cavitationLevel > 0
+                    ? `Carga: ${game.cavitationCharge}/${cavitationThreshold} · Descarga: ${cavitationSeconds} s = +${numberFormatter.format(cavitationReward)}`
+                    : 'Cámara inactiva'}
+                </span>
+                <small style={{ display: 'block', marginTop: 5 }}>
+                  Próximo nivel: cada {nextCavitationThreshold} clics ·{' '}
+                  {nextCavitationSeconds} s = +
+                  {numberFormatter.format(nextCavitationReward)} energía
+                </small>
+              </div>
+              <button
+                type="button"
+                className="upgrade-button"
+                onClick={() => dispatch({ type: 'buy-cavitation' })}
+                disabled={!canBuyCavitation}
+              >
+                <span>Estabilizar</span>
+                <strong>
+                  {game.manualClicks < CAVITATION_REQUIRED_CLICKS
+                    ? `Requiere ${numberFormatter.format(CAVITATION_REQUIRED_CLICKS)} clics`
+                    : game.generatorLevel === 0
+                      ? 'Requiere microgenerador'
+                      : `${numberFormatter.format(cavitationCost)} energía`}
                 </strong>
               </button>
             </article>
