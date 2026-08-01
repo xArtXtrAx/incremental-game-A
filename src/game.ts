@@ -3,6 +3,7 @@ export const GENERATOR_BASE_COST = 25
 export const RESONANCE_BASE_COST = 120
 export const PRESSURE_BASE_COST = 500
 export const CAVITATION_BASE_COST = 2000
+export const OVERLOAD_BASE_COST = 10000
 export const PRESSURE_REQUIRED_CLICKS = 100
 export const CAVITATION_REQUIRED_CLICKS = 500
 export const SPHERE_CLICK_CAPACITY = 5000
@@ -13,6 +14,7 @@ const GENERATOR_GROWTH = 1.8
 const RESONANCE_GROWTH = 2.2
 const PRESSURE_GROWTH = 2.4
 const CAVITATION_GROWTH = 2.6
+const OVERLOAD_GROWTH = 3
 const PRESSURE_BONUS_PER_TIER = 2
 const SAVE_VERSION = 1
 
@@ -25,16 +27,20 @@ export type GameState = {
   pressureLevel: number
   cavitationLevel: number
   cavitationCharge: number
+  overloadLevel: number
+  overloadCharge: number
+  overloadUntil: number
 }
 
 export type GameAction =
-  | { type: 'click' }
-  | { type: 'tick' }
+  | { type: 'click'; now?: number }
+  | { type: 'tick'; now?: number }
   | { type: 'buy-click-upgrade' }
   | { type: 'buy-generator' }
   | { type: 'buy-resonance' }
   | { type: 'buy-pressure' }
   | { type: 'buy-cavitation' }
+  | { type: 'buy-overload' }
   | { type: 'reset' }
 
 export type ClickOutcome = {
@@ -43,6 +49,9 @@ export type ClickOutcome = {
   cavitationEnergy: number
   nextCavitationCharge: number
   cavitationTriggered: boolean
+  nextOverloadCharge: number
+  nextOverloadUntil: number
+  overloadTriggered: boolean
 }
 
 export const initialGameState: GameState = {
@@ -54,6 +63,9 @@ export const initialGameState: GameState = {
   pressureLevel: 0,
   cavitationLevel: 0,
   cavitationCharge: 0,
+  overloadLevel: 0,
+  overloadCharge: 0,
+  overloadUntil: 0,
 }
 
 type StoredGame = {
@@ -92,6 +104,15 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
     fallback.cavitationLevel,
   )
   const cavitationThreshold = getCavitationClicksRequired(cavitationLevel)
+  const overloadLevel = getSafeInteger(
+    candidate.overloadLevel,
+    fallback.overloadLevel,
+  )
+  const overloadThreshold = getOverloadClicksRequired(overloadLevel)
+  const overloadUntil = getSafeInteger(
+    candidate.overloadUntil,
+    fallback.overloadUntil,
+  )
 
   return {
     energy: getSafeNumber(candidate.energy, fallback.energy),
@@ -120,6 +141,19 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
             cavitationThreshold - 1,
           )
         : 0,
+    overloadLevel,
+    overloadCharge:
+      overloadLevel > 0
+        ? Math.min(
+            getSafeInteger(
+              candidate.overloadCharge,
+              fallback.overloadCharge,
+            ),
+            overloadThreshold - 1,
+          )
+        : 0,
+    overloadUntil:
+      overloadLevel > 0 && overloadUntil > Date.now() ? overloadUntil : 0,
   }
 }
 
@@ -145,13 +179,41 @@ export function getPressureMultiplier(
   return 1 + getPressureBonusPercent(manualClicks, pressureLevel) / 100
 }
 
+export function getOverloadClicksRequired(overloadLevel: number) {
+  return overloadLevel > 0
+    ? Math.max(40, 110 - overloadLevel * 10)
+    : 100
+}
+
+export function getOverloadDurationSeconds(overloadLevel: number) {
+  return overloadLevel > 0 ? 12 + overloadLevel * 3 : 0
+}
+
+export function getOverloadMultiplier(overloadLevel: number) {
+  return overloadLevel > 0 ? 1.5 + overloadLevel * 0.5 : 1
+}
+
+export function isOverloadActive(overloadUntil: number, now = Date.now()) {
+  return overloadUntil > now
+}
+
+export function getOverloadRemainingSeconds(
+  overloadUntil: number,
+  now = Date.now(),
+) {
+  return Math.max(0, (overloadUntil - now) / 1000)
+}
+
 export function getClickPower(
   level: number,
   manualClicks = 0,
   pressureLevel = 0,
+  overloadMultiplier = 1,
 ) {
   return roundEnergy(
-    (level + 1) * getPressureMultiplier(manualClicks, pressureLevel),
+    (level + 1) *
+      getPressureMultiplier(manualClicks, pressureLevel) *
+      overloadMultiplier,
   )
 }
 
@@ -164,11 +226,13 @@ export function getEnergyPerSecond(
   resonanceLevel: number,
   manualClicks = 0,
   pressureLevel = 0,
+  overloadMultiplier = 1,
 ) {
   return roundEnergy(
     generatorLevel *
       getResonanceMultiplier(resonanceLevel) *
-      getPressureMultiplier(manualClicks, pressureLevel),
+      getPressureMultiplier(manualClicks, pressureLevel) *
+      overloadMultiplier,
   )
 }
 
@@ -188,6 +252,7 @@ export function getCavitationReward(
   manualClicks: number,
   pressureLevel: number,
   cavitationLevel: number,
+  overloadMultiplier = 1,
 ) {
   return roundEnergy(
     getEnergyPerSecond(
@@ -195,31 +260,32 @@ export function getCavitationReward(
       resonanceLevel,
       manualClicks,
       pressureLevel,
+      overloadMultiplier,
     ) * getCavitationSeconds(cavitationLevel),
   )
 }
 
-export function getClickOutcome(state: GameState): ClickOutcome {
+export function getClickOutcome(
+  state: GameState,
+  now = Date.now(),
+): ClickOutcome {
   const nextManualClicks = state.manualClicks + 1
+  const overloadWasActive = isOverloadActive(state.overloadUntil, now)
+  const activeOverloadMultiplier = overloadWasActive
+    ? getOverloadMultiplier(state.overloadLevel)
+    : 1
   const clickEnergy = getClickPower(
     state.clickLevel,
     nextManualClicks,
     state.pressureLevel,
+    activeOverloadMultiplier,
   )
 
-  if (state.cavitationLevel === 0) {
-    return {
-      nextManualClicks,
-      clickEnergy,
-      cavitationEnergy: 0,
-      nextCavitationCharge: 0,
-      cavitationTriggered: false,
-    }
-  }
-
-  const threshold = getCavitationClicksRequired(state.cavitationLevel)
-  const accumulatedCharge = state.cavitationCharge + 1
-  const cavitationTriggered = accumulatedCharge >= threshold
+  const cavitationThreshold = getCavitationClicksRequired(state.cavitationLevel)
+  const cavitationCharge =
+    state.cavitationLevel > 0 ? state.cavitationCharge + 1 : 0
+  const cavitationTriggered =
+    state.cavitationLevel > 0 && cavitationCharge >= cavitationThreshold
   const cavitationEnergy = cavitationTriggered
     ? getCavitationReward(
         state.generatorLevel,
@@ -227,15 +293,35 @@ export function getClickOutcome(state: GameState): ClickOutcome {
         nextManualClicks,
         state.pressureLevel,
         state.cavitationLevel,
+        activeOverloadMultiplier,
       )
     : 0
+
+  const canChargeOverload =
+    state.overloadLevel > 0 &&
+    state.manualClicks >= SPHERE_CLICK_CAPACITY &&
+    !overloadWasActive
+  const overloadThreshold = getOverloadClicksRequired(state.overloadLevel)
+  const accumulatedOverloadCharge = canChargeOverload
+    ? state.overloadCharge + 1
+    : state.overloadCharge
+  const overloadTriggered =
+    canChargeOverload && accumulatedOverloadCharge >= overloadThreshold
+  const nextOverloadUntil = overloadTriggered
+    ? now + getOverloadDurationSeconds(state.overloadLevel) * 1000
+    : overloadWasActive
+      ? state.overloadUntil
+      : 0
 
   return {
     nextManualClicks,
     clickEnergy,
     cavitationEnergy,
-    nextCavitationCharge: cavitationTriggered ? 0 : accumulatedCharge,
+    nextCavitationCharge: cavitationTriggered ? 0 : cavitationCharge,
     cavitationTriggered,
+    nextOverloadCharge: overloadTriggered ? 0 : accumulatedOverloadCharge,
+    nextOverloadUntil,
+    overloadTriggered,
   }
 }
 
@@ -257,6 +343,10 @@ export function getPressureCost(level: number) {
 
 export function getCavitationCost(level: number) {
   return getScaledCost(CAVITATION_BASE_COST, CAVITATION_GROWTH, level)
+}
+
+export function getOverloadCost(level: number) {
+  return getScaledCost(OVERLOAD_BASE_COST, OVERLOAD_GROWTH, level)
 }
 
 export function loadGameState(fallback: GameState): GameState {
@@ -303,7 +393,7 @@ export function clearSavedGame() {
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'click': {
-      const outcome = getClickOutcome(state)
+      const outcome = getClickOutcome(state, action.now)
 
       return {
         ...state,
@@ -312,24 +402,34 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ),
         manualClicks: outcome.nextManualClicks,
         cavitationCharge: outcome.nextCavitationCharge,
+        overloadCharge: outcome.nextOverloadCharge,
+        overloadUntil: outcome.nextOverloadUntil,
       }
     }
 
     case 'tick': {
+      const now = action.now ?? Date.now()
+      const overloadActive = isOverloadActive(state.overloadUntil, now)
+      const overloadMultiplier = overloadActive
+        ? getOverloadMultiplier(state.overloadLevel)
+        : 1
       const production = getEnergyPerSecond(
         state.generatorLevel,
         state.resonanceLevel,
         state.manualClicks,
         state.pressureLevel,
+        overloadMultiplier,
       )
+      const overloadUntil = overloadActive ? state.overloadUntil : 0
 
-      if (production === 0) {
+      if (production === 0 && overloadUntil === state.overloadUntil) {
         return state
       }
 
       return {
         ...state,
         energy: roundEnergy(state.energy + production),
+        overloadUntil,
       }
     }
 
@@ -414,6 +514,28 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
           state.cavitationCharge,
           nextThreshold - 1,
         ),
+      }
+    }
+
+    case 'buy-overload': {
+      const cost = getOverloadCost(state.overloadLevel)
+
+      if (
+        state.manualClicks < SPHERE_CLICK_CAPACITY ||
+        state.cavitationLevel === 0 ||
+        state.energy < cost
+      ) {
+        return state
+      }
+
+      const nextLevel = state.overloadLevel + 1
+      const nextThreshold = getOverloadClicksRequired(nextLevel)
+
+      return {
+        ...state,
+        energy: roundEnergy(state.energy - cost),
+        overloadLevel: nextLevel,
+        overloadCharge: Math.min(state.overloadCharge, nextThreshold - 1),
       }
     }
 
