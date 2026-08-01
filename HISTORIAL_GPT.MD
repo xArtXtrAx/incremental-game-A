@@ -9,119 +9,118 @@
 - Rama estable: `main`
 - Rama experimental activa: `Dev-Prestigio-Test`
 - Entorno: React + TypeScript + Vite + Motion
-- Guardado estable de `main`: `incremental-game-a:save:v1`
-- Guardado aislado de la prueba: `incremental-game-a:save:prestige-test:v1`
+- Guardado estable: `incremental-game-a:save:v1`
+- Guardado experimental aislado: `incremental-game-a:save:prestige-test:v1`
 - Última actualización: **1 de agosto de 2026**
-- Diseño estable: interfaz compacta con núcleo fijo, resumen superior, pestañas de evoluciones y tarjetas expandibles.
-- El contador interno `manualClicks` representa **clics del núcleo**: incluye clics del jugador y pulsos del autoclicker.
+- Diseño vigente: interfaz compacta con núcleo fijo, resumen superior, pestañas y tarjetas expandibles.
+- `manualClicks` representa clics del núcleo: incluye clics del jugador y pulsos autónomos.
 
 ### Situación de ramas
 
 - `main` conserva el juego estable con las evoluciones 01–07.
-- `Dev-Prestigio-Test` parte del `main` actual y añade el primer sistema de prestigio mediante un zafiro permanente.
-- No integrar `Dev-Prestigio-Test` a `main` hasta que Arturo valide visualmente la formación, extracción, soporte lateral, reinicio y balance.
-- Al abrir por primera vez la rama experimental, se usa el guardado estable como punto de partida si todavía no existe un guardado de prueba.
-- A partir de ese momento, la rama experimental guarda en su propia clave y no sobrescribe el progreso de `main`.
-- El reinicio total dentro de `Dev-Prestigio-Test` elimina únicamente el guardado experimental.
+- `Dev-Prestigio-Test` añade el primer prestigio, el zafiro permanente y su representación WebGL tridimensional.
+- No integrar la rama experimental a `main` hasta que Arturo valide la escena, el reinicio, el balance y el rendimiento.
+- La primera apertura de la rama experimental importa el progreso estable si todavía no existe una partida de prueba.
+- Después guarda exclusivamente en su clave experimental.
+- Cristalizar o reiniciar en la rama de prueba no altera la partida de `main`.
 
 ## 2. Forma de trabajo acordada
 
 - Trabajar de forma directa y evitar microcomprobaciones repetitivas.
 - Usar GitHub Desktop para el flujo local normal.
-- Crear ramas de propuesta cuando un cambio visual o estructural necesite aprobación.
-- Integrar a `main` solamente después de validar la propuesta.
+- Crear ramas de propuesta para cambios visuales, estructurales o mecánicos importantes.
+- Integrar a `main` únicamente después de la aprobación de Arturo.
 - No crear ZIP, manifiestos ni hashes salvo necesidad técnica o petición expresa.
-- Ejecutar pruebas agrupadas y registrar aquí decisiones importantes.
+- Ejecutar validaciones agrupadas y registrar aquí las decisiones importantes.
 
 ## 3. Sistemas estables en `main`
 
-### Base del prototipo
+### Base
 
 - Contador de energía.
-- Botón/esfera interactiva.
+- Esfera líquida interactiva con capacidad visual de 5,000 clics.
 - Producción manual y automática.
 - Guardado automático y reinicio protegido.
-- Esfera líquida con capacidad visual de 5,000 clics.
 - Ondas de líquido corregidas para evitar franjas gruesas giratorias.
 
 ### Evolución 01 — Amplificador de pulso
 
-- Aumenta en 1 la energía base obtenida por clic.
+- Aumenta en 1 la energía base por clic.
 - Costo inicial: 10.
-- Crecimiento de costo: ×1.7.
+- Crecimiento: ×1.7.
 
 ### Evolución 02 — Microgenerador
 
 - Produce energía automáticamente.
 - Costo inicial: 25.
-- Crecimiento de costo: ×1.8.
+- Crecimiento: ×1.8.
 
 ### Evolución 03 — Reactor de resonancia
 
-- Multiplica la producción de todos los microgeneradores.
+- Multiplica la producción de los microgeneradores.
 - Multiplicador: nivel + 1.
 - Costo inicial: 120.
-- Crecimiento de costo: ×2.2.
+- Crecimiento: ×2.2.
 
 ### Evolución 04 — Condensador de presión
 
-- Cada nivel concede +2% global por cada tramo completo de 10% de llenado.
+- Cada nivel concede +2% global por cada tramo completo del 10% de llenado.
 - Afecta clics y producción automática.
 - Requisito inicial: 100 clics.
 - Costo inicial: 500.
-- Crecimiento de costo: ×2.4.
+- Crecimiento: ×2.4.
 
 ### Evolución 05 — Cámara de cavitación
 
 - Los clics cargan una descarga basada en varios segundos de producción.
 - Nivel 1: cada 25 clics, recompensa equivalente a 5 segundos.
 - Los niveles reducen el ciclo y aumentan los segundos recompensados.
-- Requisito inicial: 500 clics y al menos un microgenerador.
+- Requisito inicial: 500 clics y un microgenerador.
 - Costo inicial: 2,000.
-- Crecimiento de costo: ×2.6.
-- Marcador visual: anillo interior de segmentos luminosos.
-- Al descargar, se ilumina el círculo completo; cuando el siguiente ciclo enciende la marca de las 12, el resto se apaga inmediatamente.
+- Crecimiento: ×2.6.
+- Anillo interior de segmentos luminosos alrededor de la esfera.
+- Al descargar se ilumina el círculo completo; al comenzar el nuevo ciclo queda únicamente la marca de las 12.
 
 ### Evolución 06 — Válvula de sobrecarga
 
-- Después de llenar la esfera, los clics adicionales cargan una fase temporal.
+- Los clics posteriores al llenado cargan una fase temporal.
 - Nivel 1: 100 clics, multiplicador ×2, duración 15 segundos.
 - Afecta clics, producción y cavitación.
 - Requisito inicial: esfera llena y cavitación nivel 1.
 - Costo inicial: 10,000.
-- Crecimiento de costo: ×3.
+- Crecimiento: ×3.
 
 ### Evolución 07 — Módulo de pulsación autónoma
 
 - Genera clics reales del núcleo sin interacción del jugador.
 - Llena la esfera y carga presión, cavitación y sobrecarga.
-- Usa acumulación fraccionaria.
-- Progresión: `0.20 × 1.6^(nivel - 1)` clics por segundo.
+- Progresión: `0.20 × 1.6^(nivel - 1)` clic/s.
 - Ejemplos: 0.20, 0.32, 0.512, 0.8192 y 1.3107 clic/s.
 - Límite técnico: 20 clic/s.
-- Requisito inicial: 500 clics y al menos un microgenerador.
+- Requisito inicial: 500 clics y un microgenerador.
 - Costo inicial: 5,000.
-- Crecimiento de costo: ×2.8.
-- No genera partículas flotantes individuales para evitar saturación visual.
+- Crecimiento: ×2.8.
+- No genera partículas flotantes por cada autoclic para evitar saturación visual.
 
 ## 4. Propuesta experimental — Prestigio de zafiro
 
-Implementada únicamente en `Dev-Prestigio-Test`.
+Implementada solamente en `Dev-Prestigio-Test`.
 
-### Activación
+### Activación y elección
 
-- Al alcanzar 5,000 clics, el núcleo queda lleno y se forma un zafiro facetado en el centro de la esfera.
-- La esfera continúa siendo clicable para permitir cargar y utilizar la sobrecarga.
-- Aparece un control independiente `CRISTALIZAR`; el prestigio nunca ocurre de manera accidental.
+- Al alcanzar 5,000 clics se forma un zafiro en el centro de la esfera.
+- La esfera sigue aceptando clics para permitir continuar usando la sobrecarga.
+- El prestigio se confirma mediante un botón independiente `CRISTALIZAR`.
+- Nunca se ejecuta automáticamente ni por accidente.
 
-### Secuencia visual
+### Secuencia
 
-1. El zafiro nace dentro de la esfera con escala, brillo y rotación.
-2. Flota y gira en profundidad mediante SVG facetado, CSS y Motion.
-3. Al pulsar `CRISTALIZAR`, se intensifica, sale de la esfera siguiendo una trayectoria hacia la izquierda y desaparece dentro del soporte.
-4. Tras la extracción aparece o evoluciona el zafiro permanente en un soporte lateral.
-5. El zafiro del soporte flota, gira, emite destellos y reacciona visualmente a cavitación, sobrecarga y nuevas cristalizaciones.
-6. En pantallas estrechas, el soporte se convierte en una banda compacta encima del núcleo para evitar cortes laterales.
+1. El zafiro se ensambla dentro del núcleo.
+2. Flota y gira mientras la esfera permanece llena.
+3. Al pulsar `CRISTALIZAR`, sale hacia la izquierda siguiendo la trayectoria de extracción.
+4. La capa temporal se reinicia.
+5. El zafiro aparece o evoluciona en el soporte permanente.
+6. El soporte reacciona visualmente a cavitación, sobrecarga y nuevas cristalizaciones.
 
 ### Multiplicador permanente
 
@@ -131,22 +130,22 @@ Implementada únicamente en `Dev-Prestigio-Test`.
 - Prestigio 3: ×2.20
 - Prestigio 4: ×2.60
 - Prestigio 5: ×3.05
-- Prestigios posteriores: +0.50 por cristalización.
+- Posteriores: +0.50 por cristalización.
 
-El multiplicador afecta:
+Afecta:
 
 - Energía por clic.
 - Producción de microgeneradores.
 - Resultado de resonancia y presión.
 - Descargas de cavitación.
 - Producción durante sobrecarga.
-- Energía producida por los clics del autoclicker.
+- Energía generada por los autoclics.
 
 No modifica:
 
 - Velocidad del autoclicker.
-- Cantidad de clics necesaria para cavitación.
-- Cantidad de clics necesaria para sobrecarga.
+- Umbral de cavitación.
+- Umbral de sobrecarga.
 - Capacidad de 5,000 clics de la esfera.
 
 ### Reinicio de cristalización
@@ -155,115 +154,149 @@ Se reinicia:
 
 - Energía.
 - Clics del núcleo.
-- Niveles de las evoluciones 01–07.
+- Evoluciones 01–07.
 - Carga de cavitación.
-- Carga y tiempo activo de sobrecarga.
+- Carga y duración activa de sobrecarga.
 - Progreso fraccionario del autoclicker.
 
 Se conserva:
 
 - Número de prestigios.
-- Zafiro permanente y multiplicador.
-- Planos de los sistemas descubiertos.
+- Zafiro y multiplicador permanente.
+- Planos de sistemas descubiertos.
 
 ### Planos permanentes
 
-Después del primer prestigio se eliminan únicamente los requisitos de descubrimiento por cantidad de clics:
+Después del primer prestigio se eliminan los requisitos de descubrimiento por clics:
 
-- Presión puede comprarse sin repetir los 100 clics de descubrimiento.
-- Cavitación y autoclicker pueden comprarse sin repetir los 500 clics de descubrimiento.
-- Sobrecarga puede instalarse antes de llenar la esfera.
+- Presión no requiere repetir 100 clics.
+- Cavitación y autoclicker no requieren repetir 500 clics.
+- Sobrecarga puede comprarse antes de volver a llenar la esfera.
 
 Se conservan las dependencias funcionales:
 
-- Cavitación y autoclicker siguen requiriendo un microgenerador.
-- Sobrecarga sigue requiriendo cavitación nivel 1.
-- La sobrecarga solo comienza a cargarse cuando la esfera vuelve a estar llena.
+- Cavitación y autoclicker requieren un microgenerador.
+- Sobrecarga requiere cavitación nivel 1.
+- La carga de sobrecarga solo comienza cuando la esfera está llena.
 
-### Evolución visual del mismo zafiro
+## 5. Zafiro tridimensional WebGL
 
-- Prestigio 1: Zafiro incipiente.
-- Prestigio 2: Zafiro facetado.
-- Prestigio 3: Zafiro resonante.
-- Prestigio 4: Zafiro astral.
-- Prestigio 5+: Zafiro trascendente.
+El SVG principal fue sustituido en `Dev-Prestigio-Test` por una malla 3D real construida sin dependencias adicionales.
 
-## 5. Arquitectura relevante
+### Geometría
+
+- Los vértices poseen coordenadas `x`, `y`, `z` reales.
+- Las superficies están compuestas por triángulos.
+- Cada triángulo tiene su propia normal para iluminación facetada.
+- La gema usa dos anillos de vértices, una punta superior y una inferior.
+- El número de sectores aumenta con el prestigio:
+  - prestigio 1: 6 sectores;
+  - prestigio 2: 8 sectores;
+  - prestigio 3: 10 sectores;
+  - prestigio 4+: hasta 12 sectores.
+- El mismo zafiro se vuelve progresivamente más facetado.
+
+### Renderizado
+
+- Canvas transparente con WebGL nativo.
+- Vertex shader para perspectiva, rotación X/Y, flotación y ensamblaje.
+- Fragment shader para luz principal, luz lateral, reflejo Fresnel y emisión cian.
+- Las caras nacen progresivamente desde el centro mediante un retraso individual por triángulo.
+- Durante cavitación o sobrecarga:
+  - aumenta la velocidad de rotación;
+  - las caras se expanden sutilmente;
+  - aumenta la emisión luminosa.
+- La animación externa de extracción continúa controlada por Motion.
+
+### Rendimiento y compatibilidad
+
+- Malla de muy baja cantidad de triángulos.
+- Render normal limitado aproximadamente a 40 FPS.
+- Estado energizado hasta 60 FPS.
+- Resolución interna limitada a un máximo de 2× el pixel ratio.
+- Al ocultar la pestaña, el navegador limita el ciclo de `requestAnimationFrame`.
+- `prefers-reduced-motion` muestra una gema estática después del primer render.
+- Si WebGL o los shaders fallan, aparece automáticamente el SVG anterior como respaldo.
+- No fue necesario añadir Three.js ni modificar `package.json`.
+
+## 6. Arquitectura relevante
 
 - `src/game.ts`
-  - Estado, fórmulas, guardado aislado, migración, prestigio y reducer.
+  - Estado, fórmulas, migración, guardado aislado, prestigio y reducer.
 - `src/App.tsx`
-  - Ciclo principal, reloj, eventos visuales, temporización de extracción y navegación móvil.
+  - Ciclo principal, eventos visuales y temporización de extracción.
 - `src/GameCore.tsx`
-  - Esfera, anillos, gema en formación, botón de cristalización, soporte y efectos.
+  - Esfera, anillos, formación, cristalización, soporte y mensajes.
 - `src/SapphireGem.tsx`
-  - SVG facetado, rotación tridimensional, brillo y soporte permanente.
+  - Componente contenedor, soporte permanente y respaldo SVG.
+- `src/SapphireGem3D.tsx`
+  - Vectores, triángulos, normales, shaders y ciclo WebGL.
 - `src/UpgradesPanelCompact.tsx`
-  - Pestañas, tarjetas, cálculos con zafiro y planos permanentes.
-- `src/App.css`
-  - Estilos visuales base.
-- `src/ProposalA.css`
-  - Diseño compacto y adaptable aprobado.
+  - Tarjetas, cálculos con zafiro y planos permanentes.
 - `src/PrestigeSapphire.css`
-  - Estilos experimentales del zafiro, extracción, soporte y comportamiento responsivo.
+  - Estilos del soporte, formación, extracción y diseño responsivo.
 - `HISTORIAL_GPT.MD`
   - Esta bitácora.
 
-## 6. Compatibilidad y decisiones técnicas
+## 7. Compatibilidad y decisiones técnicas
 
-- `main` continúa usando `incremental-game-a:save:v1`.
-- `Dev-Prestigio-Test` usa `incremental-game-a:save:prestige-test:v1`.
-- Si la clave experimental todavía no existe, la rama lee una sola vez el guardado estable como punto de partida y después guarda su propia copia aislada.
-- Los guardados anteriores migran `prestigeCount` a 0 automáticamente.
-- La sobrecarga activa se conserva al recargar únicamente mientras no haya expirado.
-- No hay progreso fuera de línea todavía.
-- La producción pasiva y los autoclics se procesan una vez por segundo.
-- Cuando hay varios autoclics en un mismo segundo, se procesan secuencialmente para respetar presión, cavitación y sobrecarga.
-- El autoclicker ejecuta la misma lógica de un clic del núcleo.
-- El zafiro se implementa sin motor 3D: SVG facetado, transformaciones 3D, CSS y Motion.
-- El botón de cristalización está separado de la esfera para conservar la elección entre prestigio y sobrecarga.
+- `main` usa `incremental-game-a:save:v1`.
+- La prueba usa `incremental-game-a:save:prestige-test:v1`.
+- Los guardados anteriores migran `prestigeCount` a 0.
+- La sobrecarga activa solo se conserva al recargar si todavía no expiró.
+- No existe progreso fuera de línea todavía.
+- Producción pasiva y autoclics se procesan una vez por segundo.
+- Los autoclics múltiples se procesan secuencialmente.
+- El autoclicker ejecuta la misma lógica que un clic del núcleo.
+- El botón de cristalización permanece separado de la esfera para conservar la elección entre prestigio y sobrecarga.
 
-## 7. Validaciones realizadas para `Dev-Prestigio-Test`
+## 8. Validaciones realizadas
 
-- TypeScript estricto para lógica, App y componentes con módulos simulados.
+- TypeScript estricto para la lógica del juego.
+- TypeScript estricto para App y componentes con módulos simulados.
+- TypeScript estricto para `SapphireGem.tsx` y `SapphireGem3D.tsx` juntos.
 - Multiplicadores de prestigio 0–6.
 - Bloqueo de cristalización antes de 5,000 clics.
-- Reinicio completo de la capa temporal.
-- Conservación de `prestigeCount`.
-- Primer clic tras prestigio 1 produce ×1.50.
-- Producción automática recibe el multiplicador del zafiro.
-- Planos permanentes eliminan requisitos de descubrimiento sin eliminar dependencias funcionales.
-- Migración de guardados antiguos sin `prestigeCount`.
-- Importación inicial del progreso estable a la rama experimental.
-- Escritura y reinicio limitados a la clave experimental.
-- Confirmación de que el guardado estable permanece intacto.
-- Estructura responsiva del soporte lateral.
+- Reinicio de la capa temporal y conservación del prestigio.
+- Aplicación del multiplicador a clics y producción automática.
+- Planos permanentes sin eliminar dependencias funcionales.
+- Migración de guardados anteriores.
+- Aislamiento del guardado experimental.
+- Construcción de malla 3D, normales y datos intercalados verificada por TypeScript.
+- Respaldo SVG preparado para ausencia de WebGL o fallo de shader.
+- La ejecución GPU real debe confirmarse en el navegador del equipo local, porque el contenedor de validación no dispone de un contexto EGL funcional.
 
-Confirmar en el equipo local:
+Validación local recomendada:
 
 ```powershell
 npm run lint
 npm run build
+npm run dev
 ```
 
-## 8. Próximo paso inmediato
+## 9. Prueba visual pendiente
 
-1. Probar `Dev-Prestigio-Test` en escritorio y móvil.
-2. Validar el momento de formación al llegar a 5,000.
-3. Validar que la esfera siga cargando sobrecarga mientras el zafiro está listo.
-4. Pulsar `CRISTALIZAR` y revisar trayectoria, duración y ubicación final.
-5. Confirmar reinicio y multiplicador ×1.50.
-6. Cambiar de vuelta a `main` y comprobar que el progreso estable no fue alterado.
-7. Ajustar tamaño, posición o velocidad antes de integrar a `main`.
+1. Seleccionar `Dev-Prestigio-Test` en GitHub Desktop.
+2. Confirmar que el zafiro dentro de la esfera tiene volumen real al girar.
+3. Observar cómo cambian las caras según la iluminación.
+4. Probar cavitación y sobrecarga para comprobar la reacción luminosa.
+5. Cristalizar y revisar que la trayectoria hacia el soporte siga intacta.
+6. Confirmar fluidez y consumo razonable.
+7. Probar al menos dos prestigios para comprobar el aumento de facetas.
+8. Cambiar a `main` y verificar que la partida estable permanece intacta.
 
-Después de aprobar esta rama, las siguientes propuestas sugeridas son:
+## 10. Próximas propuestas
 
-- Progreso fuera de línea controlado.
+Después de aprobar el prestigio:
+
+- Núcleo luminoso interno visible desde prestigio 3.
+- Anillos orbitales tridimensionales desde prestigio 4.
 - Árbol de mejoras permanentes del zafiro.
-- Telemetría local de tiempos y producción efectiva.
+- Progreso fuera de línea controlado.
+- Telemetría local de tiempos y producción.
 - Integración con DualSense mediante Gamepad API.
 - Pruebas automatizadas dentro del repositorio.
 
-## 9. Inicio recomendado para el siguiente chat
+## 11. Inicio recomendado para el siguiente chat
 
-> Continúa el desarrollo de `xArtXtrAx/incremental-game-A`. Lee primero `HISTORIAL_GPT.MD`, revisa `main` y la rama `Dev-Prestigio-Test`, y conserva las fórmulas registradas. El prestigio de zafiro está en prueba y no debe integrarse a `main` sin aprobación de Arturo.
+> Continúa el desarrollo de `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD`, revisa `main` y `Dev-Prestigio-Test`, y conserva las fórmulas registradas. El prestigio y el zafiro WebGL siguen en prueba y no deben integrarse a `main` sin la aprobación de Arturo.
