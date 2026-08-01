@@ -2,7 +2,9 @@ export const CLICK_UPGRADE_BASE_COST = 10
 export const GENERATOR_BASE_COST = 25
 export const RESONANCE_BASE_COST = 120
 export const PRESSURE_BASE_COST = 500
+export const CAVITATION_BASE_COST = 2000
 export const PRESSURE_REQUIRED_CLICKS = 100
+export const CAVITATION_REQUIRED_CLICKS = 500
 export const SPHERE_CLICK_CAPACITY = 5000
 export const GAME_STORAGE_KEY = 'incremental-game-a:save:v1'
 
@@ -10,6 +12,7 @@ const CLICK_UPGRADE_GROWTH = 1.7
 const GENERATOR_GROWTH = 1.8
 const RESONANCE_GROWTH = 2.2
 const PRESSURE_GROWTH = 2.4
+const CAVITATION_GROWTH = 2.6
 const PRESSURE_BONUS_PER_TIER = 2
 const SAVE_VERSION = 1
 
@@ -20,6 +23,8 @@ export type GameState = {
   generatorLevel: number
   resonanceLevel: number
   pressureLevel: number
+  cavitationLevel: number
+  cavitationCharge: number
 }
 
 export type GameAction =
@@ -29,7 +34,16 @@ export type GameAction =
   | { type: 'buy-generator' }
   | { type: 'buy-resonance' }
   | { type: 'buy-pressure' }
+  | { type: 'buy-cavitation' }
   | { type: 'reset' }
+
+export type ClickOutcome = {
+  nextManualClicks: number
+  clickEnergy: number
+  cavitationEnergy: number
+  nextCavitationCharge: number
+  cavitationTriggered: boolean
+}
 
 export const initialGameState: GameState = {
   energy: 0,
@@ -38,6 +52,8 @@ export const initialGameState: GameState = {
   generatorLevel: 0,
   resonanceLevel: 0,
   pressureLevel: 0,
+  cavitationLevel: 0,
+  cavitationCharge: 0,
 }
 
 type StoredGame = {
@@ -71,6 +87,11 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
   }
 
   const candidate = value as Partial<GameState>
+  const cavitationLevel = getSafeInteger(
+    candidate.cavitationLevel,
+    fallback.cavitationLevel,
+  )
+  const cavitationThreshold = getCavitationClicksRequired(cavitationLevel)
 
   return {
     energy: getSafeNumber(candidate.energy, fallback.energy),
@@ -88,6 +109,17 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
       candidate.pressureLevel,
       fallback.pressureLevel,
     ),
+    cavitationLevel,
+    cavitationCharge:
+      cavitationLevel > 0
+        ? Math.min(
+            getSafeInteger(
+              candidate.cavitationCharge,
+              fallback.cavitationCharge,
+            ),
+            cavitationThreshold - 1,
+          )
+        : 0,
   }
 }
 
@@ -140,6 +172,73 @@ export function getEnergyPerSecond(
   )
 }
 
+export function getCavitationClicksRequired(cavitationLevel: number) {
+  return cavitationLevel > 0
+    ? Math.max(10, 28 - cavitationLevel * 3)
+    : 25
+}
+
+export function getCavitationSeconds(cavitationLevel: number) {
+  return cavitationLevel > 0 ? 3 + cavitationLevel * 2 : 0
+}
+
+export function getCavitationReward(
+  generatorLevel: number,
+  resonanceLevel: number,
+  manualClicks: number,
+  pressureLevel: number,
+  cavitationLevel: number,
+) {
+  return roundEnergy(
+    getEnergyPerSecond(
+      generatorLevel,
+      resonanceLevel,
+      manualClicks,
+      pressureLevel,
+    ) * getCavitationSeconds(cavitationLevel),
+  )
+}
+
+export function getClickOutcome(state: GameState): ClickOutcome {
+  const nextManualClicks = state.manualClicks + 1
+  const clickEnergy = getClickPower(
+    state.clickLevel,
+    nextManualClicks,
+    state.pressureLevel,
+  )
+
+  if (state.cavitationLevel === 0) {
+    return {
+      nextManualClicks,
+      clickEnergy,
+      cavitationEnergy: 0,
+      nextCavitationCharge: 0,
+      cavitationTriggered: false,
+    }
+  }
+
+  const threshold = getCavitationClicksRequired(state.cavitationLevel)
+  const accumulatedCharge = state.cavitationCharge + 1
+  const cavitationTriggered = accumulatedCharge >= threshold
+  const cavitationEnergy = cavitationTriggered
+    ? getCavitationReward(
+        state.generatorLevel,
+        state.resonanceLevel,
+        nextManualClicks,
+        state.pressureLevel,
+        state.cavitationLevel,
+      )
+    : 0
+
+  return {
+    nextManualClicks,
+    clickEnergy,
+    cavitationEnergy,
+    nextCavitationCharge: cavitationTriggered ? 0 : accumulatedCharge,
+    cavitationTriggered,
+  }
+}
+
 export function getClickUpgradeCost(level: number) {
   return getScaledCost(CLICK_UPGRADE_BASE_COST, CLICK_UPGRADE_GROWTH, level)
 }
@@ -154,6 +253,10 @@ export function getResonanceCost(level: number) {
 
 export function getPressureCost(level: number) {
   return getScaledCost(PRESSURE_BASE_COST, PRESSURE_GROWTH, level)
+}
+
+export function getCavitationCost(level: number) {
+  return getScaledCost(CAVITATION_BASE_COST, CAVITATION_GROWTH, level)
 }
 
 export function loadGameState(fallback: GameState): GameState {
@@ -200,17 +303,15 @@ export function clearSavedGame() {
 export function gameReducer(state: GameState, action: GameAction): GameState {
   switch (action.type) {
     case 'click': {
-      const nextManualClicks = state.manualClicks + 1
-      const clickPower = getClickPower(
-        state.clickLevel,
-        nextManualClicks,
-        state.pressureLevel,
-      )
+      const outcome = getClickOutcome(state)
 
       return {
         ...state,
-        energy: roundEnergy(state.energy + clickPower),
-        manualClicks: nextManualClicks,
+        energy: roundEnergy(
+          state.energy + outcome.clickEnergy + outcome.cavitationEnergy,
+        ),
+        manualClicks: outcome.nextManualClicks,
+        cavitationCharge: outcome.nextCavitationCharge,
       }
     }
 
@@ -288,6 +389,31 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         energy: roundEnergy(state.energy - cost),
         pressureLevel: state.pressureLevel + 1,
+      }
+    }
+
+    case 'buy-cavitation': {
+      const cost = getCavitationCost(state.cavitationLevel)
+
+      if (
+        state.manualClicks < CAVITATION_REQUIRED_CLICKS ||
+        state.generatorLevel === 0 ||
+        state.energy < cost
+      ) {
+        return state
+      }
+
+      const nextLevel = state.cavitationLevel + 1
+      const nextThreshold = getCavitationClicksRequired(nextLevel)
+
+      return {
+        ...state,
+        energy: roundEnergy(state.energy - cost),
+        cavitationLevel: nextLevel,
+        cavitationCharge: Math.min(
+          state.cavitationCharge,
+          nextThreshold - 1,
+        ),
       }
     }
 
