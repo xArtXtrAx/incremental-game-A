@@ -2,6 +2,7 @@ import { type CSSProperties } from 'react'
 import { motion } from 'motion/react'
 import {
   type GameState,
+  getAutoclickRate,
   getCavitationClicksRequired,
   getCavitationReward,
   getClickPower,
@@ -97,6 +98,7 @@ export function GameCore({
   const sphereClicks = Math.min(game.manualClicks, SPHERE_CLICK_CAPACITY)
   const sphereFull = fill >= 100
   const pressureBonus = getPressureBonusPercent(game.manualClicks, game.pressureLevel)
+  const autoclickRate = getAutoclickRate(game.autoclickLevel)
   const overloadActive = isOverloadActive(game.overloadUntil, clockNow)
   const overloadMultiplier = overloadActive ? getOverloadMultiplier(game.overloadLevel) : 1
   const overloadRemaining = getOverloadRemainingSeconds(game.overloadUntil, clockNow)
@@ -127,6 +129,7 @@ export function GameCore({
         <strong>{format.format(game.energy)}</strong>
         <small>
           +{format.format(production)} por segundo
+          {autoclickRate > 0 ? ` · ${format.format(autoclickRate)} clic/s` : ''}
           {overloadActive ? ` · SOBRECARGA ×${format.format(overloadMultiplier)}` : ''}
         </small>
       </div>
@@ -263,6 +266,15 @@ export function GameCore({
         <span>Núcleo líquido</span>
         <strong>{sphereFull ? 'Capacidad completa' : `${fill.toFixed(1)}% lleno`} · +{format.format(pressureBonus)}% global</strong>
       </div>
+      {game.autoclickLevel > 0 && (
+        <div className="sphere-status" style={{ marginTop: -6 }}>
+          <span>Pulsación autónoma</span>
+          <strong>
+            {format.format(autoclickRate)} clic/s ·{' '}
+            {format.format(game.autoclickProgress * 100)}% hacia el siguiente
+          </strong>
+        </div>
+      )}
       {game.cavitationLevel > 0 && (
         <div className="sphere-status" style={{ marginTop: -6 }}>
           <span>Cavitación</span>
@@ -281,7 +293,7 @@ export function GameCore({
       <div className="stats-grid">
         <div className="stat-card"><span>Por clic</span><strong>+{format.format(clickPower)}</strong></div>
         <div className="stat-card"><span>Automática</span><strong>+{format.format(production)}/s</strong></div>
-        <div className="stat-card"><span>Clics manuales</span><strong>{format.format(game.manualClicks)}</strong></div>
+        <div className="stat-card"><span>Clics del núcleo</span><strong>{format.format(game.manualClicks)}</strong></div>
       </div>
     </section>
   )
