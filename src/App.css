@@ -30,11 +30,22 @@
 }
 
 .instructions {
-  margin: 12px 0 40px;
+  margin: 12px 0 22px;
   color: rgba(220, 235, 255, 0.75);
 }
 
+.button-stage {
+  position: relative;
+  width: 230px;
+  height: 230px;
+  display: grid;
+  place-items: center;
+  isolation: isolate;
+}
+
 .click-button {
+  position: relative;
+  z-index: 2;
   width: 150px;
   height: 150px;
   padding: 0;
@@ -72,9 +83,49 @@
   outline-offset: 7px;
 }
 
+.click-burst {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  pointer-events: none;
+}
+
+.click-plus-one {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 64px;
+  margin-top: -18px;
+  margin-left: -32px;
+  color: #dff8ff;
+  font-size: 1.65rem;
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+  text-shadow:
+    0 0 8px rgba(151, 235, 255, 1),
+    0 0 18px rgba(0, 195, 255, 0.95),
+    0 0 30px rgba(0, 102, 255, 0.8);
+}
+
+.click-particle {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 9px;
+  height: 9px;
+  margin-top: -4.5px;
+  margin-left: -4.5px;
+  border-radius: 50%;
+  background: #b9f3ff;
+  box-shadow:
+    0 0 8px rgba(118, 227, 255, 1),
+    0 0 16px rgba(0, 174, 255, 0.9);
+}
+
 .click-counter {
   min-width: 170px;
-  margin-top: 42px;
+  margin-top: 8px;
   padding: 14px 24px;
   border: 1px solid rgba(83, 182, 255, 0.2);
   border-radius: 18px;
@@ -115,5 +166,11 @@
       0 0 65px rgba(0, 102, 255, 0.8),
       inset 0 4px 12px rgba(255, 255, 255, 0.38),
       inset 0 -12px 20px rgba(0, 10, 50, 0.75);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .click-button {
+    animation: none;
   }
 }
