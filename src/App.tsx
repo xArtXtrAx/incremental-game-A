@@ -11,6 +11,7 @@ import { UpgradesPanel } from './UpgradesPanelCompact'
 import {
   clearSavedGame,
   gameReducer,
+  getAutoclickRate,
   getClickOutcome,
   getClickPower,
   getEnergyPerSecond,
@@ -56,6 +57,7 @@ function App() {
     game.pressureLevel,
     overloadMultiplier,
   )
+  const autoclickRate = getAutoclickRate(game.autoclickLevel)
   const pressureBonus = getPressureBonusPercent(
     game.manualClicks,
     game.pressureLevel,
@@ -171,7 +173,12 @@ function App() {
             </div>
             <div className="summary-item">
               <span>Producción</span>
-              <strong>+{format.format(production)}/s</strong>
+              <strong>
+                +{format.format(production)}/s
+                {autoclickRate > 0
+                  ? ` · ${format.format(autoclickRate)} clic/s`
+                  : ''}
+              </strong>
             </div>
             <div className="summary-item">
               <span>Presión</span>
