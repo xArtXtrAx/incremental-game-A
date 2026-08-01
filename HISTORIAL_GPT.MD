@@ -228,13 +228,13 @@ El SVG principal fue sustituido en `Dev-Prestigio-Test` por una malla 3D real co
 - `src/GameCore.tsx`
   - Esfera, anillos, formación, cristalización, soporte y mensajes.
 - `src/SapphireGem.tsx`
-  - Componente contenedor, soporte permanente y respaldo SVG.
+  - Componente contenedor, soporte permanente, halo sincronizado y respaldo SVG.
 - `src/SapphireGem3D.tsx`
-  - Vectores, triángulos, normales, shaders y ciclo WebGL.
+  - Vectores, triángulos, normales, shaders, ciclo WebGL y pulso progresivo.
 - `src/UpgradesPanelCompact.tsx`
   - Tarjetas, cálculos con zafiro y planos permanentes.
 - `src/PrestigeSapphire.css`
-  - Estilos del soporte, formación, extracción y diseño responsivo.
+  - Estilos del soporte, formación, extracción, pulso y diseño responsivo.
 - `HISTORIAL_GPT.MD`
   - Esta bitácora.
 
@@ -249,6 +249,7 @@ El SVG principal fue sustituido en `Dev-Prestigio-Test` por una malla 3D real co
 - Los autoclics múltiples se procesan secuencialmente.
 - El autoclicker ejecuta la misma lógica que un clic del núcleo.
 - El botón de cristalización permanece separado de la esfera para conservar la elección entre prestigio y sobrecarga.
+- El pulso obtiene el progreso desde el nivel visual de llenado ya presente en la esfera; no añade campos al guardado ni modifica la lógica económica.
 
 ## 8. Validaciones realizadas
 
@@ -264,6 +265,8 @@ El SVG principal fue sustituido en `Dev-Prestigio-Test` por una malla 3D real co
 - Aislamiento del guardado experimental.
 - Construcción de malla 3D, normales y datos intercalados verificada por TypeScript.
 - Respaldo SVG preparado para ausencia de WebGL o fallo de shader.
+- Fórmula del pulso verificada para 0%, 25%, 50%, 75%, 90% y 100% de llenado.
+- Fase compartida entre el zafiro del soporte y el zafiro formado dentro de la esfera.
 - La ejecución GPU real debe confirmarse en el navegador del equipo local, porque el contenedor de validación no dispone de un contexto EGL funcional.
 
 Validación local recomendada:
@@ -274,18 +277,66 @@ npm run build
 npm run dev
 ```
 
-## 9. Prueba visual pendiente
+## 9. Pulso progresivo del zafiro
+
+El zafiro funciona también como indicador visual del avance hacia la siguiente cristalización.
+
+### Brillo y transparencia
+
+- El pulso comienza en brillo máximo.
+- Desciende suavemente hasta aproximadamente 10% de luminosidad y alta transparencia.
+- Después regresa al máximo sin saltos.
+- La intensidad se calcula con una onda cosenoidal continua:
+
+```text
+brillo = 0.55 + 0.45 × cos(2π × fase)
+```
+
+- El fragment shader aplica el pulso al color, emisión, reflejo Fresnel y opacidad.
+- El halo y el destello exterior reciben la misma intensidad mediante una variable CSS compartida.
+- Las aristas conservan una silueta tenue en el mínimo para que la gema no desaparezca completamente.
+
+### Aceleración hacia el siguiente prestigio
+
+Con `p = clics actuales / 5,000`, limitado entre 0 y 1:
+
+```text
+duración = 3 + 17 × (1 − p)^1.6
+```
+
+Valores de referencia:
+
+- 0%: 20.00 s
+- 25%: 13.73 s
+- 50%: 8.61 s
+- 75%: 4.85 s
+- 90%: 3.43 s
+- 100%: 3.00 s
+
+La fase se acumula de forma continua. Al cambiar la duración por nuevos clics, el pulso acelera o desacelera sin reiniciarse.
+
+### Interacción con otros sistemas
+
+- Cavitación, sobrecarga y el anuncio de prestigio fuerzan suavemente el brillo máximo.
+- Al terminar el evento, la gema vuelve a la fase natural que le corresponde.
+- Las instancias del soporte y del centro del núcleo comparten fase para no latir de manera desincronizada.
+- Al formarse una nueva gema o evolucionar el prestigio, el ciclo comienza nuevamente desde el máximo.
+- Con `prefers-reduced-motion`, el zafiro permanece iluminado y estático.
+
+## 10. Prueba visual pendiente
 
 1. Seleccionar `Dev-Prestigio-Test` en GitHub Desktop.
 2. Confirmar que el zafiro dentro de la esfera tiene volumen real al girar.
-3. Observar cómo cambian las caras según la iluminación.
-4. Probar cavitación y sobrecarga para comprobar la reacción luminosa.
-5. Cristalizar y revisar que la trayectoria hacia el soporte siga intacta.
-6. Confirmar fluidez y consumo razonable.
-7. Probar al menos dos prestigios para comprobar el aumento de facetas.
-8. Cambiar a `main` y verificar que la partida estable permanece intacta.
+3. Observar un ciclo completo de 20 segundos después de cristalizar.
+4. Comprobar que la transparencia mínima conserve una silueta tenue.
+5. Observar la aceleración del pulso durante el llenado de la esfera.
+6. Confirmar un ciclo cercano a 3 segundos al llegar a 5,000 clics.
+7. Probar cavitación y sobrecarga para comprobar la prioridad del brillo máximo.
+8. Cristalizar y revisar que la trayectoria hacia el soporte siga intacta.
+9. Probar al menos dos prestigios para comprobar el aumento de facetas.
+10. Cambiar a `main` y verificar que la partida estable permanece intacta.
 
-## 10. Próximas propuestas
+## 11. Próximas propuestas
 
 Después de aprobar el prestigio:
 
@@ -297,6 +348,6 @@ Después de aprobar el prestigio:
 - Integración con DualSense mediante Gamepad API.
 - Pruebas automatizadas dentro del repositorio.
 
-## 11. Inicio recomendado para el siguiente chat
+## 12. Inicio recomendado para el siguiente chat
 
-> Continúa el desarrollo de `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD`, revisa `main` y `Dev-Prestigio-Test`, y conserva las fórmulas registradas. El prestigio y el zafiro WebGL siguen en prueba y no deben integrarse a `main` sin la aprobación de Arturo.
+> Continúa el desarrollo de `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD`, revisa `main` y `Dev-Prestigio-Test`, y conserva las fórmulas registradas. El prestigio, el zafiro WebGL y su pulso progresivo siguen en prueba y no deben integrarse a `main` sin la aprobación de Arturo.
