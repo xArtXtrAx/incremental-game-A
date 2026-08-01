@@ -175,6 +175,9 @@ export function GameCore({
     game.cavitationLevel,
     overloadMultiplier,
   )
+  const cavitationVisualCharge = cavitationBurst
+    ? cavitationThreshold
+    : game.cavitationCharge
   const pressureOpacity =
     game.pressureLevel > 0
       ? Math.min(0.22 + fill / 140 + game.pressureLevel * 0.08, 1)
@@ -216,7 +219,7 @@ export function GameCore({
           <span style={{ position: 'absolute', inset: 18, zIndex: 1 }}>
             <SegmentRing
               count={cavitationThreshold}
-              charged={game.cavitationCharge}
+              charged={cavitationVisualCharge}
               radius={93}
             />
           </span>
