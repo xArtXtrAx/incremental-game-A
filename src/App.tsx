@@ -14,6 +14,8 @@ import {
   getClickUpgradeCost,
   getEnergyPerSecond,
   getGeneratorCost,
+  getResonanceCost,
+  getResonanceMultiplier,
   getSphereFillPercentage,
   initialGameState,
   loadGameState,
@@ -57,12 +59,27 @@ function App() {
   const nextBurstId = useRef(0)
 
   const clickPower = getClickPower(game.clickLevel)
-  const energyPerSecond = getEnergyPerSecond(game.generatorLevel)
+  const resonanceMultiplier = getResonanceMultiplier(game.resonanceLevel)
+  const energyPerSecond = getEnergyPerSecond(
+    game.generatorLevel,
+    game.resonanceLevel,
+  )
+  const nextGeneratorProduction = getEnergyPerSecond(
+    game.generatorLevel + 1,
+    game.resonanceLevel,
+  )
+  const nextResonanceProduction = getEnergyPerSecond(
+    game.generatorLevel,
+    game.resonanceLevel + 1,
+  )
   const clickUpgradeCost = getClickUpgradeCost(game.clickLevel)
   const generatorCost = getGeneratorCost(game.generatorLevel)
+  const resonanceCost = getResonanceCost(game.resonanceLevel)
   const sphereFillPercentage = getSphereFillPercentage(game.manualClicks)
   const sphereClicks = Math.min(game.manualClicks, SPHERE_CLICK_CAPACITY)
   const sphereIsFull = sphereFillPercentage >= 100
+  const canBuyResonance =
+    game.generatorLevel > 0 && game.energy >= resonanceCost
   const sphereStyle: SphereStyle = {
     '--fill-level': `${sphereFillPercentage}%`,
     '--liquid-opacity': sphereClicks > 0 ? 1 : 0,
@@ -229,7 +246,7 @@ function App() {
 
           <aside className="upgrades-panel" aria-labelledby="upgrades-title">
             <div className="upgrades-heading">
-              <p className="eyebrow">Primeras evoluciones</p>
+              <p className="eyebrow">Evoluciones disponibles</p>
               <h2 id="upgrades-title">Mejoras</h2>
             </div>
 
@@ -264,9 +281,13 @@ function App() {
                 </div>
                 <span className="level-badge">Nivel {game.generatorLevel}</span>
               </div>
-              <p>Produce 1 de energía por segundo por cada nivel comprado.</p>
+              <p>
+                Cada unidad produce {numberFormatter.format(resonanceMultiplier)}{' '}
+                de energía por segundo.
+              </p>
               <div className="upgrade-effect">
-                Siguiente nivel: +{numberFormatter.format(energyPerSecond + 1)}/s
+                Siguiente nivel: {numberFormatter.format(nextGeneratorProduction)}{' '}
+                energía/s total
               </div>
               <button
                 type="button"
@@ -276,6 +297,38 @@ function App() {
               >
                 <span>Construir</span>
                 <strong>{numberFormatter.format(generatorCost)} energía</strong>
+              </button>
+            </article>
+
+            <article className="upgrade-card">
+              <div className="upgrade-card-header">
+                <div>
+                  <span className="upgrade-number">Evolución 03</span>
+                  <h3>Reactor de resonancia</h3>
+                </div>
+                <span className="level-badge">Nivel {game.resonanceLevel}</span>
+              </div>
+              <p>
+                Aumenta en 100% la producción de todos los microgeneradores
+                actuales y futuros.
+              </p>
+              <div className="upgrade-effect">
+                Multiplicador: ×{numberFormatter.format(resonanceMultiplier)} → ×
+                {numberFormatter.format(resonanceMultiplier + 1)} · Producción:{' '}
+                {numberFormatter.format(nextResonanceProduction)}/s
+              </div>
+              <button
+                type="button"
+                className="upgrade-button"
+                onClick={() => dispatch({ type: 'buy-resonance' })}
+                disabled={!canBuyResonance}
+              >
+                <span>Sincronizar</span>
+                <strong>
+                  {game.generatorLevel === 0
+                    ? 'Requiere microgenerador'
+                    : `${numberFormatter.format(resonanceCost)} energía`}
+                </strong>
               </button>
             </article>
 
