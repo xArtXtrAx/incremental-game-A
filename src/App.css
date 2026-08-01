@@ -106,29 +106,24 @@
   width: 150px;
   height: 150px;
   padding: 0;
+  overflow: hidden;
+  isolation: isolate;
   border: 3px solid #55c7ff;
   border-radius: 50%;
   background:
-    radial-gradient(
-      circle at 35% 30%,
-      #82ddff 0%,
-      #1678d8 38%,
-      #073474 68%,
-      #031735 100%
-    );
+    radial-gradient(circle at 36% 28%, rgba(126, 222, 255, 0.2), transparent 27%),
+    radial-gradient(circle at 50% 72%, rgba(3, 32, 77, 0.72), rgba(1, 10, 27, 0.88));
   color: white;
-  font-size: 1.4rem;
-  font-weight: 800;
-  letter-spacing: 0.12em;
   cursor: pointer;
   user-select: none;
   box-shadow:
     0 0 10px rgba(0, 195, 255, 0.85),
     0 0 24px rgba(0, 166, 255, 0.75),
     0 0 45px rgba(0, 102, 255, 0.55),
-    inset 0 4px 10px rgba(255, 255, 255, 0.3),
-    inset 0 -12px 20px rgba(0, 10, 50, 0.75);
+    inset 0 0 15px rgba(153, 231, 255, 0.2),
+    inset 0 -18px 28px rgba(0, 5, 22, 0.72);
   animation: neon-pulse 3.2s ease-in-out infinite;
+  backdrop-filter: blur(4px);
 }
 
 .click-button:hover {
@@ -136,9 +131,145 @@
 }
 
 .click-button:focus-visible,
-.upgrade-button:focus-visible {
+.upgrade-button:focus-visible,
+.reset-button:focus-visible {
   outline: 3px solid white;
   outline-offset: 5px;
+}
+
+.sphere-liquid {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 1;
+  min-height: 4px;
+  height: var(--fill-level);
+  opacity: var(--liquid-opacity);
+  transition:
+    height 240ms cubic-bezier(0.2, 0.8, 0.2, 1),
+    opacity 180ms ease;
+}
+
+.liquid-body {
+  position: absolute;
+  inset: 0;
+  background:
+    radial-gradient(circle at 25% 30%, rgba(19, 137, 222, 0.42), transparent 25%),
+    linear-gradient(180deg, rgba(5, 91, 177, 0.8), rgba(1, 31, 86, 0.96));
+  box-shadow:
+    inset 18px 0 24px rgba(27, 139, 219, 0.14),
+    inset -18px 0 28px rgba(0, 10, 48, 0.34),
+    inset 0 12px 18px rgba(48, 174, 238, 0.12);
+}
+
+.liquid-wave {
+  position: absolute;
+  top: -23px;
+  left: -58%;
+  width: 216%;
+  height: 44px;
+  border-radius: 44%;
+  transform-origin: 50% 50%;
+}
+
+.liquid-wave-back {
+  background: rgba(4, 68, 145, 0.92);
+  animation: liquid-wave-spin 7.5s linear infinite reverse;
+}
+
+.liquid-wave-front {
+  top: -19px;
+  background: rgba(8, 101, 190, 0.72);
+  box-shadow: 0 -3px 12px rgba(32, 155, 230, 0.3);
+  animation: liquid-wave-spin 5.8s linear infinite;
+}
+
+.liquid-bubble {
+  position: absolute;
+  z-index: 2;
+  bottom: 8px;
+  width: 7px;
+  height: 7px;
+  border: 1px solid rgba(117, 213, 255, 0.7);
+  border-radius: 50%;
+  background: rgba(97, 200, 255, 0.12);
+  box-shadow: 0 0 8px rgba(39, 157, 230, 0.42);
+  animation: bubble-rise 4.8s ease-in infinite;
+}
+
+.bubble-one {
+  left: 29%;
+}
+
+.bubble-two {
+  left: 58%;
+  width: 5px;
+  height: 5px;
+  animation-delay: -1.7s;
+  animation-duration: 5.6s;
+}
+
+.bubble-three {
+  left: 72%;
+  width: 9px;
+  height: 9px;
+  animation-delay: -3.1s;
+  animation-duration: 6.2s;
+}
+
+.sphere-depth {
+  position: absolute;
+  inset: 4px;
+  z-index: 3;
+  border-radius: 50%;
+  pointer-events: none;
+  box-shadow:
+    inset 13px 10px 18px rgba(182, 239, 255, 0.12),
+    inset -15px -18px 27px rgba(0, 4, 21, 0.5),
+    inset 0 0 18px rgba(68, 190, 255, 0.12);
+}
+
+.sphere-shine {
+  position: absolute;
+  top: 15px;
+  left: 22px;
+  z-index: 4;
+  width: 45px;
+  height: 24px;
+  border-radius: 50%;
+  background: linear-gradient(145deg, rgba(236, 252, 255, 0.72), rgba(132, 224, 255, 0));
+  filter: blur(1px);
+  transform: rotate(-28deg);
+  pointer-events: none;
+}
+
+.button-label {
+  position: relative;
+  z-index: 5;
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  text-shadow:
+    0 2px 5px rgba(0, 0, 0, 0.85),
+    0 0 11px rgba(92, 211, 255, 0.72);
+}
+
+.button-label strong {
+  font-size: 1.32rem;
+  font-weight: 900;
+  letter-spacing: 0.12em;
+}
+
+.button-label small {
+  margin-top: 7px;
+  color: rgba(222, 246, 255, 0.86);
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
 }
 
 .click-burst {
@@ -181,6 +312,37 @@
     0 0 16px rgba(0, 174, 255, 0.9);
 }
 
+.sphere-status {
+  display: flex;
+  width: 100%;
+  margin: -7px 0 13px;
+  padding: 9px 12px;
+  align-items: center;
+  justify-content: space-between;
+  border: 1px solid rgba(62, 164, 230, 0.13);
+  border-radius: 12px;
+  background: rgba(0, 60, 119, 0.08);
+}
+
+.sphere-status span {
+  color: rgba(166, 216, 246, 0.68);
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.sphere-status strong {
+  color: #8ad7ff;
+  font-size: 0.76rem;
+}
+
+.sphere-status.is-full {
+  border-color: rgba(73, 211, 255, 0.34);
+  background: rgba(0, 133, 195, 0.13);
+  box-shadow: inset 0 0 18px rgba(0, 190, 255, 0.08);
+}
+
 .stats-grid {
   width: 100%;
   display: grid;
@@ -217,6 +379,8 @@
 }
 
 .upgrades-panel {
+  display: flex;
+  flex-direction: column;
   padding: 24px;
 }
 
@@ -234,8 +398,7 @@
   padding: 18px;
   border: 1px solid rgba(92, 191, 255, 0.16);
   border-radius: 18px;
-  background:
-    linear-gradient(145deg, rgba(15, 39, 78, 0.68), rgba(4, 13, 32, 0.82));
+  background: linear-gradient(145deg, rgba(15, 39, 78, 0.68), rgba(4, 13, 32, 0.82));
   box-shadow: inset 0 0 24px rgba(0, 130, 255, 0.04);
 }
 
@@ -329,6 +492,82 @@
   font-size: 0.78rem;
 }
 
+.save-controls {
+  margin-top: auto;
+  padding-top: 18px;
+}
+
+.save-status {
+  display: flex;
+  padding: 13px;
+  gap: 10px;
+  align-items: center;
+  border: 1px solid rgba(77, 202, 255, 0.13);
+  border-radius: 14px;
+  background: rgba(0, 91, 151, 0.07);
+}
+
+.save-dot {
+  width: 9px;
+  height: 9px;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #62ddff;
+  box-shadow: 0 0 10px rgba(39, 198, 255, 0.9);
+}
+
+.save-status strong,
+.save-status small {
+  display: block;
+}
+
+.save-status strong {
+  color: #dff7ff;
+  font-size: 0.78rem;
+}
+
+.save-status small {
+  margin-top: 2px;
+  color: rgba(190, 219, 237, 0.58);
+  font-size: 0.68rem;
+}
+
+.reset-button {
+  width: 100%;
+  margin-top: 10px;
+  padding: 10px 12px;
+  border: 1px solid rgba(137, 169, 190, 0.2);
+  border-radius: 11px;
+  color: rgba(207, 226, 238, 0.7);
+  background: rgba(58, 73, 86, 0.17);
+  cursor: pointer;
+  font-size: 0.75rem;
+  font-weight: 800;
+  transition:
+    border-color 160ms ease,
+    color 160ms ease,
+    background 160ms ease;
+}
+
+.reset-button:hover {
+  border-color: rgba(186, 213, 229, 0.38);
+  color: white;
+}
+
+.reset-button.is-armed {
+  border-color: rgba(255, 109, 121, 0.68);
+  color: #ffdce0;
+  background: rgba(157, 23, 45, 0.25);
+}
+
+.reset-warning {
+  margin: 8px 4px 0;
+  color: rgba(255, 180, 188, 0.78);
+  font-size: 0.68rem;
+  line-height: 1.35;
+  text-align: center;
+}
+
 @keyframes neon-pulse {
   0%,
   100% {
@@ -336,8 +575,8 @@
       0 0 8px rgba(0, 195, 255, 0.65),
       0 0 18px rgba(0, 166, 255, 0.55),
       0 0 34px rgba(0, 102, 255, 0.4),
-      inset 0 4px 10px rgba(255, 255, 255, 0.3),
-      inset 0 -12px 20px rgba(0, 10, 50, 0.75);
+      inset 0 0 15px rgba(153, 231, 255, 0.18),
+      inset 0 -18px 28px rgba(0, 5, 22, 0.72);
   }
 
   50% {
@@ -345,8 +584,34 @@
       0 0 16px rgba(105, 220, 255, 1),
       0 0 35px rgba(0, 195, 255, 0.95),
       0 0 65px rgba(0, 102, 255, 0.8),
-      inset 0 4px 12px rgba(255, 255, 255, 0.38),
-      inset 0 -12px 20px rgba(0, 10, 50, 0.75);
+      inset 0 0 19px rgba(153, 231, 255, 0.25),
+      inset 0 -18px 28px rgba(0, 5, 22, 0.72);
+  }
+}
+
+@keyframes liquid-wave-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes bubble-rise {
+  0% {
+    opacity: 0;
+    transform: translateY(0) scale(0.65);
+  }
+
+  18% {
+    opacity: 0.7;
+  }
+
+  82% {
+    opacity: 0.4;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translateY(-105px) scale(1.05);
   }
 }
 
@@ -383,11 +648,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .click-button {
+  .click-button,
+  .liquid-wave,
+  .liquid-bubble {
     animation: none;
   }
 
-  .upgrade-button {
+  .sphere-liquid,
+  .upgrade-button,
+  .reset-button {
     transition: none;
   }
 }
