@@ -1,18 +1,34 @@
-import { useEffect, useReducer, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  useEffect,
+  useReducer,
+  useRef,
+  useState,
+} from 'react'
 import { motion } from 'motion/react'
 import './App.css'
 import {
+  clearSavedGame,
   gameReducer,
   getClickPower,
   getClickUpgradeCost,
   getEnergyPerSecond,
   getGeneratorCost,
+  getSphereFillPercentage,
   initialGameState,
+  loadGameState,
+  saveGameState,
+  SPHERE_CLICK_CAPACITY,
 } from './game'
 
 type ClickBurst = {
   id: number
   amount: number
+}
+
+type SphereStyle = CSSProperties & {
+  '--fill-level': string
+  '--liquid-opacity': number
 }
 
 const particleDirections = [
@@ -31,14 +47,26 @@ const numberFormatter = new Intl.NumberFormat('es-MX', {
 })
 
 function App() {
-  const [game, dispatch] = useReducer(gameReducer, initialGameState)
+  const [game, dispatch] = useReducer(
+    gameReducer,
+    initialGameState,
+    loadGameState,
+  )
   const [bursts, setBursts] = useState<ClickBurst[]>([])
+  const [resetArmed, setResetArmed] = useState(false)
   const nextBurstId = useRef(0)
 
   const clickPower = getClickPower(game.clickLevel)
   const energyPerSecond = getEnergyPerSecond(game.generatorLevel)
   const clickUpgradeCost = getClickUpgradeCost(game.clickLevel)
   const generatorCost = getGeneratorCost(game.generatorLevel)
+  const sphereFillPercentage = getSphereFillPercentage(game.manualClicks)
+  const sphereClicks = Math.min(game.manualClicks, SPHERE_CLICK_CAPACITY)
+  const sphereIsFull = sphereFillPercentage >= 100
+  const sphereStyle: SphereStyle = {
+    '--fill-level': `${sphereFillPercentage}%`,
+    '--liquid-opacity': sphereClicks > 0 ? 1 : 0,
+  }
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -47,6 +75,22 @@ function App() {
 
     return () => window.clearInterval(intervalId)
   }, [])
+
+  useEffect(() => {
+    saveGameState(game)
+  }, [game])
+
+  useEffect(() => {
+    if (!resetArmed) {
+      return
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setResetArmed(false)
+    }, 6000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [resetArmed])
 
   function handleClick() {
     const burstId = nextBurstId.current
@@ -63,6 +107,18 @@ function App() {
         currentBursts.filter((burst) => burst.id !== burstId),
       )
     }, 850)
+  }
+
+  function handleReset() {
+    if (!resetArmed) {
+      setResetArmed(true)
+      return
+    }
+
+    clearSavedGame()
+    dispatch({ type: 'reset' })
+    setBursts([])
+    setResetArmed(false)
   }
 
   return (
@@ -88,12 +144,29 @@ function App() {
               <motion.button
                 type="button"
                 className="click-button"
+                style={sphereStyle}
                 onClick={handleClick}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.92 }}
-                aria-label={`Generar ${clickPower} de energía`}
+                aria-label={`Generar ${clickPower} de energía. Esfera en ${sphereFillPercentage.toFixed(1)} por ciento.`}
               >
-                CLICK
+                <span className="sphere-liquid" aria-hidden="true">
+                  <span className="liquid-body" />
+                  <span className="liquid-wave liquid-wave-back" />
+                  <span className="liquid-wave liquid-wave-front" />
+                  <span className="liquid-bubble bubble-one" />
+                  <span className="liquid-bubble bubble-two" />
+                  <span className="liquid-bubble bubble-three" />
+                </span>
+                <span className="sphere-depth" aria-hidden="true" />
+                <span className="sphere-shine" aria-hidden="true" />
+                <span className="button-label">
+                  <strong>CLICK</strong>
+                  <small>
+                    {numberFormatter.format(sphereClicks)} /{' '}
+                    {numberFormatter.format(SPHERE_CLICK_CAPACITY)}
+                  </small>
+                </span>
               </motion.button>
 
               {bursts.map((burst) => (
@@ -127,6 +200,15 @@ function App() {
                   ))}
                 </div>
               ))}
+            </div>
+
+            <div className={`sphere-status${sphereIsFull ? ' is-full' : ''}`}>
+              <span>Núcleo líquido</span>
+              <strong>
+                {sphereIsFull
+                  ? 'Capacidad completa'
+                  : `${sphereFillPercentage.toFixed(1)}% lleno`}
+              </strong>
             </div>
 
             <div className="stats-grid">
@@ -196,6 +278,28 @@ function App() {
                 <strong>{numberFormatter.format(generatorCost)} energía</strong>
               </button>
             </article>
+
+            <div className="save-controls">
+              <div className="save-status">
+                <span className="save-dot" aria-hidden="true" />
+                <div>
+                  <strong>Guardado automático</strong>
+                  <small>El progreso se conserva en este navegador.</small>
+                </div>
+              </div>
+              <button
+                type="button"
+                className={`reset-button${resetArmed ? ' is-armed' : ''}`}
+                onClick={handleReset}
+              >
+                {resetArmed ? 'Confirmar reinicio total' : 'Reiniciar progreso'}
+              </button>
+              {resetArmed && (
+                <p className="reset-warning" role="status">
+                  Presiona otra vez antes de 6 segundos. Esta acción borra todo.
+                </p>
+              )}
+            </div>
           </aside>
         </div>
       </section>
