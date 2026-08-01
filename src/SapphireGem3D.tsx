@@ -15,6 +15,31 @@ type Geometry = {
 
 const TAU = Math.PI * 2
 const STRIDE_FLOATS = 10
+const MIN_PULSE_DURATION_SECONDS = 3
+const MAX_PULSE_DURATION_SECONDS = 20
+const PULSE_ACCELERATION_POWER = 1.6
+
+function clamp01(value: number) {
+  return Math.min(1, Math.max(0, value))
+}
+
+export function getSapphirePulseDuration(progress: number) {
+  const remaining = 1 - clamp01(progress)
+  return (
+    MIN_PULSE_DURATION_SECONDS +
+    (MAX_PULSE_DURATION_SECONDS - MIN_PULSE_DURATION_SECONDS) *
+      remaining ** PULSE_ACCELERATION_POWER
+  )
+}
+
+function readCoreProgress(canvas: HTMLCanvasElement) {
+  const core = canvas.closest('.core-column')
+  const button = core?.querySelector<HTMLElement>('.click-button')
+  const fillValue = button?.style.getPropertyValue('--fill-level') ?? '0'
+  const fillPercentage = Number.parseFloat(fillValue)
+
+  return Number.isFinite(fillPercentage) ? clamp01(fillPercentage / 100) : 0
+}
 
 function subtract(a: Vec3, b: Vec3): Vec3 {
   return [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
@@ -155,7 +180,7 @@ function createProgram(gl: WebGLRenderingContext) {
   const fragmentShader = compileShader(gl, gl.FRAGMENT_SHADER, `
     precision highp float;
     uniform float uEnergy;
-    uniform float uTime;
+    uniform float uPulse;
     varying vec3 vNormal;
     varying vec3 vColor;
     varying vec3 vPosition;
@@ -168,11 +193,21 @@ function createProgram(gl: WebGLRenderingContext) {
       float diffuse = max(dot(normal, keyLight), 0.0);
       float secondary = max(dot(normal, rimLight), 0.0);
       float fresnel = pow(1.0 - max(dot(normal, viewDirection), 0.0), 2.25);
-      float pulse = 0.5 + 0.5 * sin(uTime * 5.0);
-      vec3 color = vColor * (0.42 + diffuse * 1.05 + secondary * 0.32);
-      color += vec3(0.25, 0.86, 1.0) * (fresnel * 0.82 + uEnergy * (0.35 + pulse * 0.32));
-      color += vec3(0.86, 1.0, 1.0) * pow(diffuse, 5.0) * 0.5;
-      gl_FragColor = vec4(color, 0.9 + fresnel * 0.08);
+      float visibility = clamp(uPulse, 0.1, 1.0);
+      float bodyLight = 0.08 + visibility * 0.92;
+      float edgeLight = 0.14 + visibility * 0.86;
+
+      vec3 color = vColor * (0.42 + diffuse * 1.05 + secondary * 0.32) * bodyLight;
+      color += vec3(0.25, 0.86, 1.0) *
+        (fresnel * 0.82 * edgeLight + uEnergy * (0.35 + visibility * 0.32));
+      color += vec3(0.86, 1.0, 1.0) * pow(diffuse, 5.0) * 0.5 * bodyLight;
+
+      float alpha = clamp(
+        0.04 + visibility * 0.82 + fresnel * 0.12 + uEnergy * 0.08,
+        0.08,
+        1.0
+      );
+      gl_FragColor = vec4(color, alpha);
     }
   `)
 
@@ -225,6 +260,7 @@ export function SapphireGem3D({
     const canvas = canvasRef.current
     if (!canvas) return
     const targetCanvas = canvas
+    const host = targetCanvas.parentElement
     const context = targetCanvas.getContext('webgl', {
       alpha: true,
       antialias: true,
@@ -243,6 +279,9 @@ export function SapphireGem3D({
     let frameId = 0
     let disposed = false
     let lastFrame = 0
+    let previousPulseTime = performance.now()
+    let pulsePhase = 0
+    let displayedPulse = 1
     const startedAt = performance.now()
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
@@ -262,6 +301,7 @@ export function SapphireGem3D({
       const aspect = uniform(gl, program, 'uAspect')
       const assembly = uniform(gl, program, 'uAssembly')
       const energy = uniform(gl, program, 'uEnergy')
+      const pulse = uniform(gl, program, 'uPulse')
       const time = uniform(gl, program, 'uTime')
       const stride = STRIDE_FLOATS * Float32Array.BYTES_PER_ELEMENT
 
@@ -293,15 +333,18 @@ export function SapphireGem3D({
       function render(now: number) {
         if (disposed) return
         if (document.hidden) {
+          previousPulseTime = now
           frameId = requestAnimationFrame(render)
           return
         }
+
         const interval = energizedRef.current ? 1000 / 60 : 1000 / 40
         if (!reducedMotion && now - lastFrame < interval) {
           frameId = requestAnimationFrame(render)
           return
         }
         lastFrame = now
+
         const rect = targetCanvas.getBoundingClientRect()
         const ratio = Math.min(devicePixelRatio || 1, 2)
         const width = Math.max(1, Math.round(rect.width * ratio))
@@ -313,13 +356,30 @@ export function SapphireGem3D({
         }
 
         const elapsed = (now - startedAt) / 1000
+        const deltaSeconds = Math.min(0.1, Math.max(0, (now - previousPulseTime) / 1000))
+        previousPulseTime = now
         const active = energizedRef.current ? 1 : 0
+        const progress = readCoreProgress(targetCanvas)
+        const pulseDuration = getSapphirePulseDuration(progress)
+        pulsePhase = (pulsePhase + deltaSeconds / pulseDuration) % 1
+        const naturalPulse = 0.55 + 0.45 * Math.cos(TAU * pulsePhase)
+        const pulseTarget = active > 0 ? 1 : naturalPulse
+        const smoothing = Math.min(1, deltaSeconds * 4)
+        displayedPulse += (pulseTarget - displayedPulse) * smoothing
+
+        host?.style.setProperty('--sapphire-pulse', displayedPulse.toFixed(4))
+        host?.style.setProperty(
+          '--sapphire-pulse-duration',
+          `${pulseDuration.toFixed(3)}s`,
+        )
+
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
         gl.uniform1f(spin, reducedMotion ? 0.58 : elapsed * (active ? 1.45 : 0.72))
         gl.uniform1f(tilt, -0.18 + Math.sin(elapsed * 0.54) * 0.11)
         gl.uniform1f(aspect, width / height)
         gl.uniform1f(assembly, reducedMotion ? 1 : Math.min(1, elapsed / 1.08))
         gl.uniform1f(energy, active)
+        gl.uniform1f(pulse, reducedMotion ? 1 : displayedPulse)
         gl.uniform1f(time, elapsed)
         gl.drawArrays(gl.TRIANGLES, 0, geometry.vertexCount)
         if (!reducedMotion) frameId = requestAnimationFrame(render)
@@ -334,6 +394,8 @@ export function SapphireGem3D({
     return () => {
       disposed = true
       cancelAnimationFrame(frameId)
+      host?.style.removeProperty('--sapphire-pulse')
+      host?.style.removeProperty('--sapphire-pulse-duration')
       if (buffer) gl.deleteBuffer(buffer)
       if (program) gl.deleteProgram(program)
     }
@@ -350,7 +412,6 @@ export function SapphireGem3D({
         width: '100%',
         height: '100%',
         opacity: ready ? 1 : 0,
-        filter: 'drop-shadow(0 0 7px rgba(73, 222, 255, 0.82))',
         transition: 'opacity 240ms ease',
       }}
       aria-hidden="true"
