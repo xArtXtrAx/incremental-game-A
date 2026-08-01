@@ -93,9 +93,14 @@ export function SapphireGem({
       )}
       <motion.span
         className="sapphire-gem-glint"
-        initial={{ x: '-340%', filter: 'blur(2px) opacity(0)' }}
+        initial={{
+          x: '-340%',
+          rotate: 18,
+          filter: 'blur(2px) opacity(0)',
+        }}
         animate={{
           x: ['-340%', '-340%', '-250%', '250%', '340%', '340%'],
+          rotate: 18,
           filter: [
             'blur(2px) opacity(0)',
             'blur(2px) opacity(0)',
