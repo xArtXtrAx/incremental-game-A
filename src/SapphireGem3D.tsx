@@ -19,6 +19,25 @@ const MIN_PULSE_DURATION_SECONDS = 3
 const MAX_PULSE_DURATION_SECONDS = 20
 const PULSE_ACCELERATION_POWER = 1.6
 
+let sharedPulsePhase = 0
+let sharedPulseTimestamp = 0
+
+function resetSharedPulse(now = performance.now()) {
+  sharedPulsePhase = 0
+  sharedPulseTimestamp = now
+}
+
+function pauseSharedPulse(now: number) {
+  sharedPulseTimestamp = now
+}
+
+function getSharedPulse(now: number, duration: number) {
+  const deltaSeconds = Math.min(0.1, Math.max(0, (now - sharedPulseTimestamp) / 1000))
+  sharedPulseTimestamp = now
+  sharedPulsePhase = (sharedPulsePhase + deltaSeconds / duration) % 1
+  return 0.55 + 0.45 * Math.cos(TAU * sharedPulsePhase)
+}
+
 function clamp01(value: number) {
   return Math.min(1, Math.max(0, value))
 }
@@ -279,10 +298,9 @@ export function SapphireGem3D({
     let frameId = 0
     let disposed = false
     let lastFrame = 0
-    let previousPulseTime = performance.now()
-    let pulsePhase = 0
     let displayedPulse = 1
     const startedAt = performance.now()
+    resetSharedPulse(startedAt)
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
 
     try {
@@ -333,7 +351,7 @@ export function SapphireGem3D({
       function render(now: number) {
         if (disposed) return
         if (document.hidden) {
-          previousPulseTime = now
+          pauseSharedPulse(now)
           frameId = requestAnimationFrame(render)
           return
         }
@@ -356,13 +374,11 @@ export function SapphireGem3D({
         }
 
         const elapsed = (now - startedAt) / 1000
-        const deltaSeconds = Math.min(0.1, Math.max(0, (now - previousPulseTime) / 1000))
-        previousPulseTime = now
+        const deltaSeconds = Math.min(0.1, interval / 1000)
         const active = energizedRef.current ? 1 : 0
         const progress = readCoreProgress(targetCanvas)
         const pulseDuration = getSapphirePulseDuration(progress)
-        pulsePhase = (pulsePhase + deltaSeconds / pulseDuration) % 1
-        const naturalPulse = 0.55 + 0.45 * Math.cos(TAU * pulsePhase)
+        const naturalPulse = getSharedPulse(now, pulseDuration)
         const pulseTarget = active > 0 ? 1 : naturalPulse
         const smoothing = Math.min(1, deltaSeconds * 4)
         displayedPulse += (pulseTarget - displayedPulse) * smoothing
