@@ -24,6 +24,8 @@ import {
   getPressureTier,
   getResonanceCost,
   getResonanceMultiplier,
+  getSapphireMultiplier,
+  hasUnlockedBlueprints,
   isOverloadActive,
   PRESSURE_REQUIRED_CLICKS,
   SPHERE_CLICK_CAPACITY,
@@ -167,6 +169,8 @@ export function UpgradesPanel({
 
   const active = isOverloadActive(game.overloadUntil, clockNow)
   const activeMultiplier = active ? getOverloadMultiplier(game.overloadLevel) : 1
+  const sapphireMultiplier = getSapphireMultiplier(game.prestigeCount)
+  const blueprintsUnlocked = hasUnlockedBlueprints(game)
   const remaining = getOverloadRemainingSeconds(game.overloadUntil, clockNow)
   const pressureTier = getPressureTier(game.manualClicks)
   const pressureBonus = getPressureBonusPercent(
@@ -182,6 +186,7 @@ export function UpgradesPanel({
     game.manualClicks,
     game.pressureLevel,
     activeMultiplier,
+    sapphireMultiplier,
   )
   const generatorNext = getEnergyPerSecond(
     game.generatorLevel + 1,
@@ -189,6 +194,7 @@ export function UpgradesPanel({
     game.manualClicks,
     game.pressureLevel,
     activeMultiplier,
+    sapphireMultiplier,
   )
   const resonance = getResonanceMultiplier(game.resonanceLevel)
   const resonanceNext = getEnergyPerSecond(
@@ -197,12 +203,14 @@ export function UpgradesPanel({
     game.manualClicks,
     game.pressureLevel,
     activeMultiplier,
+    sapphireMultiplier,
   )
   const pressureClickNext = getClickPower(
     game.clickLevel,
     game.manualClicks,
     game.pressureLevel + 1,
     activeMultiplier,
+    sapphireMultiplier,
   )
   const pressureProductionNext = getEnergyPerSecond(
     game.generatorLevel,
@@ -210,6 +218,7 @@ export function UpgradesPanel({
     game.manualClicks,
     game.pressureLevel + 1,
     activeMultiplier,
+    sapphireMultiplier,
   )
   const cavitationThreshold = getCavitationClicksRequired(game.cavitationLevel)
   const cavitationSeconds = getCavitationSeconds(game.cavitationLevel)
@@ -220,11 +229,10 @@ export function UpgradesPanel({
     game.pressureLevel,
     game.cavitationLevel,
     activeMultiplier,
+    sapphireMultiplier,
   )
   const nextCavitationLevel = game.cavitationLevel + 1
-  const nextCavitationThreshold = getCavitationClicksRequired(
-    nextCavitationLevel,
-  )
+  const nextCavitationThreshold = getCavitationClicksRequired(nextCavitationLevel)
   const nextCavitationSeconds = getCavitationSeconds(nextCavitationLevel)
   const nextCavitationReward = getCavitationReward(
     game.generatorLevel,
@@ -233,6 +241,7 @@ export function UpgradesPanel({
     game.pressureLevel,
     nextCavitationLevel,
     activeMultiplier,
+    sapphireMultiplier,
   )
   const autoclickRate = getAutoclickRate(game.autoclickLevel)
   const nextAutoclickRate = getAutoclickRate(game.autoclickLevel + 1)
@@ -249,7 +258,15 @@ export function UpgradesPanel({
   const autoclickCost = getAutoclickCost(game.autoclickLevel)
   const overloadCost = getOverloadCost(game.overloadLevel)
   const sphereFull = game.manualClicks >= SPHERE_CLICK_CAPACITY
-  const category = categories.find((item) => item.id === activeCategory) ?? categories[0]
+  const pressureDiscoveryMissing =
+    !blueprintsUnlocked && game.manualClicks < PRESSURE_REQUIRED_CLICKS
+  const cavitationDiscoveryMissing =
+    !blueprintsUnlocked && game.manualClicks < CAVITATION_REQUIRED_CLICKS
+  const autoclickDiscoveryMissing =
+    !blueprintsUnlocked && game.manualClicks < AUTOCLICK_REQUIRED_CLICKS
+  const overloadDiscoveryMissing = !blueprintsUnlocked && !sphereFull
+  const category =
+    categories.find((item) => item.id === activeCategory) ?? categories[0]
 
   function selectCategory(categoryId: UpgradeCategory) {
     setActiveCategory(categoryId)
@@ -268,7 +285,9 @@ export function UpgradesPanel({
             <p className="eyebrow">Evoluciones disponibles</p>
             <h2 id="upgrades-title">Mejoras</h2>
           </div>
-          <span className="upgrade-total">7 sistemas</span>
+          <span className="upgrade-total">
+            7 sistemas{blueprintsUnlocked ? ' · planos permanentes' : ''}
+          </span>
         </div>
 
         <div className="upgrade-tabs" role="tablist" aria-label="Categorías de evolución">
@@ -302,7 +321,7 @@ export function UpgradesPanel({
               title="Amplificador de pulso"
               level={game.clickLevel}
               summary={<>+{format.format(clickPowerNext)} por clic</>}
-              description="Aumenta en 1 la energía base obtenida con cada clic manual."
+              description="Aumenta en 1 la energía base obtenida con cada clic del núcleo. El zafiro multiplica el resultado final."
               effect={<>Siguiente nivel: +{format.format(clickPowerNext)} por clic</>}
               label="Mejorar"
               detail={`${format.format(clickCost)} energía`}
@@ -318,7 +337,7 @@ export function UpgradesPanel({
               title="Microgenerador"
               level={game.generatorLevel}
               summary={<>{format.format(generatorNext)} energía/s total</>}
-              description="Cada unidad recibe los multiplicadores de resonancia, presión y sobrecarga."
+              description="Cada unidad recibe resonancia, presión, sobrecarga y el multiplicador permanente del zafiro."
               effect={<>Siguiente nivel: {format.format(generatorNext)} energía/s total</>}
               label="Construir"
               detail={`${format.format(generatorCost)} energía`}
@@ -358,7 +377,7 @@ export function UpgradesPanel({
                   ? `${format.format(autoclickRate)} clic/s · ${format.format(game.autoclickProgress * 100)}% de carga`
                   : 'Autoclicker inactivo'
               }
-              description="Acumula fracciones de clic y las convierte en clics reales del núcleo. Llena la esfera y activa presión, cavitación y sobrecarga."
+              description="Acumula fracciones de clic y las convierte en clics reales. Llena la esfera y activa presión, cavitación y sobrecarga."
               effect={
                 <>
                   <span>Actual: {describeAutoclickRate(autoclickRate)}</span>
@@ -369,14 +388,14 @@ export function UpgradesPanel({
               }
               label="Automatizar"
               detail={
-                game.manualClicks < AUTOCLICK_REQUIRED_CLICKS
+                autoclickDiscoveryMissing
                   ? `Requiere ${AUTOCLICK_REQUIRED_CLICKS} clics`
                   : game.generatorLevel === 0
                     ? 'Requiere microgenerador'
                     : `${format.format(autoclickCost)} energía`
               }
               disabled={
-                game.manualClicks < AUTOCLICK_REQUIRED_CLICKS ||
+                autoclickDiscoveryMissing ||
                 game.generatorLevel === 0 ||
                 game.energy < autoclickCost
               }
@@ -398,9 +417,7 @@ export function UpgradesPanel({
               description="Cada nivel concede +2% global por cada tramo completo del 10% de llenado."
               effect={
                 <>
-                  <span>
-                    Bono siguiente: +{format.format(nextPressureBonus)}%
-                  </span>
+                  <span>Bono siguiente: +{format.format(nextPressureBonus)}%</span>
                   <small>
                     +{format.format(pressureClickNext)} por clic · +
                     {format.format(pressureProductionNext)}/s
@@ -409,14 +426,11 @@ export function UpgradesPanel({
               }
               label="Presurizar"
               detail={
-                game.manualClicks < PRESSURE_REQUIRED_CLICKS
+                pressureDiscoveryMissing
                   ? `Requiere ${PRESSURE_REQUIRED_CLICKS} clics`
                   : `${format.format(pressureCost)} energía`
               }
-              disabled={
-                game.manualClicks < PRESSURE_REQUIRED_CLICKS ||
-                game.energy < pressureCost
-              }
+              disabled={pressureDiscoveryMissing || game.energy < pressureCost}
               expanded={expandedCard === 'pressure-condenser'}
               onToggle={() => toggleCard('pressure-condenser')}
               onClick={() => dispatch({ type: 'buy-pressure' })}
@@ -432,7 +446,7 @@ export function UpgradesPanel({
                   ? `${game.cavitationCharge}/${cavitationThreshold} · +${format.format(cavitationReward)}`
                   : 'Cámara inactiva'
               }
-              description="Los clics cargan la cámara y liberan varios segundos de producción automática."
+              description="Los clics cargan la cámara y liberan varios segundos de producción automática, incluido el multiplicador del zafiro."
               effect={
                 <>
                   <span>
@@ -447,14 +461,14 @@ export function UpgradesPanel({
               }
               label="Estabilizar"
               detail={
-                game.manualClicks < CAVITATION_REQUIRED_CLICKS
+                cavitationDiscoveryMissing
                   ? `Requiere ${CAVITATION_REQUIRED_CLICKS} clics`
                   : game.generatorLevel === 0
                     ? 'Requiere microgenerador'
                     : `${format.format(cavitationCost)} energía`
               }
               disabled={
-                game.manualClicks < CAVITATION_REQUIRED_CLICKS ||
+                cavitationDiscoveryMissing ||
                 game.generatorLevel === 0 ||
                 game.energy < cavitationCost
               }
@@ -478,12 +492,11 @@ export function UpgradesPanel({
                   ? `ACTIVA ×${format.format(overloadMultiplier)} · ${remaining.toFixed(1)} s`
                   : `${game.overloadCharge}/${overloadThreshold} · ×${format.format(overloadMultiplier)}`
             }
-            description="Los clics posteriores a llenar la esfera cargan una fase temporal que multiplica toda la energía."
+            description="Los clics posteriores a llenar la esfera cargan una fase temporal que multiplica toda la energía. Puede instalarse antes tras conservar su plano."
             effect={
               <>
                 <span>
-                  Actual: ×{format.format(overloadMultiplier)} durante{' '}
-                  {overloadDuration} s
+                  Actual: ×{format.format(overloadMultiplier)} durante {overloadDuration} s
                 </span>
                 <small>
                   Próximo: cada {getOverloadClicksRequired(nextOverloadLevel)} clics · ×
@@ -494,14 +507,14 @@ export function UpgradesPanel({
             }
             label="Instalar válvula"
             detail={
-              !sphereFull
+              overloadDiscoveryMissing
                 ? `Requiere esfera llena (${SPHERE_CLICK_CAPACITY} clics)`
                 : game.cavitationLevel === 0
                   ? 'Requiere cavitación nivel 1'
                   : `${format.format(overloadCost)} energía`
             }
             disabled={
-              !sphereFull ||
+              overloadDiscoveryMissing ||
               game.cavitationLevel === 0 ||
               game.energy < overloadCost
             }
@@ -517,7 +530,11 @@ export function UpgradesPanel({
           <span className="save-dot" aria-hidden="true" />
           <div>
             <strong>Guardado automático</strong>
-            <small>El progreso se conserva en este navegador.</small>
+            <small>
+              {blueprintsUnlocked
+                ? `Zafiro permanente ×${format.format(sapphireMultiplier)} y planos conservados.`
+                : 'El progreso se conserva en este navegador.'}
+            </small>
           </div>
         </div>
         <button
@@ -529,7 +546,7 @@ export function UpgradesPanel({
         </button>
         {resetArmed && (
           <p className="reset-warning" role="status">
-            Presiona otra vez antes de 6 segundos. Esta acción borra todo.
+            Presiona otra vez antes de 6 segundos. Esta acción borra también el zafiro.
           </p>
         )}
       </div>
