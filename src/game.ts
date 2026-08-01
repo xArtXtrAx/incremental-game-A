@@ -23,6 +23,7 @@ const AUTOCLICK_MAX_RATE = 20
 const OVERLOAD_GROWTH = 3
 const PRESSURE_BONUS_PER_TIER = 2
 const SAVE_VERSION = 1
+const SAPPHIRE_MULTIPLIERS = [1, 1.5, 1.85, 2.2, 2.6, 3.05] as const
 
 export type GameState = {
   energy: number
@@ -38,6 +39,7 @@ export type GameState = {
   overloadLevel: number
   overloadCharge: number
   overloadUntil: number
+  prestigeCount: number
 }
 
 export type GameAction =
@@ -50,6 +52,7 @@ export type GameAction =
   | { type: 'buy-cavitation' }
   | { type: 'buy-autoclicker' }
   | { type: 'buy-overload' }
+  | { type: 'crystallize' }
   | { type: 'reset' }
 
 export type ClickOutcome = {
@@ -77,6 +80,7 @@ export const initialGameState: GameState = {
   overloadLevel: 0,
   overloadCharge: 0,
   overloadUntil: 0,
+  prestigeCount: 0,
 }
 
 type StoredGame = {
@@ -186,6 +190,10 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
         : 0,
     overloadUntil:
       overloadLevel > 0 && overloadUntil > Date.now() ? overloadUntil : 0,
+    prestigeCount: getSafeInteger(
+      candidate.prestigeCount,
+      fallback.prestigeCount,
+    ),
   }
 }
 
@@ -209,6 +217,33 @@ export function getPressureMultiplier(
   pressureLevel: number,
 ) {
   return 1 + getPressureBonusPercent(manualClicks, pressureLevel) / 100
+}
+
+export function getSapphireMultiplier(prestigeCount: number) {
+  if (prestigeCount <= 0) {
+    return 1
+  }
+
+  if (prestigeCount < SAPPHIRE_MULTIPLIERS.length) {
+    return SAPPHIRE_MULTIPLIERS[prestigeCount]
+  }
+
+  return roundEnergy(
+    SAPPHIRE_MULTIPLIERS[SAPPHIRE_MULTIPLIERS.length - 1] +
+      (prestigeCount - (SAPPHIRE_MULTIPLIERS.length - 1)) * 0.5,
+  )
+}
+
+export function getNextSapphireMultiplier(prestigeCount: number) {
+  return getSapphireMultiplier(prestigeCount + 1)
+}
+
+export function canCrystallize(state: GameState) {
+  return state.manualClicks >= SPHERE_CLICK_CAPACITY
+}
+
+export function hasUnlockedBlueprints(state: GameState) {
+  return state.prestigeCount > 0
 }
 
 export function getAutoclickRate(autoclickLevel: number) {
@@ -254,11 +289,13 @@ export function getClickPower(
   manualClicks = 0,
   pressureLevel = 0,
   overloadMultiplier = 1,
+  sapphireMultiplier = 1,
 ) {
   return roundEnergy(
     (level + 1) *
       getPressureMultiplier(manualClicks, pressureLevel) *
-      overloadMultiplier,
+      overloadMultiplier *
+      sapphireMultiplier,
   )
 }
 
@@ -272,12 +309,14 @@ export function getEnergyPerSecond(
   manualClicks = 0,
   pressureLevel = 0,
   overloadMultiplier = 1,
+  sapphireMultiplier = 1,
 ) {
   return roundEnergy(
     generatorLevel *
       getResonanceMultiplier(resonanceLevel) *
       getPressureMultiplier(manualClicks, pressureLevel) *
-      overloadMultiplier,
+      overloadMultiplier *
+      sapphireMultiplier,
   )
 }
 
@@ -298,6 +337,7 @@ export function getCavitationReward(
   pressureLevel: number,
   cavitationLevel: number,
   overloadMultiplier = 1,
+  sapphireMultiplier = 1,
 ) {
   return roundEnergy(
     getEnergyPerSecond(
@@ -306,6 +346,7 @@ export function getCavitationReward(
       manualClicks,
       pressureLevel,
       overloadMultiplier,
+      sapphireMultiplier,
     ) * getCavitationSeconds(cavitationLevel),
   )
 }
@@ -319,11 +360,13 @@ export function getClickOutcome(
   const activeOverloadMultiplier = overloadWasActive
     ? getOverloadMultiplier(state.overloadLevel)
     : 1
+  const sapphireMultiplier = getSapphireMultiplier(state.prestigeCount)
   const clickEnergy = getClickPower(
     state.clickLevel,
     nextManualClicks,
     state.pressureLevel,
     activeOverloadMultiplier,
+    sapphireMultiplier,
   )
 
   const cavitationThreshold = getCavitationClicksRequired(state.cavitationLevel)
@@ -339,6 +382,7 @@ export function getClickOutcome(
         state.pressureLevel,
         state.cavitationLevel,
         activeOverloadMultiplier,
+        sapphireMultiplier,
       )
     : 0
 
@@ -498,6 +542,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         nextState.manualClicks,
         nextState.pressureLevel,
         overloadMultiplier,
+        getSapphireMultiplier(nextState.prestigeCount),
       )
 
       if (production === 0) {
@@ -554,9 +599,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'buy-pressure': {
       const cost = getPressureCost(state.pressureLevel)
+      const requiresDiscovery = !hasUnlockedBlueprints(state)
 
       if (
-        state.manualClicks < PRESSURE_REQUIRED_CLICKS ||
+        (requiresDiscovery && state.manualClicks < PRESSURE_REQUIRED_CLICKS) ||
         state.energy < cost
       ) {
         return state
@@ -571,9 +617,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'buy-cavitation': {
       const cost = getCavitationCost(state.cavitationLevel)
+      const requiresDiscovery = !hasUnlockedBlueprints(state)
 
       if (
-        state.manualClicks < CAVITATION_REQUIRED_CLICKS ||
+        (requiresDiscovery && state.manualClicks < CAVITATION_REQUIRED_CLICKS) ||
         state.generatorLevel === 0 ||
         state.energy < cost
       ) {
@@ -596,9 +643,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'buy-autoclicker': {
       const cost = getAutoclickCost(state.autoclickLevel)
+      const requiresDiscovery = !hasUnlockedBlueprints(state)
 
       if (
-        state.manualClicks < AUTOCLICK_REQUIRED_CLICKS ||
+        (requiresDiscovery && state.manualClicks < AUTOCLICK_REQUIRED_CLICKS) ||
         state.generatorLevel === 0 ||
         state.energy < cost
       ) {
@@ -614,9 +662,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'buy-overload': {
       const cost = getOverloadCost(state.overloadLevel)
+      const requiresDiscovery = !hasUnlockedBlueprints(state)
 
       if (
-        state.manualClicks < SPHERE_CLICK_CAPACITY ||
+        (requiresDiscovery && state.manualClicks < SPHERE_CLICK_CAPACITY) ||
         state.cavitationLevel === 0 ||
         state.energy < cost
       ) {
@@ -633,6 +682,16 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         overloadCharge: Math.min(state.overloadCharge, nextThreshold - 1),
       }
     }
+
+    case 'crystallize':
+      if (!canCrystallize(state)) {
+        return state
+      }
+
+      return {
+        ...initialGameState,
+        prestigeCount: state.prestigeCount + 1,
+      }
 
     case 'reset':
       return initialGameState
