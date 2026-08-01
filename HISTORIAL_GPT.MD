@@ -9,7 +9,8 @@
 - Rama estable: `main`
 - Rama experimental activa: `Dev-Prestigio-Test`
 - Entorno: React + TypeScript + Vite + Motion
-- Guardado: `localStorage`, clave `incremental-game-a:save:v1`
+- Guardado estable de `main`: `incremental-game-a:save:v1`
+- Guardado aislado de la prueba: `incremental-game-a:save:prestige-test:v1`
 - Última actualización: **1 de agosto de 2026**
 - Diseño estable: interfaz compacta con núcleo fijo, resumen superior, pestañas de evoluciones y tarjetas expandibles.
 - El contador interno `manualClicks` representa **clics del núcleo**: incluye clics del jugador y pulsos del autoclicker.
@@ -19,6 +20,9 @@
 - `main` conserva el juego estable con las evoluciones 01–07.
 - `Dev-Prestigio-Test` parte del `main` actual y añade el primer sistema de prestigio mediante un zafiro permanente.
 - No integrar `Dev-Prestigio-Test` a `main` hasta que Arturo valide visualmente la formación, extracción, soporte lateral, reinicio y balance.
+- Al abrir por primera vez la rama experimental, se usa el guardado estable como punto de partida si todavía no existe un guardado de prueba.
+- A partir de ese momento, la rama experimental guarda en su propia clave y no sobrescribe el progreso de `main`.
+- El reinicio total dentro de `Dev-Prestigio-Test` elimina únicamente el guardado experimental.
 
 ## 2. Forma de trabajo acordada
 
@@ -187,7 +191,7 @@ Se conservan las dependencias funcionales:
 ## 5. Arquitectura relevante
 
 - `src/game.ts`
-  - Estado, fórmulas, guardado, migración, prestigio y reducer.
+  - Estado, fórmulas, guardado aislado, migración, prestigio y reducer.
 - `src/App.tsx`
   - Ciclo principal, reloj, eventos visuales, temporización de extracción y navegación móvil.
 - `src/GameCore.tsx`
@@ -207,7 +211,9 @@ Se conservan las dependencias funcionales:
 
 ## 6. Compatibilidad y decisiones técnicas
 
-- La clave de guardado continúa siendo `incremental-game-a:save:v1`.
+- `main` continúa usando `incremental-game-a:save:v1`.
+- `Dev-Prestigio-Test` usa `incremental-game-a:save:prestige-test:v1`.
+- Si la clave experimental todavía no existe, la rama lee una sola vez el guardado estable como punto de partida y después guarda su propia copia aislada.
 - Los guardados anteriores migran `prestigeCount` a 0 automáticamente.
 - La sobrecarga activa se conserva al recargar únicamente mientras no haya expirado.
 - No hay progreso fuera de línea todavía.
@@ -228,6 +234,9 @@ Se conservan las dependencias funcionales:
 - Producción automática recibe el multiplicador del zafiro.
 - Planos permanentes eliminan requisitos de descubrimiento sin eliminar dependencias funcionales.
 - Migración de guardados antiguos sin `prestigeCount`.
+- Importación inicial del progreso estable a la rama experimental.
+- Escritura y reinicio limitados a la clave experimental.
+- Confirmación de que el guardado estable permanece intacto.
 - Estructura responsiva del soporte lateral.
 
 Confirmar en el equipo local:
@@ -244,7 +253,8 @@ npm run build
 3. Validar que la esfera siga cargando sobrecarga mientras el zafiro está listo.
 4. Pulsar `CRISTALIZAR` y revisar trayectoria, duración y ubicación final.
 5. Confirmar reinicio y multiplicador ×1.50.
-6. Ajustar tamaño, posición o velocidad antes de integrar a `main`.
+6. Cambiar de vuelta a `main` y comprobar que el progreso estable no fue alterado.
+7. Ajustar tamaño, posición o velocidad antes de integrar a `main`.
 
 Después de aprobar esta rama, las siguientes propuestas sugeridas son:
 
