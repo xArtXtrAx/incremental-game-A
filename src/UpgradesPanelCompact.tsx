@@ -2,7 +2,10 @@ import { useState, type ReactNode } from 'react'
 import {
   type GameAction,
   type GameState,
+  AUTOCLICK_REQUIRED_CLICKS,
   CAVITATION_REQUIRED_CLICKS,
+  getAutoclickCost,
+  getAutoclickRate,
   getCavitationClicksRequired,
   getCavitationCost,
   getCavitationReward,
@@ -64,7 +67,7 @@ const categories: Array<{
     id: 'production',
     label: 'Producción',
     description: 'Clics, automatización y eficiencia base.',
-    count: 3,
+    count: 4,
   },
   {
     id: 'core',
@@ -79,6 +82,16 @@ const categories: Array<{
     count: 1,
   },
 ]
+
+function describeAutoclickRate(rate: number) {
+  if (rate <= 0) {
+    return 'Inactivo'
+  }
+
+  return rate < 1
+    ? `1 clic cada ${format.format(1 / rate)} s`
+    : `${format.format(rate)} clics/s`
+}
 
 function Card({
   id,
@@ -221,6 +234,8 @@ export function UpgradesPanel({
     nextCavitationLevel,
     activeMultiplier,
   )
+  const autoclickRate = getAutoclickRate(game.autoclickLevel)
+  const nextAutoclickRate = getAutoclickRate(game.autoclickLevel + 1)
   const overloadThreshold = getOverloadClicksRequired(game.overloadLevel)
   const overloadDuration = getOverloadDurationSeconds(game.overloadLevel)
   const overloadMultiplier = getOverloadMultiplier(game.overloadLevel)
@@ -231,6 +246,7 @@ export function UpgradesPanel({
   const resonanceCost = getResonanceCost(game.resonanceLevel)
   const pressureCost = getPressureCost(game.pressureLevel)
   const cavitationCost = getCavitationCost(game.cavitationLevel)
+  const autoclickCost = getAutoclickCost(game.autoclickLevel)
   const overloadCost = getOverloadCost(game.overloadLevel)
   const sphereFull = game.manualClicks >= SPHERE_CLICK_CAPACITY
   const category = categories.find((item) => item.id === activeCategory) ?? categories[0]
@@ -252,7 +268,7 @@ export function UpgradesPanel({
             <p className="eyebrow">Evoluciones disponibles</p>
             <h2 id="upgrades-title">Mejoras</h2>
           </div>
-          <span className="upgrade-total">6 sistemas</span>
+          <span className="upgrade-total">7 sistemas</span>
         </div>
 
         <div className="upgrade-tabs" role="tablist" aria-label="Categorías de evolución">
@@ -330,6 +346,43 @@ export function UpgradesPanel({
               expanded={expandedCard === 'resonance-reactor'}
               onToggle={() => toggleCard('resonance-reactor')}
               onClick={() => dispatch({ type: 'buy-resonance' })}
+            />
+
+            <Card
+              id="autonomous-pulser"
+              number="Evolución 07"
+              title="Módulo de pulsación autónoma"
+              level={game.autoclickLevel}
+              summary={
+                game.autoclickLevel > 0
+                  ? `${format.format(autoclickRate)} clic/s · ${format.format(game.autoclickProgress * 100)}% de carga`
+                  : 'Autoclicker inactivo'
+              }
+              description="Acumula fracciones de clic y las convierte en clics reales del núcleo. Llena la esfera y activa presión, cavitación y sobrecarga."
+              effect={
+                <>
+                  <span>Actual: {describeAutoclickRate(autoclickRate)}</span>
+                  <small>
+                    Próximo nivel: {describeAutoclickRate(nextAutoclickRate)}
+                  </small>
+                </>
+              }
+              label="Automatizar"
+              detail={
+                game.manualClicks < AUTOCLICK_REQUIRED_CLICKS
+                  ? `Requiere ${AUTOCLICK_REQUIRED_CLICKS} clics`
+                  : game.generatorLevel === 0
+                    ? 'Requiere microgenerador'
+                    : `${format.format(autoclickCost)} energía`
+              }
+              disabled={
+                game.manualClicks < AUTOCLICK_REQUIRED_CLICKS ||
+                game.generatorLevel === 0 ||
+                game.energy < autoclickCost
+              }
+              expanded={expandedCard === 'autonomous-pulser'}
+              onToggle={() => toggleCard('autonomous-pulser')}
+              onClick={() => dispatch({ type: 'buy-autoclicker' })}
             />
           </>
         )}
