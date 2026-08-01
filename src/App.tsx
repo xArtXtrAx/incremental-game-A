@@ -1,9 +1,18 @@
-import { useRef, useState } from 'react'
+import { useEffect, useReducer, useRef, useState } from 'react'
 import { motion } from 'motion/react'
 import './App.css'
+import {
+  gameReducer,
+  getClickPower,
+  getClickUpgradeCost,
+  getEnergyPerSecond,
+  getGeneratorCost,
+  initialGameState,
+} from './game'
 
 type ClickBurst = {
   id: number
+  amount: number
 }
 
 const particleDirections = [
@@ -17,17 +26,37 @@ const particleDirections = [
   { x: -58, y: -58 },
 ]
 
+const numberFormatter = new Intl.NumberFormat('es-MX', {
+  maximumFractionDigits: 0,
+})
+
 function App() {
-  const [clicks, setClicks] = useState(0)
+  const [game, dispatch] = useReducer(gameReducer, initialGameState)
   const [bursts, setBursts] = useState<ClickBurst[]>([])
   const nextBurstId = useRef(0)
+
+  const clickPower = getClickPower(game.clickLevel)
+  const energyPerSecond = getEnergyPerSecond(game.generatorLevel)
+  const clickUpgradeCost = getClickUpgradeCost(game.clickLevel)
+  const generatorCost = getGeneratorCost(game.generatorLevel)
+
+  useEffect(() => {
+    const intervalId = window.setInterval(() => {
+      dispatch({ type: 'tick' })
+    }, 1000)
+
+    return () => window.clearInterval(intervalId)
+  }, [])
 
   function handleClick() {
     const burstId = nextBurstId.current
     nextBurstId.current += 1
 
-    setClicks((currentClicks) => currentClicks + 1)
-    setBursts((currentBursts) => [...currentBursts, { id: burstId }])
+    dispatch({ type: 'click' })
+    setBursts((currentBursts) => [
+      ...currentBursts,
+      { id: burstId, amount: clickPower },
+    ])
 
     window.setTimeout(() => {
       setBursts((currentBursts) =>
@@ -39,60 +68,135 @@ function App() {
   return (
     <main className="game-screen">
       <section className="game-panel">
-        <h1>Incremental Game A</h1>
+        <header className="game-header">
+          <p className="eyebrow">Prototipo incremental</p>
+          <h1>Incremental Game A</h1>
+          <p className="instructions">
+            Genera energía, mejora el núcleo y automatiza la producción.
+          </p>
+        </header>
 
-        <p className="instructions">
-          Presiona el botón para generar energía.
-        </p>
+        <div className="game-layout">
+          <section className="core-column" aria-label="Núcleo de energía">
+            <div className="energy-display" aria-live="polite">
+              <span>Energía</span>
+              <strong>{numberFormatter.format(game.energy)}</strong>
+              <small>+{numberFormatter.format(energyPerSecond)} por segundo</small>
+            </div>
 
-        <div className="button-stage">
-          <motion.button
-            type="button"
-            className="click-button"
-            onClick={handleClick}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.92 }}
-            aria-label="Generar un click"
-          >
-            CLICK
-          </motion.button>
-
-          {bursts.map((burst) => (
-            <div className="click-burst" key={burst.id} aria-hidden="true">
-              <motion.span
-                className="click-plus-one"
-                initial={{ opacity: 0, scale: 0.65, y: 0 }}
-                animate={{
-                  opacity: [0, 1, 1, 0],
-                  scale: [0.65, 1.08, 1],
-                  y: -92,
-                }}
-                transition={{ duration: 0.8, ease: 'easeOut' }}
+            <div className="button-stage">
+              <motion.button
+                type="button"
+                className="click-button"
+                onClick={handleClick}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.92 }}
+                aria-label={`Generar ${clickPower} de energía`}
               >
-                +1
-              </motion.span>
+                CLICK
+              </motion.button>
 
-              {particleDirections.map((direction, index) => (
-                <motion.span
-                  className="click-particle"
-                  key={index}
-                  initial={{ opacity: 0, scale: 0.25, x: 0, y: 0 }}
-                  animate={{
-                    opacity: [0, 1, 0],
-                    scale: [0.25, 1.15, 0.2],
-                    x: direction.x,
-                    y: direction.y,
-                  }}
-                  transition={{ duration: 0.65, ease: 'easeOut' }}
-                />
+              {bursts.map((burst) => (
+                <div className="click-burst" key={burst.id} aria-hidden="true">
+                  <motion.span
+                    className="click-plus-one"
+                    initial={{ opacity: 0, scale: 0.65, y: 0 }}
+                    animate={{
+                      opacity: [0, 1, 1, 0],
+                      scale: [0.65, 1.08, 1],
+                      y: -92,
+                    }}
+                    transition={{ duration: 0.8, ease: 'easeOut' }}
+                  >
+                    +{burst.amount}
+                  </motion.span>
+
+                  {particleDirections.map((direction, index) => (
+                    <motion.span
+                      className="click-particle"
+                      key={`${burst.id}-${index}`}
+                      initial={{ opacity: 0, scale: 0.25, x: 0, y: 0 }}
+                      animate={{
+                        opacity: [0, 1, 0],
+                        scale: [0.25, 1.15, 0.2],
+                        x: direction.x,
+                        y: direction.y,
+                      }}
+                      transition={{ duration: 0.65, ease: 'easeOut' }}
+                    />
+                  ))}
+                </div>
               ))}
             </div>
-          ))}
-        </div>
 
-        <div className="click-counter" aria-live="polite">
-          <span>Clicks</span>
-          <strong>{clicks}</strong>
+            <div className="stats-grid">
+              <div className="stat-card">
+                <span>Por clic</span>
+                <strong>+{numberFormatter.format(clickPower)}</strong>
+              </div>
+              <div className="stat-card">
+                <span>Automática</span>
+                <strong>+{numberFormatter.format(energyPerSecond)}/s</strong>
+              </div>
+              <div className="stat-card">
+                <span>Clics manuales</span>
+                <strong>{numberFormatter.format(game.manualClicks)}</strong>
+              </div>
+            </div>
+          </section>
+
+          <aside className="upgrades-panel" aria-labelledby="upgrades-title">
+            <div className="upgrades-heading">
+              <p className="eyebrow">Primeras evoluciones</p>
+              <h2 id="upgrades-title">Mejoras</h2>
+            </div>
+
+            <article className="upgrade-card">
+              <div className="upgrade-card-header">
+                <div>
+                  <span className="upgrade-number">Evolución 01</span>
+                  <h3>Amplificador de pulso</h3>
+                </div>
+                <span className="level-badge">Nivel {game.clickLevel}</span>
+              </div>
+              <p>Aumenta en 1 la energía obtenida con cada clic manual.</p>
+              <div className="upgrade-effect">
+                Siguiente nivel: +{numberFormatter.format(clickPower + 1)} por clic
+              </div>
+              <button
+                type="button"
+                className="upgrade-button"
+                onClick={() => dispatch({ type: 'buy-click-upgrade' })}
+                disabled={game.energy < clickUpgradeCost}
+              >
+                <span>Mejorar</span>
+                <strong>{numberFormatter.format(clickUpgradeCost)} energía</strong>
+              </button>
+            </article>
+
+            <article className="upgrade-card">
+              <div className="upgrade-card-header">
+                <div>
+                  <span className="upgrade-number">Evolución 02</span>
+                  <h3>Microgenerador</h3>
+                </div>
+                <span className="level-badge">Nivel {game.generatorLevel}</span>
+              </div>
+              <p>Produce 1 de energía por segundo por cada nivel comprado.</p>
+              <div className="upgrade-effect">
+                Siguiente nivel: +{numberFormatter.format(energyPerSecond + 1)}/s
+              </div>
+              <button
+                type="button"
+                className="upgrade-button"
+                onClick={() => dispatch({ type: 'buy-generator' })}
+                disabled={game.energy < generatorCost}
+              >
+                <span>Construir</span>
+                <strong>{numberFormatter.format(generatorCost)} energía</strong>
+              </button>
+            </article>
+          </aside>
         </div>
       </section>
     </main>
