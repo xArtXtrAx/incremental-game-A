@@ -35,7 +35,7 @@ function getSharedPulse(now: number, duration: number) {
   const deltaSeconds = Math.min(0.1, Math.max(0, (now - sharedPulseTimestamp) / 1000))
   sharedPulseTimestamp = now
   sharedPulsePhase = (sharedPulsePhase + deltaSeconds / duration) % 1
-  return 0.55 + 0.45 * Math.cos(TAU * sharedPulsePhase)
+  return 0.75 + 0.25 * Math.cos(TAU * sharedPulsePhase)
 }
 
 function clamp01(value: number) {
@@ -212,7 +212,7 @@ function createProgram(gl: WebGLRenderingContext) {
       float diffuse = max(dot(normal, keyLight), 0.0);
       float secondary = max(dot(normal, rimLight), 0.0);
       float fresnel = pow(1.0 - max(dot(normal, viewDirection), 0.0), 2.25);
-      float visibility = clamp(uPulse, 0.1, 1.0);
+      float visibility = clamp(uPulse, 0.5, 1.0);
       float bodyLight = 0.08 + visibility * 0.92;
       float edgeLight = 0.14 + visibility * 0.86;
 
@@ -223,7 +223,7 @@ function createProgram(gl: WebGLRenderingContext) {
 
       float alpha = clamp(
         0.04 + visibility * 0.82 + fresnel * 0.12 + uEnergy * 0.08,
-        0.08,
+        0.45,
         1.0
       );
       gl_FragColor = vec4(color, alpha);
