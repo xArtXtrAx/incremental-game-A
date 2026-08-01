@@ -18,6 +18,8 @@
 }
 
 .sapphire-gem {
+  --sapphire-pulse: 1;
+  --sapphire-pulse-duration: 20s;
   position: relative;
   display: inline-grid;
   place-items: center;
@@ -42,6 +44,7 @@
   display: block;
   width: 100%;
   height: 100%;
+  opacity: var(--sapphire-pulse);
   transform-style: preserve-3d;
 }
 
@@ -58,14 +61,15 @@
   border-radius: 50%;
   background: radial-gradient(circle, rgba(114, 232, 255, 0.58), rgba(0, 115, 255, 0.14) 48%, transparent 74%);
   filter: blur(9px);
-  animation: sapphire-halo 2.6s ease-in-out infinite;
+  opacity: var(--sapphire-pulse);
+  transform: scale(1.08);
+  transition: inset 180ms ease, filter 180ms ease, background 180ms ease;
 }
 
 .sapphire-gem.is-energized .sapphire-gem-halo {
   inset: 2%;
   background: radial-gradient(circle, rgba(228, 255, 255, 0.88), rgba(0, 191, 255, 0.34) 42%, transparent 74%);
   filter: blur(12px);
-  animation-duration: 0.72s;
 }
 
 .sapphire-gem-glint {
@@ -78,8 +82,9 @@
   border-radius: 50%;
   background: linear-gradient(180deg, transparent, rgba(255, 255, 255, 0.9), transparent);
   filter: blur(2px);
-  transform: rotate(18deg);
+  opacity: var(--sapphire-pulse);
   pointer-events: none;
+  animation: sapphire-glint-travel 4s linear infinite;
 }
 
 .sapphire-dock {
@@ -285,16 +290,15 @@
     0 0 42px #3157ff;
 }
 
-@keyframes sapphire-halo {
+@keyframes sapphire-glint-travel {
   0%,
-  100% {
-    opacity: 0.5;
-    transform: scale(0.88);
+  18% {
+    transform: translateX(-320%) rotate(18deg);
   }
 
-  50% {
-    opacity: 0.95;
-    transform: scale(1.14);
+  55%,
+  100% {
+    transform: translateX(320%) rotate(18deg);
   }
 }
 
@@ -370,8 +374,15 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .sapphire-gem-halo {
+  .sapphire-gem-halo,
+  .sapphire-gem-rotator,
+  .sapphire-gem-glint {
+    opacity: 1;
+  }
+
+  .sapphire-gem-glint {
     animation: none;
+    transform: translateX(0) rotate(18deg);
   }
 
   .crystallize-control button {
