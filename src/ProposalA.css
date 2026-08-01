@@ -1,0 +1,605 @@
+/* Propuesta A: navegación compacta sin modificar los estilos base de main. */
+.game-screen {
+  display: block;
+  min-height: 100vh;
+  padding: 22px;
+}
+
+.game-panel {
+  width: min(100%, 1180px);
+  margin: 0 auto;
+  padding: 26px;
+}
+
+.game-header {
+  display: grid;
+  grid-template-columns: minmax(250px, 0.75fr) minmax(520px, 1.25fr);
+  gap: 22px;
+  align-items: end;
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.header-copy {
+  min-width: 0;
+}
+
+.game-header h1 {
+  font-size: clamp(1.75rem, 4vw, 2.55rem);
+  line-height: 1.05;
+}
+
+.instructions {
+  margin: 8px 0 0;
+  font-size: 0.88rem;
+  line-height: 1.45;
+}
+
+.summary-strip {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.summary-item {
+  min-width: 0;
+  padding: 10px 11px;
+  border: 1px solid rgba(83, 182, 255, 0.12);
+  border-radius: 13px;
+  background: rgba(2, 9, 23, 0.66);
+}
+
+.summary-item span,
+.summary-item strong {
+  display: block;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.summary-item span {
+  color: rgba(162, 209, 244, 0.68);
+  font-size: 0.61rem;
+  font-weight: 800;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+}
+
+.summary-item strong {
+  margin-top: 4px;
+  color: #f4fbff;
+  font-size: 0.92rem;
+}
+
+.summary-item.is-active {
+  border-color: rgba(94, 224, 255, 0.48);
+  background: rgba(0, 128, 197, 0.16);
+  box-shadow: inset 0 0 18px rgba(0, 194, 255, 0.08);
+}
+
+.mobile-section-tabs {
+  display: none;
+}
+
+.game-layout {
+  grid-template-columns: minmax(320px, 0.78fr) minmax(0, 1.42fr);
+  gap: 22px;
+  align-items: start;
+}
+
+.layout-section {
+  min-width: 0;
+}
+
+.core-layout-section {
+  position: sticky;
+  top: 18px;
+  align-self: start;
+}
+
+.core-column {
+  padding: 22px 18px 18px;
+}
+
+.energy-display strong {
+  font-size: clamp(2.35rem, 5vw, 3.65rem);
+}
+
+.energy-display small {
+  margin-top: 7px;
+  font-size: 0.78rem;
+}
+
+.sphere-status {
+  margin-bottom: 11px;
+  padding: 8px 10px;
+  gap: 10px;
+  border-radius: 11px;
+}
+
+.sphere-status span {
+  font-size: 0.63rem;
+}
+
+.sphere-status strong {
+  font-size: 0.7rem;
+  text-align: right;
+}
+
+.stats-grid {
+  gap: 7px;
+}
+
+.stat-card {
+  padding: 9px 7px;
+  border-radius: 12px;
+}
+
+.stat-card span {
+  font-size: 0.58rem;
+}
+
+.stat-card strong {
+  font-size: 0.96rem;
+}
+
+.upgrades-panel {
+  display: block;
+  max-height: calc(100vh - 165px);
+  min-height: 560px;
+  overflow: auto;
+  padding: 0 18px 18px;
+  scrollbar-color: rgba(82, 193, 255, 0.45) transparent;
+}
+
+.upgrades-toolbar {
+  position: sticky;
+  top: 0;
+  z-index: 6;
+  margin: 0 -18px 14px;
+  padding: 18px 18px 12px;
+  border-bottom: 1px solid rgba(83, 182, 255, 0.12);
+  background: linear-gradient(
+    180deg,
+    rgba(3, 12, 30, 0.98) 0%,
+    rgba(3, 12, 30, 0.94) 78%,
+    rgba(3, 12, 30, 0) 100%
+  );
+  backdrop-filter: blur(14px);
+}
+
+.upgrades-heading {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+
+.upgrades-heading h2 {
+  font-size: 1.55rem;
+}
+
+.upgrade-total {
+  padding: 5px 9px;
+  border: 1px solid rgba(94, 201, 255, 0.2);
+  border-radius: 999px;
+  color: rgba(190, 228, 250, 0.72);
+  background: rgba(0, 106, 177, 0.08);
+  font-size: 0.66rem;
+  font-weight: 800;
+}
+
+.upgrade-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 7px;
+}
+
+.upgrade-tabs button {
+  min-width: 0;
+  padding: 9px 10px;
+  border: 1px solid rgba(88, 184, 242, 0.14);
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  color: rgba(191, 222, 242, 0.72);
+  background: rgba(4, 20, 44, 0.72);
+  cursor: pointer;
+  font-size: 0.74rem;
+  font-weight: 800;
+  transition:
+    border-color 150ms ease,
+    background 150ms ease,
+    color 150ms ease;
+}
+
+.upgrade-tabs button:hover,
+.upgrade-tabs button.is-active {
+  border-color: rgba(94, 210, 255, 0.48);
+  color: white;
+  background: rgba(0, 103, 177, 0.2);
+}
+
+.upgrade-tabs small {
+  display: grid;
+  min-width: 20px;
+  height: 20px;
+  place-items: center;
+  border-radius: 999px;
+  color: #9fe4ff;
+  background: rgba(0, 161, 225, 0.15);
+  font-size: 0.62rem;
+}
+
+.upgrade-category-intro {
+  display: flex;
+  margin-top: 9px;
+  gap: 9px;
+  align-items: baseline;
+}
+
+.upgrade-category-intro span {
+  color: #8ddaff;
+  font-size: 0.7rem;
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.upgrade-category-intro p {
+  margin: 0;
+  color: rgba(185, 214, 235, 0.58);
+  font-size: 0.69rem;
+}
+
+.upgrade-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px;
+}
+
+.upgrade-card,
+.upgrade-card + .upgrade-card {
+  min-width: 0;
+  margin-top: 0;
+  padding: 14px;
+  border-radius: 16px;
+  transition:
+    border-color 160ms ease,
+    background 160ms ease;
+}
+
+.upgrade-card.is-expanded {
+  border-color: rgba(91, 204, 255, 0.34);
+  background: linear-gradient(
+    145deg,
+    rgba(17, 48, 91, 0.8),
+    rgba(4, 13, 32, 0.92)
+  );
+}
+
+.upgrade-card-header {
+  gap: 10px;
+}
+
+.upgrade-number {
+  font-size: 0.59rem;
+}
+
+.upgrade-card h3 {
+  margin-top: 3px;
+  font-size: 0.98rem;
+  line-height: 1.2;
+}
+
+.level-badge {
+  padding: 4px 7px;
+  font-size: 0.64rem;
+}
+
+.upgrade-quick {
+  min-height: 34px;
+  margin-top: 10px;
+  padding: 8px 9px;
+  border-radius: 9px;
+  display: flex;
+  align-items: center;
+  color: #bfeaff;
+  background: rgba(0, 133, 213, 0.09);
+  font-size: 0.74rem;
+  font-weight: 800;
+  line-height: 1.35;
+}
+
+.upgrade-card-actions {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 7px;
+  margin-top: 10px;
+}
+
+.upgrade-button {
+  min-width: 0;
+  margin-top: 0;
+  padding: 9px 10px;
+  border-radius: 10px;
+  gap: 8px;
+}
+
+.upgrade-button span {
+  flex: 0 0 auto;
+  font-size: 0.72rem;
+}
+
+.upgrade-button strong {
+  min-width: 0;
+  overflow: hidden;
+  font-size: 0.67rem;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upgrade-details-toggle {
+  width: 38px;
+  padding: 0;
+  border: 1px solid rgba(107, 180, 221, 0.18);
+  border-radius: 10px;
+  display: grid;
+  place-items: center;
+  color: rgba(196, 225, 242, 0.72);
+  background: rgba(16, 40, 65, 0.62);
+  cursor: pointer;
+  font-size: 0;
+}
+
+.upgrade-details-toggle span {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.upgrade-details-toggle:hover {
+  border-color: rgba(113, 211, 255, 0.42);
+  color: white;
+}
+
+.upgrade-card-details {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(89, 178, 230, 0.12);
+}
+
+.upgrade-card-details p {
+  margin: 0 0 8px;
+  font-size: 0.76rem;
+  line-height: 1.45;
+}
+
+.upgrade-effect {
+  padding: 8px 9px;
+  border-radius: 9px;
+  font-size: 0.72rem;
+  line-height: 1.4;
+}
+
+.upgrade-effect span,
+.upgrade-effect small {
+  display: block;
+}
+
+.upgrade-effect small {
+  margin-top: 4px;
+  color: rgba(184, 222, 243, 0.64);
+  font-size: 0.66rem;
+}
+
+.save-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(150px, 0.72fr);
+  gap: 8px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(83, 182, 255, 0.1);
+}
+
+.save-status {
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.save-status strong {
+  font-size: 0.72rem;
+}
+
+.save-status small {
+  font-size: 0.62rem;
+}
+
+.reset-button {
+  margin-top: 0;
+  padding: 9px 10px;
+  font-size: 0.7rem;
+}
+
+.reset-warning {
+  grid-column: 1 / -1;
+  margin: 0;
+}
+
+.click-button:focus-visible,
+.upgrade-button:focus-visible,
+.upgrade-details-toggle:focus-visible,
+.upgrade-tabs button:focus-visible,
+.mobile-section-tabs button:focus-visible,
+.reset-button:focus-visible {
+  outline: 3px solid white;
+  outline-offset: 4px;
+}
+
+@media (max-width: 980px) {
+  .game-header {
+    grid-template-columns: 1fr;
+  }
+
+  .summary-strip {
+    grid-template-columns: repeat(5, minmax(110px, 1fr));
+    overflow-x: auto;
+    padding-bottom: 3px;
+  }
+
+  .game-layout {
+    grid-template-columns: minmax(300px, 0.72fr) minmax(0, 1.28fr);
+  }
+
+  .upgrade-cards-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 760px) {
+  .game-screen {
+    padding: 10px;
+  }
+
+  .game-panel {
+    padding: 15px;
+    border-radius: 20px;
+  }
+
+  .game-header {
+    margin-bottom: 12px;
+  }
+
+  .summary-strip {
+    grid-template-columns: repeat(5, 116px);
+  }
+
+  .mobile-section-tabs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 7px;
+    margin-bottom: 12px;
+    padding: 5px;
+    border: 1px solid rgba(83, 182, 255, 0.12);
+    border-radius: 13px;
+    background: rgba(2, 11, 27, 0.7);
+  }
+
+  .mobile-section-tabs button {
+    padding: 10px;
+    border: 1px solid transparent;
+    border-radius: 9px;
+    color: rgba(187, 219, 239, 0.7);
+    background: transparent;
+    cursor: pointer;
+    font-size: 0.78rem;
+    font-weight: 900;
+  }
+
+  .mobile-section-tabs button.is-active {
+    border-color: rgba(92, 207, 255, 0.42);
+    color: white;
+    background: rgba(0, 112, 184, 0.22);
+  }
+
+  .game-layout {
+    display: block;
+  }
+
+  .layout-section {
+    display: none;
+  }
+
+  .layout-section.is-mobile-active {
+    display: block;
+  }
+
+  .core-layout-section {
+    position: static;
+  }
+
+  .upgrades-panel {
+    max-height: none;
+    min-height: 0;
+    overflow: visible;
+  }
+
+  .upgrades-toolbar {
+    position: static;
+  }
+}
+
+@media (max-width: 460px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .stat-card:last-child {
+    grid-column: 1 / -1;
+  }
+
+  .upgrade-tabs {
+    grid-template-columns: 1fr;
+  }
+
+  .upgrade-category-intro {
+    display: block;
+  }
+
+  .upgrade-category-intro p {
+    margin-top: 3px;
+  }
+
+  .upgrade-card-actions,
+  .save-controls {
+    grid-template-columns: 1fr;
+  }
+
+  .upgrade-details-toggle {
+    width: 100%;
+    min-height: 34px;
+    font-size: 0.68rem;
+  }
+
+  .upgrade-details-toggle span {
+    display: none;
+  }
+}
+
+@media (max-height: 720px) and (min-width: 761px) {
+  .game-screen {
+    padding-block: 12px;
+  }
+
+  .game-panel {
+    padding-block: 18px;
+  }
+
+  .game-header {
+    margin-bottom: 12px;
+  }
+
+  .upgrades-panel {
+    max-height: calc(100vh - 135px);
+    min-height: 0;
+  }
+
+  .core-column {
+    padding-block: 16px;
+  }
+
+  .button-stage {
+    height: 205px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upgrade-button,
+  .upgrade-card,
+  .reset-button {
+    transition: none;
+  }
+}
