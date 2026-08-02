@@ -61,9 +61,8 @@
   box-shadow:
     0 0 8px rgba(45, 205, 255, 0.32),
     inset 0 1px 0 rgba(231, 253, 255, 0.22);
-  transform: scaleX(var(--upgrade-progress, 0));
+  transform: scaleX(0);
   transform-origin: left center;
-  transition: transform var(--upgrade-transition-ms, 920ms) linear;
   will-change: transform;
 }
 
