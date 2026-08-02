@@ -29,6 +29,21 @@ incremental-game-a:pulse-trigger:v1
 
 Los nombres cambian automáticamente a `A/B/X/Y`, `LB/RB`, `RT` y `Menu` cuando se detecta un control Xbox.
 
+## Guía visual por regiones
+
+Las dos áreas principales tienen ahora un borde neón ligero que indica dónde se encuentra la interacción:
+
+- `L1` enfoca Núcleo y resalta todo el sector izquierdo.
+- `R1` enfoca Evoluciones y resalta todo el sector derecho.
+- Al entrar con el mouse en una región, esa región toma temporalmente el resplandor.
+- Al sacar el mouse, vuelve a mostrarse la última región elegida mediante navegación.
+- La última entrada tiene prioridad: si el cursor está quieto a la izquierda y se pulsa `R1`, el borde cambia inmediatamente a la derecha.
+- Hacer clic dentro de una región no deja el borde pegado después de retirar el mouse.
+- El efecto funciona también en vista móvil sobre la sección visible.
+- Se respeta `prefers-reduced-motion`; en ese caso no se reproduce la animación de llegada.
+
+La guía está desacoplada del reducer y del guardado. Solo observa `pointerenter`, `pointerleave` y `focusin` sobre `.core-layout-section` y `.upgrades-layout-section`.
+
 ## Gatillo de pulso
 
 La pulsación continua gratuita fue retirada. Mouse y control comparten ahora una herramienta con recurso propio:
@@ -50,6 +65,9 @@ El Gatillo se detiene al soltar la entrada, agotarse la reserva, ocultarse la pe
 
 - `src/gamepad.ts`: ajustes, persistencia, detección de familia y mapeo estándar.
 - `src/GamepadController.tsx`: sondeo, flancos de botones, navegación espacial y acciones discretas.
+- `src/regionFocus.ts`: protocolo opcional para anunciar cambios de región.
+- `src/RegionFocusGuide.tsx`: prioridad entre mouse y navegación, y aplicación de clases visuales.
+- `src/RegionFocusGuide.css`: borde neón, iluminación sutil, móvil y movimiento reducido.
 - `src/pulseTrigger.ts`: constantes, persistencia, protocolo de entradas y reglas puras de carga/consumo.
 - `src/PulseTriggerSystem.tsx`: botón visual, reserva, mouse/teclado, lectura de `R2/RT` y pulsaciones compartidas.
 - `src/PulseTriggerSystem.css`: presentación, barras de reserva/carga y estados activo/listo.
@@ -71,6 +89,7 @@ El soporte acciona los mismos botones del DOM que usa el mouse. No replica fórm
 - Configuración saneada al cargar: intensidad 0–100% y zona muerta 25–90%.
 - El antiguo ajuste de velocidad de R2 queda ignorado y se guarda desactivado para evitar que reaparezca mediante una configuración anterior.
 - El Gatillo marca internamente sus clics antes de pulsar el núcleo; el listener de carga consume esa marca y evita la autorrecarga.
+- La guía visual solo modifica clases CSS y no escribe en el estado de juego.
 
 ## Vibración
 
@@ -104,20 +123,26 @@ npm run dev
 
 3. Abrir el juego en Chrome o Edge.
 4. Conectar el DualSense por Bluetooth o USB y pulsar cualquier botón.
-5. Realizar 10 clics directos y confirmar que la reserva cambia a `1.0 s`.
-6. Mantener el botón visual y confirmar seis pulsaciones antes de quedar en `0.0 s`.
-7. Repetir usando `R2` y confirmar el mismo comportamiento.
-8. Comprobar que mantener `R2` sin reserva no genera clics.
-9. Comprar Autoclicker y confirmar que sus clics no aumentan `Siguiente segundo`.
-10. Confirmar que las pulsaciones del Gatillo tampoco aumentan su propia carga.
-11. Probar Cavitación, Sobrecarga, PRISMA y cristalización durante una descarga.
-12. Confirmar que cristalizar y borrar progreso reinician la reserva.
-13. Probar desconexión, reconexión y cambio de pestaña durante una descarga.
+5. Pulsar `L1` y confirmar que el borde aparece alrededor del sector izquierdo.
+6. Pulsar `R1` y confirmar que el borde pasa al sector derecho.
+7. Mover el mouse entre ambos sectores y confirmar que el borde lo sigue.
+8. Dejar el cursor sobre la izquierda, pulsar `R1` y confirmar que la derecha gana inmediatamente.
+9. Sacar el mouse del juego y confirmar que reaparece la última selección L1/R1.
+10. Realizar 10 clics directos y confirmar que la reserva cambia a `1.0 s`.
+11. Mantener el botón visual y confirmar seis pulsaciones antes de quedar en `0.0 s`.
+12. Repetir usando `R2` y confirmar el mismo comportamiento.
+13. Comprobar que mantener `R2` sin reserva no genera clics.
+14. Comprar Autoclicker y confirmar que sus clics no aumentan `Siguiente segundo`.
+15. Confirmar que las pulsaciones del Gatillo tampoco aumentan su propia carga.
+16. Probar Cavitación, Sobrecarga, PRISMA y cristalización durante una descarga.
+17. Confirmar que cristalizar y borrar progreso reinician la reserva.
+18. Probar desconexión, reconexión, vista móvil y cambio de pestaña.
 
 ## Validación realizada
 
 - Rama creada exactamente desde el `main` aprobado.
-- Módulos de Gamepad, Gatillo y hápticos comprobados con TypeScript estricto usando ES2023 + DOM y declaraciones React equivalentes.
+- Módulos de Gamepad, Gatillo, guía visual y hápticos comprobados con TypeScript estricto usando ES2023 + DOM y declaraciones React equivalentes.
+- La guía visual pasó TypeScript estricto con `noUnusedLocals` y `noUnusedParameters`.
 - Pruebas puras aprobadas:
   - 9 clics dejan progreso `9/10`.
   - El clic 10 genera exactamente 1,000 ms.
