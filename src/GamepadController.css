@@ -173,21 +173,6 @@
   outline-offset: 3px;
 }
 
-/* El antiguo R2 gratuito queda retirado: el Gatillo usa reserva propia. */
-.gamepad-capabilities + .gamepad-switch + .gamepad-switch,
-.gamepad-capabilities + .gamepad-switch + .gamepad-switch + .gamepad-switch + .gamepad-range {
-  display: none;
-}
-
-.gamepad-map span:nth-child(2) {
-  font-size: 0;
-}
-
-.gamepad-map span:nth-child(2)::after {
-  content: 'R2 / RT · Gatillo de pulso';
-  font-size: 0.57rem;
-}
-
 @media (max-width: 760px) {
   .gamepad-panel {
     right: 10px;
