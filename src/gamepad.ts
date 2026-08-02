@@ -13,8 +13,8 @@ export const DEFAULT_GAMEPAD_SETTINGS: GamepadSettings = {
   enabled: true,
   hapticsEnabled: true,
   hapticIntensity: 0.7,
-  holdToPulse: true,
-  holdPulseRate: 8,
+  holdToPulse: false,
+  holdPulseRate: 6,
   deadzone: 0.55,
 }
 
@@ -57,13 +57,9 @@ export function loadGamepadSettings(): GamepadSettings {
         1,
         DEFAULT_GAMEPAD_SETTINGS.hapticIntensity,
       ),
-      holdToPulse: value.holdToPulse ?? DEFAULT_GAMEPAD_SETTINGS.holdToPulse,
-      holdPulseRate: clampNumber(
-        value.holdPulseRate,
-        2,
-        12,
-        DEFAULT_GAMEPAD_SETTINGS.holdPulseRate,
-      ),
+      // El antiguo R2 gratuito queda desactivado. El nuevo Gatillo usa reserva.
+      holdToPulse: false,
+      holdPulseRate: DEFAULT_GAMEPAD_SETTINGS.holdPulseRate,
       deadzone: clampNumber(
         value.deadzone,
         0.25,
@@ -78,7 +74,14 @@ export function loadGamepadSettings(): GamepadSettings {
 
 export function saveGamepadSettings(settings: GamepadSettings) {
   try {
-    window.localStorage.setItem(GAMEPAD_SETTINGS_KEY, JSON.stringify(settings))
+    window.localStorage.setItem(
+      GAMEPAD_SETTINGS_KEY,
+      JSON.stringify({
+        ...settings,
+        holdToPulse: false,
+        holdPulseRate: DEFAULT_GAMEPAD_SETTINGS.holdPulseRate,
+      }),
+    )
   } catch {
     // El control continúa funcionando aunque el navegador bloquee localStorage.
   }
@@ -169,7 +172,9 @@ export function isButtonPressed(button: GamepadButton | undefined) {
 
 export function getFirstConnectedGamepad() {
   if (!('getGamepads' in navigator)) return null
-  return Array.from(navigator.getGamepads()).find(
-    (gamepad): gamepad is Gamepad => Boolean(gamepad?.connected),
-  ) ?? null
+  return (
+    Array.from(navigator.getGamepads()).find(
+      (gamepad): gamepad is Gamepad => Boolean(gamepad?.connected),
+    ) ?? null
+  )
 }
