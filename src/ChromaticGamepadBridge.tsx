@@ -34,13 +34,17 @@ function cycleGem(direction: -1 | 1) {
     (safeIndex + direction + buttons.length) % buttons.length
   const next = buttons[nextIndex]
   next.click()
-  focusElement(next)
+
+  // GamepadController también procesa L1/R1 para la vista histórica.
+  // Reenfocamos después de su callback para mantener la Cámara al frente.
+  window.setTimeout(() => focusElement(next), 24)
 }
 
 export function ChromaticGamepadBridge() {
   const previousButtons = useRef<boolean[]>([])
   const previousCombo = useRef(false)
   const animationFrame = useRef(0)
+  const focusTimers = useRef<number[]>([])
 
   useEffect(() => {
     let controlsEnabled = loadGamepadSettings().enabled
@@ -106,7 +110,10 @@ export function ChromaticGamepadBridge() {
     }
 
     animationFrame.current = window.requestAnimationFrame(poll)
-    return () => window.cancelAnimationFrame(animationFrame.current)
+    return () => {
+      window.cancelAnimationFrame(animationFrame.current)
+      focusTimers.current.forEach((timer) => window.clearTimeout(timer))
+    }
   }, [])
 
   return null
