@@ -45,6 +45,7 @@ import {
 import { PULSE_TRIGGER_BUY_EVENT } from './pulseTrigger'
 import {
   getRefractionBonusMultiplier,
+  getRefractionFacetCount,
   isRefractionActive,
   REFRACTION_REQUIRED_PRESTIGE,
 } from './refraction'
@@ -66,7 +67,9 @@ function appReducer(state: GameState, action: AppAction): GameState {
     const values = sanitizeDeveloperValues(action.values)
     const sphereBelowCapacity = values.manualClicks < SPHERE_CLICK_CAPACITY
     const refractionAllowed =
-      values.prestigeCount >= REFRACTION_REQUIRED_PRESTIGE
+      values.prestigeCount >= REFRACTION_REQUIRED_PRESTIGE &&
+      state.refractionLevel > 0
+    const refractionFacetCount = getRefractionFacetCount(values.prestigeCount)
 
     return {
       ...state,
@@ -80,7 +83,10 @@ function appReducer(state: GameState, action: AppAction): GameState {
         ? state.refractionOrbitProgress
         : 0,
       refractionFacetsCharged: refractionAllowed
-        ? state.refractionFacetsCharged
+        ? Math.min(
+            state.refractionFacetsCharged,
+            Math.max(0, refractionFacetCount - 1),
+          )
         : 0,
       refractionUntil: refractionAllowed ? state.refractionUntil : 0,
       refractionDischargeCount: refractionAllowed
