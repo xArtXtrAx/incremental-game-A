@@ -71,6 +71,10 @@
 }
 
 @media (max-width: 760px) {
+  .core-layout-section {
+    position: relative;
+  }
+
   .core-layout-section::after,
   .upgrades-layout-section::after {
     inset: -5px;
