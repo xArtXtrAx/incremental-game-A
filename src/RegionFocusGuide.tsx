@@ -76,7 +76,12 @@ export function RegionFocusGuide() {
         activeSource = navigationRegion ? 'navigation' : null
         applyHighlight()
       }
-      const handleFocusIn = () => setNavigationRegion(region)
+      const handleFocusIn = () => {
+        // Un clic con el mouse enfoca botones. Mientras el cursor siga dentro,
+        // conservamos el origen pointer para que al salir el borde no quede pegado.
+        if (activeSource === 'pointer' && activeRegion === region) return
+        setNavigationRegion(region)
+      }
 
       element.addEventListener('pointerenter', handlePointerEnter)
       element.addEventListener('pointerleave', handlePointerLeave)
