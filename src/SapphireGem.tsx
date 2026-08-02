@@ -68,7 +68,7 @@ function SapphireFallback() {
         >
           <stop offset="0" stopColor="#1baeff" />
           <stop offset="0.48" stopColor="#083fae" />
-          <stop offset="1" stopColor="#020d72" />
+          <stop offset="1" stopColor="#020d46" />
         </linearGradient>
       </defs>
       <polygon
