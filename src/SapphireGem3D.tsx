@@ -18,6 +18,10 @@ const STRIDE_FLOATS = 10
 const MIN_PULSE_DURATION_SECONDS = 3
 const MAX_PULSE_DURATION_SECONDS = 20
 const PULSE_ACCELERATION_POWER = 1.6
+const ORBIT_RADIUS_X = 46
+const ORBIT_RADIUS_Y = 42
+const ORBIT_TRAIL_COUNT = 6
+const ORBIT_TRAIL_PHASE_STEP = 0.028
 
 let sharedPulsePhase = 0
 let sharedPulseTimestamp = 0
@@ -32,7 +36,10 @@ function pauseSharedPulse(now: number) {
 }
 
 function getSharedPulse(now: number, duration: number) {
-  const deltaSeconds = Math.min(0.1, Math.max(0, (now - sharedPulseTimestamp) / 1000))
+  const deltaSeconds = Math.min(
+    0.1,
+    Math.max(0, (now - sharedPulseTimestamp) / 1000),
+  )
   sharedPulseTimestamp = now
   sharedPulsePhase = (sharedPulsePhase + deltaSeconds / duration) % 1
   return 0.75 + 0.25 * Math.cos(TAU * sharedPulsePhase)
@@ -58,6 +65,47 @@ function readCoreProgress(canvas: HTMLCanvasElement) {
   const fillPercentage = Number.parseFloat(fillValue)
 
   return Number.isFinite(fillPercentage) ? clamp01(fillPercentage / 100) : 0
+}
+
+function setOrbitPoint(
+  host: HTMLElement,
+  propertyPrefix: string,
+  phase: number,
+) {
+  const angle = phase * TAU
+  const x = 50 + Math.cos(angle) * ORBIT_RADIUS_X
+  const y = 50 + Math.sin(angle) * ORBIT_RADIUS_Y
+
+  host.style.setProperty(`${propertyPrefix}-x`, `${x.toFixed(3)}%`)
+  host.style.setProperty(`${propertyPrefix}-y`, `${y.toFixed(3)}%`)
+}
+
+function updateOrbitVariables(host: HTMLElement | null, phase: number) {
+  if (!host) return
+
+  setOrbitPoint(host, '--sapphire-orbit', phase)
+
+  for (let index = 1; index <= ORBIT_TRAIL_COUNT; index += 1) {
+    const trailPhase =
+      (phase - index * ORBIT_TRAIL_PHASE_STEP + ORBIT_TRAIL_COUNT) % 1
+    setOrbitPoint(
+      host,
+      `--sapphire-orbit-trail-${index}`,
+      trailPhase,
+    )
+  }
+}
+
+function clearOrbitVariables(host: HTMLElement | null) {
+  if (!host) return
+
+  host.style.removeProperty('--sapphire-orbit-x')
+  host.style.removeProperty('--sapphire-orbit-y')
+
+  for (let index = 1; index <= ORBIT_TRAIL_COUNT; index += 1) {
+    host.style.removeProperty(`--sapphire-orbit-trail-${index}-x`)
+    host.style.removeProperty(`--sapphire-orbit-trail-${index}-y`)
+  }
 }
 
 function subtract(a: Vec3, b: Vec3): Vec3 {
@@ -134,7 +182,11 @@ function buildGeometry(prestigeCount: number): Geometry {
   }
 }
 
-function compileShader(gl: WebGLRenderingContext, type: number, source: string) {
+function compileShader(
+  gl: WebGLRenderingContext,
+  type: number,
+  source: string,
+) {
   const shader = gl.createShader(type)
   if (!shader) throw new Error('No se pudo crear el shader.')
   gl.shaderSource(shader, source)
@@ -216,10 +268,18 @@ function createProgram(gl: WebGLRenderingContext) {
       float bodyLight = 0.08 + visibility * 0.92;
       float edgeLight = 0.14 + visibility * 0.86;
 
-      vec3 color = vColor * (0.42 + diffuse * 1.05 + secondary * 0.32) * bodyLight;
+      vec3 color =
+        vColor *
+        (0.42 + diffuse * 1.05 + secondary * 0.32) *
+        bodyLight;
       color += vec3(0.25, 0.86, 1.0) *
-        (fresnel * 0.82 * edgeLight + uEnergy * (0.35 + visibility * 0.32));
-      color += vec3(0.86, 1.0, 1.0) * pow(diffuse, 5.0) * 0.5 * bodyLight;
+        (fresnel * 0.82 * edgeLight +
+          uEnergy * (0.35 + visibility * 0.32));
+      color +=
+        vec3(0.86, 1.0, 1.0) *
+        pow(diffuse, 5.0) *
+        0.5 *
+        bodyLight;
 
       float alpha = clamp(
         0.04 + visibility * 0.82 + fresnel * 0.12 + uEnergy * 0.08,
@@ -238,20 +298,29 @@ function createProgram(gl: WebGLRenderingContext) {
   gl.deleteShader(vertexShader)
   gl.deleteShader(fragmentShader)
   if (!gl.getProgramParameter(program, gl.LINK_STATUS)) {
-    const message = gl.getProgramInfoLog(program) ?? 'Programa WebGL inválido.'
+    const message =
+      gl.getProgramInfoLog(program) ?? 'Programa WebGL inválido.'
     gl.deleteProgram(program)
     throw new Error(message)
   }
   return program
 }
 
-function attribute(gl: WebGLRenderingContext, program: WebGLProgram, name: string) {
+function attribute(
+  gl: WebGLRenderingContext,
+  program: WebGLProgram,
+  name: string,
+) {
   const location = gl.getAttribLocation(program, name)
   if (location < 0) throw new Error(`Atributo no encontrado: ${name}`)
   return location
 }
 
-function uniform(gl: WebGLRenderingContext, program: WebGLProgram, name: string) {
+function uniform(
+  gl: WebGLRenderingContext,
+  program: WebGLProgram,
+  name: string,
+) {
   const location = gl.getUniformLocation(program, name)
   if (!location) throw new Error(`Uniforme no encontrado: ${name}`)
   return location
@@ -301,7 +370,10 @@ export function SapphireGem3D({
     let displayedPulse = 1
     const startedAt = performance.now()
     resetSharedPulse(startedAt)
-    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+    updateOrbitVariables(host, 0)
+    const reducedMotion = window.matchMedia(
+      '(prefers-reduced-motion: reduce)',
+    ).matches
 
     try {
       program = createProgram(gl)
@@ -383,17 +455,33 @@ export function SapphireGem3D({
         const smoothing = Math.min(1, deltaSeconds * 4)
         displayedPulse += (pulseTarget - displayedPulse) * smoothing
 
-        host?.style.setProperty('--sapphire-pulse', displayedPulse.toFixed(4))
+        host?.style.setProperty(
+          '--sapphire-pulse',
+          displayedPulse.toFixed(4),
+        )
         host?.style.setProperty(
           '--sapphire-pulse-duration',
           `${pulseDuration.toFixed(3)}s`,
         )
+        updateOrbitVariables(
+          host,
+          reducedMotion ? 0 : sharedPulsePhase,
+        )
 
         gl.clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
-        gl.uniform1f(spin, reducedMotion ? 0.58 : elapsed * (active ? 1.45 : 0.72))
-        gl.uniform1f(tilt, -0.18 + Math.sin(elapsed * 0.54) * 0.11)
+        gl.uniform1f(
+          spin,
+          reducedMotion ? 0.58 : elapsed * (active ? 1.45 : 0.72),
+        )
+        gl.uniform1f(
+          tilt,
+          -0.18 + Math.sin(elapsed * 0.54) * 0.11,
+        )
         gl.uniform1f(aspect, width / height)
-        gl.uniform1f(assembly, reducedMotion ? 1 : Math.min(1, elapsed / 1.08))
+        gl.uniform1f(
+          assembly,
+          reducedMotion ? 1 : Math.min(1, elapsed / 1.08),
+        )
         gl.uniform1f(energy, active)
         gl.uniform1f(pulse, reducedMotion ? 1 : displayedPulse)
         gl.uniform1f(time, elapsed)
@@ -412,6 +500,7 @@ export function SapphireGem3D({
       cancelAnimationFrame(frameId)
       host?.style.removeProperty('--sapphire-pulse')
       host?.style.removeProperty('--sapphire-pulse-duration')
+      clearOrbitVariables(host)
       if (buffer) gl.deleteBuffer(buffer)
       if (program) gl.deleteProgram(program)
     }
