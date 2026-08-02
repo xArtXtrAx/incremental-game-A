@@ -9,8 +9,9 @@ export const PRESSURE_REQUIRED_CLICKS = 100
 export const CAVITATION_REQUIRED_CLICKS = 500
 export const AUTOCLICK_REQUIRED_CLICKS = 500
 export const SPHERE_CLICK_CAPACITY = 5000
-export const GAME_STORAGE_KEY = 'incremental-game-a:save:prestige-test:v1'
-const STABLE_GAME_STORAGE_KEY = 'incremental-game-a:save:v1'
+export const GAME_STORAGE_KEY = 'incremental-game-a:save:v1'
+const LEGACY_PRESTIGE_TEST_STORAGE_KEY =
+  'incremental-game-a:save:prestige-test:v1'
 
 const CLICK_UPGRADE_GROWTH = 1.7
 const GENERATOR_GROWTH = 1.8
@@ -445,9 +446,11 @@ export function getOverloadCost(level: number) {
 
 export function loadGameState(fallback: GameState): GameState {
   try {
+    const legacyRawSave = window.localStorage.getItem(
+      LEGACY_PRESTIGE_TEST_STORAGE_KEY,
+    )
     const rawSave =
-      window.localStorage.getItem(GAME_STORAGE_KEY) ??
-      window.localStorage.getItem(STABLE_GAME_STORAGE_KEY)
+      legacyRawSave ?? window.localStorage.getItem(GAME_STORAGE_KEY)
 
     if (!rawSave) {
       return fallback
@@ -459,7 +462,21 @@ export function loadGameState(fallback: GameState): GameState {
       return fallback
     }
 
-    return sanitizeGameState(storedGame.state, fallback)
+    const sanitizedState = sanitizeGameState(storedGame.state, fallback)
+
+    if (legacyRawSave) {
+      const migratedGame: StoredGame = {
+        version: SAVE_VERSION,
+        state: sanitizedState,
+      }
+      window.localStorage.setItem(
+        GAME_STORAGE_KEY,
+        JSON.stringify(migratedGame),
+      )
+      window.localStorage.removeItem(LEGACY_PRESTIGE_TEST_STORAGE_KEY)
+    }
+
+    return sanitizedState
   } catch {
     return fallback
   }
@@ -481,6 +498,7 @@ export function saveGameState(state: GameState) {
 export function clearSavedGame() {
   try {
     window.localStorage.removeItem(GAME_STORAGE_KEY)
+    window.localStorage.removeItem(LEGACY_PRESTIGE_TEST_STORAGE_KEY)
   } catch {
     // El estado en memoria todavía puede reiniciarse con normalidad.
   }
