@@ -2,6 +2,8 @@ import { useEffect, useReducer, useRef, useState } from 'react'
 import './App.css'
 import './ProposalA.css'
 import './PrestigeSapphire.css'
+import { BulkPurchaseControls } from './BulkPurchaseControls'
+import type { BulkPurchasePlan } from './bulkPurchase'
 import {
   DeveloperPanel,
   sanitizeDeveloperValues,
@@ -45,10 +47,15 @@ type MobileView = 'core' | 'upgrades'
 type AppAction =
   | GameAction
   | { type: 'developer-set-values'; values: DeveloperValues }
+  | { type: 'apply-bulk-purchase'; state: GameState }
 
 const format = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 })
 
 function appReducer(state: GameState, action: AppAction): GameState {
+  if (action.type === 'apply-bulk-purchase') {
+    return action.state
+  }
+
   if (action.type === 'developer-set-values') {
     const values = sanitizeDeveloperValues(action.values)
     const sphereBelowCapacity = values.manualClicks < SPHERE_CLICK_CAPACITY
@@ -306,6 +313,14 @@ function App() {
     dispatch({ type: 'developer-set-values', values })
   }
 
+  function handleBulkPurchase(plan: BulkPurchasePlan) {
+    if (isCrystallizing || plan.purchases.length === 0) {
+      return
+    }
+
+    dispatch({ type: 'apply-bulk-purchase', state: plan.finalState })
+  }
+
   return (
     <main className="game-screen">
       <div className="game-workspace">
@@ -407,6 +422,11 @@ function App() {
                 mobileView === 'upgrades' ? ' is-mobile-active' : ''
               }`}
             >
+              <BulkPurchaseControls
+                game={game}
+                disabled={isCrystallizing}
+                onApply={handleBulkPurchase}
+              />
               <UpgradesPanel
                 game={game}
                 clockNow={clockNow}
