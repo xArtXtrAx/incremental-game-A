@@ -4,10 +4,12 @@ import { requestChromaticDeveloperPreview } from './chromatic'
 
 export const DEVELOPER_MAX_ENERGY = 90_000_000_000_000
 export const DEVELOPER_MAX_CLICKS = 1_000_000_000
+export const DEVELOPER_MAX_CRYSTALLIZATIONS = 1_000_000_000
 
 export type DeveloperValues = {
   energy: number
   manualClicks: number
+  prestigeCount: number
 }
 
 type DeveloperPanelProps = DeveloperValues & {
@@ -34,6 +36,9 @@ export function sanitizeDeveloperValues(
     manualClicks: Math.floor(
       clamp(values.manualClicks, DEVELOPER_MAX_CLICKS),
     ),
+    prestigeCount: Math.floor(
+      clamp(values.prestigeCount, DEVELOPER_MAX_CRYSTALLIZATIONS),
+    ),
   }
 }
 
@@ -55,6 +60,7 @@ function blockUnsafeKeys(
 export function DeveloperPanel({
   energy,
   manualClicks,
+  prestigeCount,
   disabled = false,
   onApply,
 }: DeveloperPanelProps) {
@@ -63,6 +69,9 @@ export function DeveloperPanel({
   )
   const [clickInput, setClickInput] = useState(() =>
     formatInputValue(manualClicks),
+  )
+  const [crystallizationInput, setCrystallizationInput] = useState(() =>
+    formatInputValue(prestigeCount),
   )
   const [dirty, setDirty] = useState(false)
   const [message, setMessage] = useState(
@@ -76,7 +85,8 @@ export function DeveloperPanel({
 
     setEnergyInput(formatInputValue(energy))
     setClickInput(formatInputValue(manualClicks))
-  }, [dirty, energy, manualClicks])
+    setCrystallizationInput(formatInputValue(prestigeCount))
+  }, [dirty, energy, manualClicks, prestigeCount])
 
   function updateEnergy(value: string) {
     if (!/^(?:\d+(?:\.\d{0,2})?)?$/.test(value)) {
@@ -100,9 +110,23 @@ export function DeveloperPanel({
     setMessage('Valores pendientes de aplicar.')
   }
 
+  function updateCrystallizations(value: string) {
+    if (!/^\d*$/.test(value)) {
+      setMessage(
+        'Las cristalizaciones deben ser un número entero no negativo.',
+      )
+      return
+    }
+
+    setCrystallizationInput(value)
+    setDirty(true)
+    setMessage('Valores pendientes de aplicar.')
+  }
+
   function restoreCurrentValues() {
     setEnergyInput(formatInputValue(energy))
     setClickInput(formatInputValue(manualClicks))
+    setCrystallizationInput(formatInputValue(prestigeCount))
     setDirty(false)
     setMessage('Se restauraron los valores actuales del juego.')
   }
@@ -122,19 +146,26 @@ export function DeveloperPanel({
       return
     }
 
-    if (energyInput === '' || clickInput === '') {
-      setMessage('Completa ambos campos antes de aplicar los cambios.')
+    if (
+      energyInput === '' ||
+      clickInput === '' ||
+      crystallizationInput === ''
+    ) {
+      setMessage('Completa los tres campos antes de aplicar los cambios.')
       return
     }
 
     const parsedEnergy = Number(energyInput)
     const parsedClicks = Number(clickInput)
+    const parsedCrystallizations = Number(crystallizationInput)
 
     if (
       !Number.isFinite(parsedEnergy) ||
       !Number.isFinite(parsedClicks) ||
+      !Number.isFinite(parsedCrystallizations) ||
       parsedEnergy < 0 ||
-      parsedClicks < 0
+      parsedClicks < 0 ||
+      parsedCrystallizations < 0
     ) {
       setMessage('Los valores deben ser numéricos, finitos y no negativos.')
       return
@@ -154,14 +185,23 @@ export function DeveloperPanel({
       return
     }
 
+    if (parsedCrystallizations > DEVELOPER_MAX_CRYSTALLIZATIONS) {
+      setMessage(
+        `El máximo permitido es ${DEVELOPER_MAX_CRYSTALLIZATIONS.toLocaleString('es-MX')} cristalizaciones.`,
+      )
+      return
+    }
+
     const safeValues = sanitizeDeveloperValues({
       energy: parsedEnergy,
       manualClicks: parsedClicks,
+      prestigeCount: parsedCrystallizations,
     })
 
     onApply(safeValues)
     setEnergyInput(formatInputValue(safeValues.energy))
     setClickInput(formatInputValue(safeValues.manualClicks))
+    setCrystallizationInput(formatInputValue(safeValues.prestigeCount))
     setDirty(false)
     setMessage('Valores aplicados y guardados en la partida actual.')
   }
@@ -177,7 +217,7 @@ export function DeveloperPanel({
       </header>
 
       <p className="developer-panel-intro">
-        Modifica recursos sin alterar niveles, prestigios ni multiplicadores.
+        Modifica recursos y cristalizaciones sin ejecutar el ciclo de prestigio.
       </p>
 
       <section
@@ -236,6 +276,25 @@ export function DeveloperPanel({
           <small>Máximo: 1,000,000,000 · solo enteros</small>
         </label>
 
+        <label htmlFor="developer-crystallizations">
+          <span>Cristalizaciones</span>
+          <input
+            id="developer-crystallizations"
+            type="text"
+            inputMode="numeric"
+            autoComplete="off"
+            spellCheck={false}
+            value={crystallizationInput}
+            maxLength={10}
+            disabled={disabled}
+            onKeyDown={(event) => blockUnsafeKeys(event, false)}
+            onChange={(event) =>
+              updateCrystallizations(event.currentTarget.value)
+            }
+          />
+          <small>Máximo: 1,000,000,000 · solo enteros</small>
+        </label>
+
         <div className="developer-panel-actions">
           <button type="submit" disabled={disabled || !dirty}>
             Aplicar valores
@@ -256,8 +315,9 @@ export function DeveloperPanel({
       </p>
 
       <footer>
-        Al reducir los clics por debajo de 5,000 se cancela cualquier
-        sobrecarga activa para conservar un estado válido.
+        Reducir los clics por debajo de 5,000 cancela la sobrecarga activa.
+        Establecer 0 cristalizaciones también limpia la Matriz de refracción
+        para conservar un estado válido.
       </footer>
     </aside>
   )
