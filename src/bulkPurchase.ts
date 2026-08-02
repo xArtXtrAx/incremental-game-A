@@ -17,6 +17,10 @@ import {
   type GameState,
 } from './game'
 import {
+  getPulseTriggerRate,
+  PULSE_TRIGGER_CHARGE_CLICKS,
+} from './pulseTrigger'
+import {
   getRefractionBonusMultiplier,
   getRefractionChargeRate,
   getRefractionDurationSeconds,
@@ -30,6 +34,7 @@ export type BulkPurchaseStrategy = 'balanced' | 'active' | 'automatic'
 
 export type BulkPurchaseKind =
   | 'click'
+  | 'pulseTrigger'
   | 'generator'
   | 'resonance'
   | 'pressure'
@@ -68,6 +73,11 @@ const PURCHASES: readonly PurchaseDefinition[] = [
     kind: 'click',
     label: 'Amplificador de pulso',
     action: { type: 'buy-click-upgrade' },
+  },
+  {
+    kind: 'pulseTrigger',
+    label: 'Acelerador de pulso',
+    action: { type: 'buy-pulse-trigger' },
   },
   {
     kind: 'generator',
@@ -112,6 +122,7 @@ const STRATEGY_BIAS: Record<
 > = {
   balanced: {
     click: 1,
+    pulseTrigger: 1.05,
     generator: 1.15,
     resonance: 1.1,
     pressure: 1.2,
@@ -122,6 +133,7 @@ const STRATEGY_BIAS: Record<
   },
   active: {
     click: 1.35,
+    pulseTrigger: 1.45,
     generator: 0.9,
     resonance: 0.85,
     pressure: 1.25,
@@ -132,6 +144,7 @@ const STRATEGY_BIAS: Record<
   },
   automatic: {
     click: 0.45,
+    pulseTrigger: 0.18,
     generator: 1.4,
     resonance: 1.35,
     pressure: 1.15,
@@ -157,6 +170,7 @@ const DIVERSITY_PENALTY: Record<BulkPurchaseStrategy, number> = {
 function createEmptyCounts(): Record<BulkPurchaseKind, number> {
   return {
     click: 0,
+    pulseTrigger: 0,
     generator: 0,
     resonance: 0,
     pressure: 0,
@@ -197,8 +211,12 @@ function getStateUtility(state: GameState, strategy: BulkPurchaseStrategy) {
         ) / getCavitationClicksRequired(state.cavitationLevel)
       : 0
   const manualRate = MANUAL_CLICKS_PER_SECOND[strategy]
+  const triggerBonusRate =
+    manualRate *
+    (getPulseTriggerRate(state.pulseTriggerLevel) /
+      PULSE_TRIGGER_CHARGE_CLICKS)
   const autoclickRate = getAutoclickRate(state.autoclickLevel)
-  const totalClickRate = manualRate + autoclickRate
+  const totalClickRate = manualRate + triggerBonusRate + autoclickRate
   const valuePerClick = clickPower + cavitationPerClick
   const baseValue = production + totalClickRate * valuePerClick
 
@@ -253,6 +271,11 @@ function getFoundationBoost(
   kind: BulkPurchaseKind,
   strategy: BulkPurchaseStrategy,
 ) {
+  if (kind === 'pulseTrigger' && state.pulseTriggerLevel === 0) {
+    if (strategy === 'active') return 2.2
+    return strategy === 'balanced' ? 1.35 : 0.35
+  }
+
   if (kind === 'generator' && state.generatorLevel === 0) {
     return strategy === 'automatic' ? 7 : 5
   }
