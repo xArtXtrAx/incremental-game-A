@@ -22,10 +22,18 @@
 - Los atajos anteriores sin L2 se conservan por compatibilidad.
 - Las combinaciones quedan suspendidas mientras la Cámara Cromática está abierta.
 
+## X dedicado al Núcleo
+
+- X pulsa siempre la esfera, independientemente del elemento que tenga el foco.
+- X ya no activa botones, compras, pestañas ni controles del panel.
+- Mientras L2 está presionado, la acción base de X queda suspendida para reservar `L2 + X` como hotkey presente o futuro.
+- X no pulsa la esfera por detrás de la Cámara Cromática cuando el overlay está abierto.
+- Cada pulsación conserva la vibración breve del clic manual.
+
 ## Compatibilidad
 
-- DualSense / PlayStation: L2, Triángulo y Cuadrado.
-- Xbox: LT, Y y X.
+- DualSense / PlayStation: L2, Triángulo, Cuadrado y X.
+- Xbox: LT, Y, X y A.
 - R2/RT continúa reservado para el Gatillo de pulso.
 - No se modifican economía, compras, guardado ni progresión.
 
