@@ -586,19 +586,32 @@ export function UpgradesPanel({
               }
               description="La chispa orbital carga una faceta por ciclo. Al completar el zafiro libera una descarga prismática y activa una bonificación global temporal."
               effect={
-                <>
-                  <span>
-                    Actual: +{format.format(currentRefractionReward)} · ×
-                    {format.format(getRefractionBonusMultiplier(game.refractionLevel))} durante{' '}
-                    {getRefractionDurationSeconds(game.refractionLevel)} s
-                  </span>
-                  <small>
-                    Próximo: {format.format(getRefractionChargeRate(nextRefractionLevel))} facetas/vuelta · +
-                    {format.format(nextRefractionReward)} ({getRefractionRewardSeconds(nextRefractionLevel)} s de producción) · ×
-                    {format.format(getRefractionBonusMultiplier(nextRefractionLevel))} durante{' '}
-                    {getRefractionDurationSeconds(nextRefractionLevel)} s. Vuelta actual: {refractionOrbitDuration.toFixed(2)} s.
-                  </small>
-                </>
+                game.refractionLevel > 0 ? (
+                  <>
+                    <span>
+                      Actual: +{format.format(currentRefractionReward)} · ×
+                      {format.format(getRefractionBonusMultiplier(game.refractionLevel))} durante{' '}
+                      {getRefractionDurationSeconds(game.refractionLevel)} s
+                    </span>
+                    <small>
+                      Próximo: {format.format(getRefractionChargeRate(nextRefractionLevel))} facetas/vuelta · +
+                      {format.format(nextRefractionReward)} ({getRefractionRewardSeconds(nextRefractionLevel)} s de producción) · ×
+                      {format.format(getRefractionBonusMultiplier(nextRefractionLevel))} durante{' '}
+                      {getRefractionDurationSeconds(nextRefractionLevel)} s. Vuelta actual: {refractionOrbitDuration.toFixed(2)} s.
+                    </small>
+                  </>
+                ) : (
+                  <>
+                    <span>
+                      Nivel 1: 1 faceta/vuelta · +{format.format(nextRefractionReward)} · ×
+                      {format.format(getRefractionBonusMultiplier(1))} durante{' '}
+                      {getRefractionDurationSeconds(1)} s
+                    </span>
+                    <small>
+                      Recompensa equivalente a {getRefractionRewardSeconds(1)} s de producción. Vuelta actual: {refractionOrbitDuration.toFixed(2)} s.
+                    </small>
+                  </>
+                )
               }
               label="Calibrar matriz"
               detail={
