@@ -449,16 +449,6 @@ export function GamepadController() {
           switchSection('upgrades')
           rumble(gamepad, 35, 0.12, 0.04)
         }
-        if (!chamberOpen && justPressed(STANDARD_BUTTON.dpadLeft)) {
-          switchSection('core')
-          lastNavigationAt.current = now
-          rumble(gamepad, 35, 0.12, 0.04)
-        }
-        if (!chamberOpen && justPressed(STANDARD_BUTTON.dpadRight)) {
-          switchSection('upgrades')
-          lastNavigationAt.current = now
-          rumble(gamepad, 35, 0.12, 0.04)
-        }
         if (justPressed(STANDARD_BUTTON.options)) {
           togglePanelFromController()
           rumble(gamepad, 45, 0.14, 0.05)
@@ -478,9 +468,15 @@ export function GamepadController() {
             (gamepad.axes[1] ?? 0) > deadzone
           ) {
             direction = 'down'
-          } else if ((gamepad.axes[0] ?? 0) < -deadzone) {
+          } else if (
+            pressed[STANDARD_BUTTON.dpadLeft] ||
+            (gamepad.axes[0] ?? 0) < -deadzone
+          ) {
             direction = 'left'
-          } else if ((gamepad.axes[0] ?? 0) > deadzone) {
+          } else if (
+            pressed[STANDARD_BUTTON.dpadRight] ||
+            (gamepad.axes[0] ?? 0) > deadzone
+          ) {
             direction = 'right'
           }
 
@@ -636,10 +632,7 @@ export function GamepadController() {
               cambiar sección
             </span>
             <span>
-              <kbd>Cruceta ←/→</kbd> cambiar sección al instante
-            </span>
-            <span>
-              <kbd>Cruceta ↑/↓ · stick</kbd> navegar y ajustar
+              <kbd>Cruceta / stick</kbd> navegar y ajustar
             </span>
             <span>
               <kbd>{labels.back}</kbd> volver al núcleo
