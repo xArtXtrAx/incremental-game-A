@@ -7,6 +7,7 @@ import {
 } from './regionFocus'
 
 type RegionElements = Record<GameRegion, HTMLElement | null>
+type HighlightSource = 'pointer' | 'navigation'
 
 const REGION_CLASS = 'is-region-highlighted'
 const POINTER_CLASS = 'is-pointer-region'
@@ -23,11 +24,10 @@ export function RegionFocusGuide() {
   useEffect(() => {
     const elements = getRegionElements()
     let navigationRegion: GameRegion | null = null
-    let pointerRegion: GameRegion | null = null
+    let activeRegion: GameRegion | null = null
+    let activeSource: HighlightSource | null = null
 
     function applyHighlight() {
-      const activeRegion = pointerRegion ?? navigationRegion
-
       for (const region of ['core', 'upgrades'] as const) {
         const element = elements[region]
         if (!element) continue
@@ -36,17 +36,19 @@ export function RegionFocusGuide() {
         element.classList.toggle(REGION_CLASS, isActive)
         element.classList.toggle(
           POINTER_CLASS,
-          isActive && pointerRegion === region,
+          isActive && activeSource === 'pointer',
         )
         element.classList.toggle(
           NAVIGATION_CLASS,
-          isActive && pointerRegion === null && navigationRegion === region,
+          isActive && activeSource === 'navigation',
         )
       }
     }
 
     function setNavigationRegion(region: GameRegion) {
       navigationRegion = region
+      activeRegion = region
+      activeSource = 'navigation'
       applyHighlight()
     }
 
@@ -63,14 +65,16 @@ export function RegionFocusGuide() {
       if (!element) continue
 
       const handlePointerEnter = () => {
-        pointerRegion = region
+        activeRegion = region
+        activeSource = 'pointer'
         applyHighlight()
       }
       const handlePointerLeave = () => {
-        if (pointerRegion === region) {
-          pointerRegion = null
-          applyHighlight()
-        }
+        if (activeSource !== 'pointer' || activeRegion !== region) return
+
+        activeRegion = navigationRegion
+        activeSource = navigationRegion ? 'navigation' : null
+        applyHighlight()
       }
       const handleFocusIn = () => setNavigationRegion(region)
 
