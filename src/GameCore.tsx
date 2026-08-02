@@ -19,10 +19,22 @@ import {
   isOverloadActive,
   SPHERE_CLICK_CAPACITY,
 } from './game'
+import {
+  getRefractionBonusMultiplier,
+  getRefractionFacetCount,
+  getRefractionRemainingSeconds,
+  getRefractionReward,
+  isRefractionActive,
+} from './refraction'
 
 export type ClickBurst = { id: number; amount: number }
 export type EnergyBurst = { id: number; amount: number }
 export type OverloadBurst = { id: number; multiplier: number }
+export type RefractionBurst = {
+  id: number
+  amount: number
+  multiplier: number
+}
 export type PrestigeAnnouncement = {
   prestigeCount: number
   multiplier: number
@@ -39,6 +51,7 @@ type GameCoreProps = {
   bursts: ClickBurst[]
   cavitationBurst: EnergyBurst | null
   overloadBurst: OverloadBurst | null
+  refractionBurst: RefractionBurst | null
   sapphireBirthId: number
   isCrystallizing: boolean
   prestigeAnnouncement: PrestigeAnnouncement | null
@@ -55,6 +68,15 @@ const particleDirections = [
   { x: -58, y: 58 },
   { x: -82, y: 0 },
   { x: -58, y: -58 },
+]
+
+const prismDirections = [
+  { x: -95, y: -50, rotate: -28 },
+  { x: 98, y: -44, rotate: 24 },
+  { x: -106, y: 8, rotate: -4 },
+  { x: 110, y: 12, rotate: 8 },
+  { x: -74, y: 72, rotate: -45 },
+  { x: 78, y: 76, rotate: 42 },
 ]
 
 const format = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 })
@@ -138,6 +160,7 @@ export function GameCore({
   bursts,
   cavitationBurst,
   overloadBurst,
+  refractionBurst,
   sapphireBirthId,
   isCrystallizing,
   prestigeAnnouncement,
@@ -156,10 +179,19 @@ export function GameCore({
   const overloadMultiplier = overloadActive
     ? getOverloadMultiplier(game.overloadLevel)
     : 1
+  const refractionActive = isRefractionActive(game.refractionUntil, clockNow)
+  const refractionMultiplier = refractionActive
+    ? getRefractionBonusMultiplier(game.refractionLevel)
+    : 1
+  const activeMultiplier = overloadMultiplier * refractionMultiplier
   const sapphireMultiplier = getSapphireMultiplier(game.prestigeCount)
   const nextSapphireMultiplier = getNextSapphireMultiplier(game.prestigeCount)
   const overloadRemaining = getOverloadRemainingSeconds(
     game.overloadUntil,
+    clockNow,
+  )
+  const refractionRemaining = getRefractionRemainingSeconds(
+    game.refractionUntil,
     clockNow,
   )
   const overloadThreshold = getOverloadClicksRequired(game.overloadLevel)
@@ -168,7 +200,7 @@ export function GameCore({
     game.clickLevel,
     game.manualClicks,
     game.pressureLevel,
-    overloadMultiplier,
+    activeMultiplier,
     sapphireMultiplier,
   )
   const production = getEnergyPerSecond(
@@ -176,9 +208,22 @@ export function GameCore({
     game.resonanceLevel,
     game.manualClicks,
     game.pressureLevel,
+    activeMultiplier,
+    sapphireMultiplier,
+  )
+  const baseRefractionProduction = getEnergyPerSecond(
+    game.generatorLevel,
+    game.resonanceLevel,
+    game.manualClicks,
+    game.pressureLevel,
     overloadMultiplier,
     sapphireMultiplier,
   )
+  const refractionReward = getRefractionReward(
+    baseRefractionProduction,
+    game.refractionLevel,
+  )
+  const refractionFacetCount = getRefractionFacetCount(game.prestigeCount)
   const cavitationThreshold = getCavitationClicksRequired(game.cavitationLevel)
   const cavitationReward = getCavitationReward(
     game.generatorLevel,
@@ -186,7 +231,7 @@ export function GameCore({
     game.manualClicks,
     game.pressureLevel,
     game.cavitationLevel,
-    overloadMultiplier,
+    activeMultiplier,
     sapphireMultiplier,
   )
   const cavitationVisualCharge =
@@ -198,7 +243,11 @@ export function GameCore({
       ? Math.min(0.22 + fill / 140 + game.pressureLevel * 0.08, 1)
       : 0
   const sapphireEnergized =
-    Boolean(cavitationBurst) || overloadActive || prestigeAnnouncement !== null
+    Boolean(cavitationBurst) ||
+    overloadActive ||
+    refractionActive ||
+    Boolean(refractionBurst) ||
+    prestigeAnnouncement !== null
   const sphereStyle: SphereStyle = {
     '--fill-level': `${fill}%`,
     '--liquid-opacity': sphereClicks > 0 ? 1 : 0,
@@ -213,6 +262,11 @@ export function GameCore({
         prestigeCount={game.prestigeCount}
         multiplier={sapphireMultiplier}
         energized={sapphireEnergized}
+        refractionLevel={game.refractionLevel}
+        refractionCharged={game.refractionFacetsCharged}
+        refractionTotal={refractionFacetCount}
+        refractionActive={refractionActive}
+        refractionDischarging={Boolean(refractionBurst)}
       />
 
       <div className="energy-display" aria-live="polite">
@@ -226,6 +280,9 @@ export function GameCore({
             : ''}
           {overloadActive
             ? ` · SOBRECARGA ×${format.format(overloadMultiplier)}`
+            : ''}
+          {refractionActive
+            ? ` · PRISMA ×${format.format(refractionMultiplier)}`
             : ''}
         </small>
       </div>
@@ -261,19 +318,25 @@ export function GameCore({
           whileHover={isCrystallizing ? undefined : { scale: 1.05 }}
           whileTap={isCrystallizing ? undefined : { scale: 0.92 }}
           animate={
-            overloadActive
+            overloadActive || refractionActive
               ? {
-                  boxShadow: [
-                    '0 0 18px rgba(49,211,255,.9),0 0 45px rgba(0,119,255,.8)',
-                    '0 0 30px rgba(179,247,255,1),0 0 78px rgba(0,153,255,.95)',
-                    '0 0 18px rgba(49,211,255,.9),0 0 45px rgba(0,119,255,.8)',
-                  ],
+                  boxShadow: refractionActive
+                    ? [
+                        '0 0 18px rgba(94,229,255,.78),0 0 42px rgba(67,99,255,.65)',
+                        '0 0 32px rgba(230,254,255,1),0 0 82px rgba(89,111,255,.92)',
+                        '0 0 18px rgba(94,229,255,.78),0 0 42px rgba(67,99,255,.65)',
+                      ]
+                    : [
+                        '0 0 18px rgba(49,211,255,.9),0 0 45px rgba(0,119,255,.8)',
+                        '0 0 30px rgba(179,247,255,1),0 0 78px rgba(0,153,255,.95)',
+                        '0 0 18px rgba(49,211,255,.9),0 0 45px rgba(0,119,255,.8)',
+                      ],
                 }
               : undefined
           }
           transition={
-            overloadActive
-              ? { duration: 0.75, repeat: Infinity }
+            overloadActive || refractionActive
+              ? { duration: refractionActive ? 1.05 : 0.75, repeat: Infinity }
               : undefined
           }
           aria-label={`Generar ${clickPower} de energía. Núcleo ${sphereClicks} de ${SPHERE_CLICK_CAPACITY}.`}
@@ -287,14 +350,14 @@ export function GameCore({
                     x: [0, -4, 4, -3, 3, 0],
                     rotate: [0, -1.2, 1.2, 0],
                   }
-                : overloadActive
+                : overloadActive || refractionActive
                   ? { x: [0, -1.5, 1.5, 0], y: [0, -1, 1, 0] }
                   : { x: 0, y: 0 }
             }
             transition={
               cavitationBurst
                 ? { duration: 0.68 }
-                : overloadActive
+                : overloadActive || refractionActive
                   ? { duration: 0.32, repeat: Infinity }
                   : { duration: 0.2 }
             }
@@ -366,6 +429,26 @@ export function GameCore({
             />
           )}
 
+          {refractionActive && (
+            <motion.span
+              aria-hidden="true"
+              animate={{ opacity: [0.22, 0.72, 0.22], rotate: [0, 180, 360] }}
+              transition={{ duration: 2.4, repeat: Infinity, ease: 'linear' }}
+              style={{
+                position: 'absolute',
+                inset: 9,
+                zIndex: 4,
+                borderRadius: '50%',
+                border: '1px solid rgba(224,252,255,.9)',
+                background:
+                  'conic-gradient(from 0deg,rgba(102,236,255,.35),rgba(130,94,255,.18),rgba(255,255,255,.42),rgba(102,236,255,.35))',
+                boxShadow:
+                  '0 0 34px rgba(85,220,255,.72),inset 0 0 34px rgba(117,102,255,.28)',
+                mixBlendMode: 'screen',
+              }}
+            />
+          )}
+
           {cavitationBurst && (
             <motion.span
               key={cavitationBurst.id}
@@ -385,6 +468,60 @@ export function GameCore({
                 boxShadow: '0 0 32px #3fcdff',
               }}
             />
+          )}
+
+          {refractionBurst && (
+            <span
+              key={refractionBurst.id}
+              aria-hidden="true"
+              style={{
+                position: 'absolute',
+                inset: 0,
+                zIndex: 8,
+                pointerEvents: 'none',
+              }}
+            >
+              <motion.span
+                initial={{ opacity: 0.95, scale: 0.15 }}
+                animate={{ opacity: [0.95, 0.5, 0], scale: [0.15, 0.9, 1.62] }}
+                transition={{ duration: 1.05 }}
+                style={{
+                  position: 'absolute',
+                  inset: 4,
+                  border: '2px solid rgba(235,254,255,.96)',
+                  borderRadius: '50%',
+                  boxShadow:
+                    '0 0 32px rgba(131,240,255,.95),0 0 68px rgba(105,90,255,.72)',
+                }}
+              />
+              {prismDirections.map((direction, index) => (
+                <motion.span
+                  key={index}
+                  initial={{ opacity: 0, x: 0, y: 0, scaleX: 0.15 }}
+                  animate={{
+                    opacity: [0, 1, 0],
+                    x: direction.x,
+                    y: direction.y,
+                    scaleX: [0.15, 1.25, 0.2],
+                  }}
+                  transition={{ duration: 0.82, delay: index * 0.045 }}
+                  style={{
+                    position: 'absolute',
+                    top: '50%',
+                    left: '50%',
+                    width: 42,
+                    height: 2,
+                    marginLeft: -21,
+                    marginTop: -1,
+                    borderRadius: 999,
+                    background:
+                      'linear-gradient(90deg,transparent,#eaffff 42%,#83ddff 62%,transparent)',
+                    boxShadow: '0 0 12px rgba(116,229,255,.95)',
+                    rotate: `${direction.rotate}deg`,
+                  }}
+                />
+              ))}
+            </span>
           )}
 
           {sphereFull && (
@@ -410,21 +547,32 @@ export function GameCore({
               }
               aria-hidden="true"
             >
-              <SapphireGem size="core" energized={overloadActive} />
+              <SapphireGem
+                size="core"
+                energized={overloadActive || refractionActive}
+              />
             </motion.span>
           )}
 
           <span className="sphere-shine" aria-hidden="true" />
           <span className="button-label">
             <strong>
-              {overloadActive ? 'OVERLOAD' : sphereFull ? 'NÚCLEO LLENO' : 'CLICK'}
+              {refractionActive
+                ? 'PRISMA ACTIVO'
+                : overloadActive
+                  ? 'OVERLOAD'
+                  : sphereFull
+                    ? 'NÚCLEO LLENO'
+                    : 'CLICK'}
             </strong>
             <small>
-              {overloadActive
-                ? `${overloadRemaining.toFixed(1)} s · ×${format.format(overloadMultiplier)}`
-                : sphereFull
-                  ? 'Clic para continuar sobrecarga'
-                  : `${format.format(sphereClicks)} / ${format.format(SPHERE_CLICK_CAPACITY)}`}
+              {refractionActive
+                ? `${refractionRemaining.toFixed(1)} s · ×${format.format(refractionMultiplier)}`
+                : overloadActive
+                  ? `${overloadRemaining.toFixed(1)} s · ×${format.format(overloadMultiplier)}`
+                  : sphereFull
+                    ? 'Clic para continuar sobrecarga'
+                    : `${format.format(sphereClicks)} / ${format.format(SPHERE_CLICK_CAPACITY)}`}
             </small>
           </span>
         </motion.button>
@@ -490,6 +638,29 @@ export function GameCore({
           </motion.div>
         )}
 
+        {refractionBurst && (
+          <motion.div
+            key={refractionBurst.id}
+            role="status"
+            initial={{ opacity: 0, scale: 0.45, y: 24 }}
+            animate={{
+              opacity: [0, 1, 1, 0],
+              scale: [0.45, 1.12, 1],
+              y: [24, -14, -42],
+            }}
+            transition={{ duration: 1.8 }}
+            className="core-event-message prestige-message"
+            style={{
+              color: '#f2feff',
+              textShadow:
+                '0 0 10px #fff, 0 0 22px rgba(84,221,255,.95), 0 0 32px rgba(111,91,255,.78)',
+            }}
+          >
+            DESCARGA PRISMÁTICA +{format.format(refractionBurst.amount)} · ×
+            {format.format(refractionBurst.multiplier)}
+          </motion.div>
+        )}
+
         {prestigeAnnouncement && (
           <motion.div
             key={prestigeAnnouncement.prestigeCount}
@@ -533,6 +704,20 @@ export function GameCore({
           <span>Zafiro permanente</span>
           <strong>
             ×{format.format(sapphireMultiplier)} global · Prestigio {game.prestigeCount}
+          </strong>
+        </div>
+      )}
+
+      {game.refractionLevel > 0 && (
+        <div
+          className={`sphere-status sapphire-status${refractionActive ? ' is-full' : ''}`}
+          style={{ marginTop: -6 }}
+        >
+          <span>Matriz de refracción</span>
+          <strong>
+            {refractionActive
+              ? `PRISMA ×${format.format(refractionMultiplier)} · ${refractionRemaining.toFixed(1)} s`
+              : `${game.refractionFacetsCharged}/${refractionFacetCount} facetas · ${format.format(game.refractionOrbitProgress * 100)}% de vuelta · Próxima +${format.format(refractionReward)}`}
           </strong>
         </div>
       )}
