@@ -1,17 +1,17 @@
-# Navegación inmediata y capa L2
+# Navegación con DualSense y capa L2
 
 ## Rama
 
 `Dev-DualSense-L2-Hotkeys`, creada desde el `main` estable.
 
-## Cruceta horizontal
+## Navegación y cambio de sección
 
-- Cruceta izquierda cambia inmediatamente a la sección del Núcleo.
-- Cruceta derecha cambia inmediatamente a la sección de Evoluciones.
-- Estas acciones usan detección `justPressed`, por lo que no dependen del intervalo de repetición de 190 ms.
-- L1/R1 conservan el mismo comportamiento inmediato.
-- La cruceta arriba/abajo mantiene la navegación direccional repetible.
+- L1 cambia inmediatamente a la sección del Núcleo.
+- R1 cambia inmediatamente a la sección de Evoluciones.
+- La cruceta ya no cambia de sección directamente.
+- Las cuatro direcciones de la cruceta recorren los controles enfocables del juego.
 - El stick conserva navegación en las cuatro direcciones y ajuste de controles deslizantes.
+- La navegación direccional mantiene el intervalo controlado de repetición para evitar desplazamientos accidentales demasiado rápidos.
 
 ## X dedicado al núcleo
 
@@ -39,12 +39,12 @@
 
 ## Compatibilidad
 
-- DualSense / PlayStation: X, Cuadrado, L2 y Triángulo.
-- Xbox: A, X, LT y Y.
+- DualSense / PlayStation: X, Cuadrado, L1, R1, L2 y Triángulo.
+- Xbox: A, X, LB, RB, LT y Y.
 - R2/RT continúa reservado para el Gatillo de pulso.
 - No se modifican economía, compras, guardado ni progresión.
 
 ## Validación
 
-- `GamepadController.tsx` y `gamepad.ts` pasaron una comprobación TypeScript aislada con DOM, `strictNullChecks`, `noUnusedLocals` y `noUnusedParameters`.
+- El cambio de la cruceta se limita al enrutamiento de navegación en `GamepadController.tsx`.
 - El repositorio no tiene CI configurado; `npm run lint`, `npm run build` y la prueba física con DualSense quedan pendientes en el entorno local.
