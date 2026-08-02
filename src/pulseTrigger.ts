@@ -28,6 +28,11 @@ export type PulseTriggerStoredState = {
   chargeClicks: number
 }
 
+export type PulseTriggerChargeResult = {
+  state: PulseTriggerStoredState
+  charged: boolean
+}
+
 export const EMPTY_PULSE_TRIGGER_STATE: PulseTriggerStoredState = {
   reserveMs: 0,
   chargeClicks: 0,
@@ -44,6 +49,53 @@ function clampNumber(
   return typeof value === 'number' && Number.isFinite(value)
     ? Math.min(maximum, Math.max(minimum, value))
     : fallback
+}
+
+function roundTriggerTime(value: number) {
+  const rounded = Math.round((value + Number.EPSILON) * 10_000) / 10_000
+  return rounded < 0.01 ? 0 : rounded
+}
+
+export function chargePulseTriggerFromDirectClick(
+  state: PulseTriggerStoredState,
+): PulseTriggerChargeResult {
+  if (state.reserveMs >= PULSE_TRIGGER_MAX_RESERVE_MS) {
+    return { state, charged: false }
+  }
+
+  const nextCharge = state.chargeClicks + 1
+  if (nextCharge < PULSE_TRIGGER_CHARGE_CLICKS) {
+    return {
+      state: { ...state, chargeClicks: nextCharge },
+      charged: false,
+    }
+  }
+
+  return {
+    state: {
+      reserveMs: Math.min(
+        PULSE_TRIGGER_MAX_RESERVE_MS,
+        state.reserveMs + PULSE_TRIGGER_RESERVE_GAIN_MS,
+      ),
+      chargeClicks: 0,
+    },
+    charged: true,
+  }
+}
+
+export function spendPulseTriggerPulse(
+  state: PulseTriggerStoredState,
+): PulseTriggerStoredState | null {
+  if (state.reserveMs + 0.001 < PULSE_TRIGGER_INTERVAL_MS) {
+    return null
+  }
+
+  return {
+    reserveMs: roundTriggerTime(
+      Math.max(0, state.reserveMs - PULSE_TRIGGER_INTERVAL_MS),
+    ),
+    chargeClicks: state.chargeClicks,
+  }
 }
 
 export function loadPulseTriggerState(): PulseTriggerStoredState {
