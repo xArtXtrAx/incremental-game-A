@@ -1,0 +1,175 @@
+.upgrade-progress-stack {
+  display: grid;
+  gap: 8px;
+  margin: 10px 0 12px;
+}
+
+.upgrade-progress {
+  min-width: 0;
+}
+
+.upgrade-progress-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 5px;
+  color: rgba(166, 211, 237, 0.62);
+  font-size: 0.56rem;
+  font-weight: 800;
+  letter-spacing: 0.045em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+.upgrade-progress-heading span,
+.upgrade-progress-heading strong {
+  min-width: 0;
+}
+
+.upgrade-progress-heading strong {
+  overflow: hidden;
+  color: rgba(204, 236, 249, 0.74);
+  font-weight: 850;
+  letter-spacing: 0.02em;
+  text-align: right;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.upgrade-progress-track {
+  position: relative;
+  height: 7px;
+  overflow: hidden;
+  border: 1px solid rgba(91, 178, 224, 0.14);
+  border-radius: 999px;
+  background:
+    linear-gradient(180deg, rgba(0, 0, 0, 0.22), transparent),
+    rgba(67, 133, 169, 0.1);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.34),
+    0 0 0 1px rgba(117, 218, 255, 0.015);
+}
+
+.upgrade-progress-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: var(--upgrade-progress);
+  min-width: 0;
+  border-radius: inherit;
+  background: linear-gradient(90deg, #147fb8, #42c8f4 72%, #b6f6ff);
+  box-shadow:
+    0 0 8px rgba(45, 205, 255, 0.32),
+    inset 0 1px 0 rgba(231, 253, 255, 0.22);
+  transition: width 150ms linear;
+}
+
+.upgrade-progress-segments {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent 0 calc(var(--upgrade-segment-size) - 1px),
+    rgba(1, 10, 24, 0.7) calc(var(--upgrade-segment-size) - 1px)
+      var(--upgrade-segment-size)
+  );
+  pointer-events: none;
+}
+
+.upgrade-progress.is-locked .upgrade-progress-heading,
+.upgrade-progress.is-locked .upgrade-progress-heading strong {
+  color: rgba(151, 182, 202, 0.54);
+}
+
+.upgrade-progress.is-locked .upgrade-progress-track {
+  border-color: rgba(133, 161, 180, 0.12);
+  background: rgba(93, 116, 132, 0.08);
+}
+
+.upgrade-progress.is-locked .upgrade-progress-fill {
+  background: linear-gradient(90deg, #3b586c, #7292a4);
+  box-shadow: none;
+}
+
+.upgrade-progress.is-ready .upgrade-progress-heading strong {
+  color: #dffbff;
+  text-shadow: 0 0 8px rgba(91, 222, 255, 0.38);
+}
+
+.upgrade-progress.is-ready .upgrade-progress-track {
+  border-color: rgba(108, 231, 255, 0.34);
+  box-shadow:
+    inset 0 1px 3px rgba(0, 0, 0, 0.28),
+    0 0 10px rgba(49, 204, 255, 0.12);
+}
+
+.upgrade-progress.is-ready .upgrade-progress-fill {
+  background: linear-gradient(90deg, #1a9bc9, #7de8ff 70%, #efffff);
+  box-shadow:
+    0 0 10px rgba(87, 228, 255, 0.5),
+    inset 0 1px 0 rgba(255, 255, 255, 0.45);
+  animation: upgrade-progress-ready 1.45s ease-in-out infinite;
+}
+
+.upgrade-progress.is-active .upgrade-progress-heading span {
+  color: rgba(169, 239, 255, 0.78);
+}
+
+.upgrade-progress.is-active .upgrade-progress-heading strong {
+  color: #f0feff;
+}
+
+.upgrade-progress.is-active .upgrade-progress-fill {
+  background:
+    linear-gradient(90deg, #64dfff, #f1feff 52%, #74dfff),
+    #64dfff;
+  background-size: 180% 100%;
+  box-shadow:
+    0 0 11px rgba(94, 226, 255, 0.62),
+    inset 0 1px 0 rgba(255, 255, 255, 0.52);
+  animation: upgrade-progress-active 1.1s linear infinite;
+}
+
+@keyframes upgrade-progress-ready {
+  0%,
+  100% {
+    filter: brightness(0.96);
+  }
+
+  50% {
+    filter: brightness(1.18);
+  }
+}
+
+@keyframes upgrade-progress-active {
+  from {
+    background-position: 100% 0;
+  }
+
+  to {
+    background-position: -80% 0;
+  }
+}
+
+@media (max-width: 560px) {
+  .upgrade-progress-heading {
+    gap: 7px;
+    font-size: 0.53rem;
+  }
+
+  .upgrade-progress-track {
+    height: 6px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upgrade-progress-fill {
+    transition: none;
+  }
+
+  .upgrade-progress.is-ready .upgrade-progress-fill,
+  .upgrade-progress.is-active .upgrade-progress-fill {
+    animation: none;
+  }
+}
