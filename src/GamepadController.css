@@ -94,6 +94,7 @@
   align-items: center;
   gap: 9px;
   color: rgba(218, 239, 250, 0.82);
+  cursor: pointer;
   font-size: 0.68rem;
 }
 
@@ -101,6 +102,7 @@
   width: 16px;
   height: 16px;
   accent-color: #20bce8;
+  cursor: pointer;
 }
 
 .gamepad-range {
@@ -114,6 +116,7 @@
 .gamepad-range input {
   width: 100%;
   accent-color: #20bce8;
+  cursor: pointer;
 }
 
 .gamepad-map {
@@ -164,6 +167,12 @@
   color: white;
 }
 
+.gamepad-panel button:focus-visible,
+.gamepad-panel input:focus-visible {
+  outline: 3px solid #dff9ff;
+  outline-offset: 3px;
+}
+
 @media (max-width: 760px) {
   .gamepad-panel {
     right: 10px;
@@ -173,5 +182,14 @@
 
   .gamepad-map {
     grid-template-columns: 1fr;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gamepad-panel *,
+  .gamepad-panel *::before,
+  .gamepad-panel *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
   }
 }
