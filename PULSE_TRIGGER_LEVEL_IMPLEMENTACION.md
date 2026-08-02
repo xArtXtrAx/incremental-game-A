@@ -1,12 +1,12 @@
-# Gatillo de pulso escalable — Dev-Pulse-Trigger-Level
+# Gatillo de pulso escalable
 
 ## Estado
 
-Implementación experimental creada desde el `main` aprobado. `main` permanece intacta hasta la validación visual y de balance.
+El sistema escalable ya forma parte de `main`. La rama `Dev-Pulse-Trigger-Mouse` prueba una mejora de control: trasladar la descarga del mouse al botón derecho para dejar el botón izquierdo libre sobre el núcleo.
 
 ## Posición
 
-La tarjeta del Gatillo se ordena inmediatamente debajo de la esfera y antes del estado del núcleo. Esto reduce el recorrido del mouse entre los clics directos y la descarga mantenida.
+La tarjeta del Gatillo se ordena inmediatamente debajo de la esfera y antes del estado del núcleo. Esto reduce el recorrido visual entre los clics directos y la información de la descarga.
 
 ## Escalado
 
@@ -60,6 +60,21 @@ La tarjeta muestra:
 
 La compra usa un evento de interfaz que termina en la acción `buy-pulse-trigger` del reducer. La energía nunca se modifica directamente desde el componente visual.
 
+## Control con mouse
+
+En `Dev-Pulse-Trigger-Mouse`:
+
+- Mantener el botón derecho dentro de `.game-panel` activa el Gatillo.
+- Soltar el botón derecho detiene la descarga.
+- El menú contextual se bloquea únicamente dentro del panel jugable mientras el botón derecho está asignado al Gatillo.
+- El Panel DEV y los campos editables conservan el clic derecho normal.
+- El botón izquierdo queda completamente libre para pulsar la esfera mientras el Gatillo descarga.
+- Se usan eventos `mousedown` y `mouseup`, porque reconocen cada botón del mouse de forma independiente y permiten mantener derecho mientras se pulsa repetidamente con izquierdo.
+- El clic izquierdo sobre el botón visual ya no activa el Gatillo.
+- Toque y stylus continúan pudiendo mantener pulsado el botón visual.
+- Espacio/Enter y R2/RT conservan el comportamiento existente.
+- Al perder foco, ocultar la pestaña, agotar la reserva o reiniciar, todas las fuentes se detienen de forma segura.
+
 ## Comprar todo
 
 El Acelerador de pulso participa en las tres estrategias:
@@ -72,18 +87,20 @@ Su utilidad se calcula como pulsos adicionales obtenidos por los clics manuales 
 
 ## Prueba recomendada
 
-1. Cambiar a `Dev-Pulse-Trigger-Level` y hacer Pull.
+1. Cambiar a `Dev-Pulse-Trigger-Mouse` y hacer Pull.
 2. Ejecutar `npm run lint`, `npm run build` y `npm run dev`.
-3. Confirmar que la tarjeta aparece inmediatamente debajo de la esfera.
-4. Con 6,000 de energía, comprar nivel 1 y comprobar `6.0 → 6.5 pulsos/s`.
-5. Cargar 2 segundos de reserva y verificar aproximadamente 13 pulsos a nivel 1.
-6. Repetir compras hasta nivel 6 y confirmar el tope de 9.0 pulsos/s.
-7. Confirmar que no se puede comprar nivel 7.
-8. Probar la descarga con mouse y R2/RT.
-9. Confirmar que Gatillo y Autoclicker no recargan la reserva.
-10. Comparar las vistas previas de Comprar todo en los tres perfiles.
-11. Recargar la página y comprobar que el nivel se conserva.
-12. Cristalizar y confirmar que nivel y reserva regresan a cero.
+3. Cargar al menos un segundo de reserva.
+4. Mantener clic derecho sobre el núcleo o cualquier zona del panel principal.
+5. Confirmar que el menú contextual no aparezca y que comience la descarga.
+6. Sin soltar el derecho, pulsar repetidamente la esfera con el izquierdo.
+7. Confirmar que los clics izquierdos produzcan energía y carguen la siguiente reserva.
+8. Confirmar que los pulsos automáticos del Gatillo no recarguen su propia reserva.
+9. Soltar solamente el derecho y confirmar que la descarga se detenga inmediatamente.
+10. Hacer clic izquierdo sobre el botón visual y confirmar que no active el Gatillo.
+11. Probar Espacio/Enter sobre el botón y R2/RT con control.
+12. Hacer clic derecho dentro de un campo del Panel DEV y confirmar que el menú contextual siga disponible.
+13. Agotar la reserva manteniendo derecho y confirmar que sea necesario soltar y volver a presionar para reactivar.
+14. Cambiar de pestaña o perder foco y confirmar que el Gatillo se detenga.
 
 ## Validación remota
 
@@ -92,5 +109,6 @@ Su utilidad se calcula como pulsos adicionales obtenidos por los clics manuales 
 - El reducer es la única capa que compra niveles y descuenta energía.
 - El planificador deja de considerar el Gatillo al alcanzar nivel 6.
 - No se modificaron las fórmulas de energía por clic, generadores, Cavitación, Sobrecarga ni Refracción.
+- El componente modificado pasó una comprobación TypeScript aislada con `strictNullChecks`, `noUnusedLocals` y `noUnusedParameters`.
 
-La ejecución de `npm run lint`, `npm run build` y la prueba visual física quedan pendientes en el checkout local con las dependencias reales del proyecto.
+La ejecución de `npm run lint`, `npm run build` y la prueba física con mouse quedan pendientes en el checkout local con las dependencias reales del proyecto.
