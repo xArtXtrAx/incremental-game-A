@@ -2,6 +2,8 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
+import { ChromaticChamberSystem } from './ChromaticChamberSystem'
+import { ChromaticGamepadBridge } from './ChromaticGamepadBridge'
 import { GamepadController } from './GamepadController'
 import { GamepadEventHaptics } from './GamepadEventHaptics'
 import { PulseTriggerSystem } from './PulseTriggerSystem'
@@ -26,7 +28,9 @@ createRoot(document.getElementById('root')!).render(
     <App />
     <RegionFocusGuide />
     <PulseTriggerSystem />
+    <ChromaticChamberSystem />
     <GamepadController />
+    <ChromaticGamepadBridge />
     <GamepadEventHaptics />
   </StrictMode>,
 )
