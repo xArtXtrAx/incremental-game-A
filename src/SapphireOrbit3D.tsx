@@ -1,4 +1,11 @@
 import { useEffect, useRef } from 'react'
+import {
+  getSapphireOrbitPhase,
+  getSapphireOrbitPoint,
+  pauseSapphireOrbit,
+  SAPPHIRE_ORBIT_TAU,
+  type SapphireOrbitPoint,
+} from './SapphireOrbitState'
 
 type Props = {
   depth: 'back' | 'front'
@@ -6,20 +13,10 @@ type Props = {
   onUnavailable: () => void
 }
 
-type OrbitPoint = {
-  x: number
-  y: number
-  z: number
-}
-
-const TAU = Math.PI * 2
 const RING_POINT_COUNT = 120
 const TRAIL_POINT_COUNT = 12
 const TRAIL_ARC_FRACTION = 0.18
 const FLOATS_PER_POINT = 7
-
-let sharedOrbitPhase = 0
-let sharedOrbitTimestamp = 0
 
 function compileShader(
   gl: WebGLRenderingContext,
@@ -106,20 +103,8 @@ function attribute(
   return location
 }
 
-function projectOrbitPoint(angle: number): OrbitPoint {
-  const x3d = Math.cos(angle)
-  const z3d = Math.sin(angle)
-  const perspective = 1 + z3d * 0.1
-
-  return {
-    x: x3d * 0.82 * perspective,
-    y: -z3d * 0.57 * perspective,
-    z: z3d,
-  }
-}
-
-function isVisibleAtDepth(point: OrbitPoint, depth: Props['depth']) {
-  return depth === 'front' ? point.z >= 0 : point.z < 0
+function isVisibleAtDepth(point: SapphireOrbitPoint, depth: Props['depth']) {
+  return depth === 'front' ? point.depth >= 0 : point.depth < 0
 }
 
 function readDuration(host: HTMLElement | null) {
@@ -127,21 +112,6 @@ function readDuration(host: HTMLElement | null) {
     host?.style.getPropertyValue('--sapphire-pulse-duration') ?? ''
   const duration = Number.parseFloat(rawDuration)
   return Number.isFinite(duration) && duration > 0 ? duration : 20
-}
-
-function getSharedOrbitPhase(now: number, duration: number) {
-  if (sharedOrbitTimestamp === 0) {
-    sharedOrbitTimestamp = now
-    return sharedOrbitPhase
-  }
-
-  const deltaSeconds = Math.min(
-    0.1,
-    Math.max(0, (now - sharedOrbitTimestamp) / 1000),
-  )
-  sharedOrbitTimestamp = now
-  sharedOrbitPhase = (sharedOrbitPhase + deltaSeconds / duration) % 1
-  return sharedOrbitPhase
 }
 
 function readPulse(host: HTMLElement | null) {
@@ -162,7 +132,7 @@ function buildOrbitVertices(
   const energyBoost = energized ? 1.2 : 1
 
   const pushPoint = (
-    point: OrbitPoint,
+    point: SapphireOrbitPoint,
     size: number,
     red: number,
     green: number,
@@ -171,8 +141,8 @@ function buildOrbitVertices(
   ) => {
     if (!isVisibleAtDepth(point, depth)) return
     values.push(
-      point.x,
-      point.y,
+      point.screenX,
+      point.screenY,
       size * pixelRatio,
       red,
       green,
@@ -182,8 +152,8 @@ function buildOrbitVertices(
   }
 
   for (let index = 0; index < RING_POINT_COUNT; index += 1) {
-    const angle = (index / RING_POINT_COUNT) * TAU
-    const point = projectOrbitPoint(angle)
+    const ringPhase = index / RING_POINT_COUNT
+    const point = getSapphireOrbitPoint(ringPhase)
     const ringPulse = 0.72 + pulse * 0.28
 
     pushPoint(
@@ -196,13 +166,15 @@ function buildOrbitVertices(
     )
   }
 
-  const sparkAngle = phase * TAU
-  const trailArc = TAU * TRAIL_ARC_FRACTION
+  const trailArc = SAPPHIRE_ORBIT_TAU * TRAIL_ARC_FRACTION
+  const sparkAngle = phase * SAPPHIRE_ORBIT_TAU
 
   for (let index = TRAIL_POINT_COUNT; index >= 1; index -= 1) {
     const distance = index / TRAIL_POINT_COUNT
-    const angle = sparkAngle - trailArc * distance
-    const point = projectOrbitPoint(angle)
+    const trailPhase =
+      (sparkAngle - trailArc * distance + SAPPHIRE_ORBIT_TAU) /
+      SAPPHIRE_ORBIT_TAU
+    const point = getSapphireOrbitPoint(trailPhase)
     const proximity = 1 - distance
     const alpha = (0.08 + proximity * 0.5) * (0.76 + pulse * 0.24)
     const size = 5.5 + proximity * 6.5
@@ -210,7 +182,7 @@ function buildOrbitVertices(
     pushPoint(point, size, 0.3, 0.84, 1, alpha * energyBoost)
   }
 
-  const spark = projectOrbitPoint(sparkAngle)
+  const spark = getSapphireOrbitPoint(phase)
   pushPoint(
     spark,
     energized ? 21 : 17,
@@ -313,6 +285,11 @@ export function SapphireOrbit3D({ depth, energized, onUnavailable }: Props) {
 
       function render(now: number) {
         if (disposed) return
+        if (document.hidden) {
+          pauseSapphireOrbit(now)
+          frameId = requestAnimationFrame(render)
+          return
+        }
 
         const interval = energizedRef.current ? 1000 / 60 : 1000 / 40
         if (!reducedMotion && now - lastFrame < interval) {
@@ -333,7 +310,9 @@ export function SapphireOrbit3D({ depth, energized, onUnavailable }: Props) {
         }
 
         const duration = readDuration(host)
-        const phase = reducedMotion ? 0 : getSharedOrbitPhase(now, duration)
+        const phase = reducedMotion
+          ? 0
+          : getSapphireOrbitPhase(now, duration)
         const pulse = readPulse(host)
         const vertices = buildOrbitVertices(
           depth,
