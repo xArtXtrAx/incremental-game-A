@@ -1,13 +1,16 @@
 # Corrección de interpolación de barras
 
-La primera versión de suavizado mantenía un `style={{ transform: ... }}` controlado por React en el elemento de relleno. Cada render volvía a escribir inmediatamente el valor objetivo y anulaba las posiciones intermedias calculadas por `requestAnimationFrame`.
+La primera versión de suavizado mantenía un `style={{ transform: ... }}` controlado por React en el elemento de relleno. Cada render volvía a escribir inmediatamente el valor objetivo y anulaba las posiciones intermedias.
 
-La solución definitiva deja al reloj visual como única autoridad sobre `transform` y separa tres comportamientos:
+Una segunda versión intentó mantener un reloj manual con `requestAnimationFrame`, pero en la ejecución real podía dejar el relleno congelado aunque la pista y la etiqueta siguieran actualizándose.
 
-- Las barras normales interpolan linealmente entre actualizaciones con una duración ligeramente mayor que el intervalo observado. La siguiente actualización comienza antes de que termine la anterior, evitando pausas o pequeños tirones.
-- Autoclicker y Refracción avanzan continuamente mediante su velocidad real, independientemente de la frecuencia con la que se guarde el estado.
-- Sobrecarga y PRISMA usan directamente la hora absoluta de finalización para producir un descenso continuo.
+La solución vigente usa la Web Animations API del navegador:
 
-Los procesos cíclicos nunca retroceden al recibir un valor menor. Autoclicker y Refracción cruzan naturalmente `100% → 0%`; Cavitación y carga de Sobrecarga completan primero el tramo restante, permanecen brevemente en 100%, reinician en cero y continúan hasta el nuevo valor.
+- Cada actualización comienza desde la posición visual exacta que tiene la barra en ese instante.
+- La duración es ligeramente mayor que el intervalo observado entre actualizaciones, de modo que el siguiente trayecto enlaza antes de que aparezca una pausa.
+- Si llega un valor nuevo mientras la barra todavía se mueve, la animación anterior se cancela visualmente y la nueva continúa desde ese punto, sin regresar al último valor guardado.
+- Las barras normales pueden avanzar o retroceder cuando el recurso realmente cambia.
+- Autoclicker, Cavitación, carga de Sobrecarga y Refracción se consideran ciclos. Cuando reciben un valor menor, recorren `posición actual → 100% → 0% → nuevo valor`, en lugar de retroceder hacia la izquierda.
+- El salto de 100% a 0% ocupa una fracción casi instantánea de la línea temporal y el resto del recorrido conserva velocidad lineal.
 
-La transición CSS anterior fue retirada para evitar una segunda interpolación encima del reloj visual. La preferencia de movimiento reducido solo desactiva adornos pulsantes; no elimina el movimiento funcional de la barra.
+El relleno mantiene un valor inicial visible en `transform`, y la animación nativa es la única autoridad durante cada transición. No se utiliza una transición CSS adicional ni un bucle permanente de JavaScript.
