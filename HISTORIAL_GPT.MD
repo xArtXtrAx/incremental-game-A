@@ -7,15 +7,15 @@
 
 - Repositorio: `xArtXtrAx/incremental-game-A`.
 - Rama estable: `main`.
-- Rama aprobada para integración: `Dev-Pulse-Trigger-Level`.
-- Ramas históricas: `Dev-Prestigio-Test`, `Dev-Orbita-Zafiro-Test`, `Dev-Matriz-Refraccion-Test` y `Dev-Gamepad-Test`.
+- Rama aprobada para integración: `Dev-Camara-Cromatica`.
+- Ramas históricas: `Dev-Prestigio-Test`, `Dev-Orbita-Zafiro-Test`, `Dev-Matriz-Refraccion-Test`, `Dev-Gamepad-Test` y `Dev-Pulse-Trigger-Level`.
 - Entorno: React + TypeScript + Vite + Motion.
 - Guardado principal: `incremental-game-a:save:v1`.
 - Ajustes de mando: `incremental-game-a:gamepad:v1`.
 - Reserva del Gatillo: `incremental-game-a:pulse-trigger:v1`.
 - Última actualización: **2 de agosto de 2026**.
 
-Arturo aprobó visualmente y funcionalmente el soporte de mando, la vibración, el Gatillo de pulso, la guía neón de regiones y el Acelerador de pulso escalable. `Dev-Pulse-Trigger-Level` debe integrarse a `main` mediante fast-forward limpio antes de comenzar la progresión de gemas de la Cámara Cromática.
+Arturo aprobó visualmente y funcionalmente la Cámara Cromática, el Nexo Prismático, el acceso normal y DEV, el control de cristalizaciones y el Zafiro WebGL orbitando con iluminación dinámica. `Dev-Camara-Cromatica` puede integrarse a `main` mediante fast-forward limpio.
 
 ## 2. Forma de trabajo
 
@@ -45,6 +45,11 @@ Arturo aprobó visualmente y funcionalmente el soporte de mando, la vibración, 
   - Al salir, reaparece la última selección del mando.
   - La última entrada tiene prioridad.
   - El borde es un neón azul tenue, no bloquea clics y respeta movimiento reducido.
+- Acceso superior a la Cámara Cromática:
+  - visible desde P0;
+  - bloqueado hasta Zafiro P5;
+  - muestra progreso `Zafiro X/5`;
+  - se activa como entrada de metaprogresión en P5.
 
 ## 4. Evoluciones y sistemas del núcleo
 
@@ -208,6 +213,14 @@ duración = 3 + 17 × (1 − clics / 5000)^1.6
 - La fase se conserva al cambiar la velocidad.
 - SVG y órbita CSS permanecen como respaldo si WebGL falla.
 - La Matriz muestra indicadores alrededor del zafiro y genera halo, haces y mensaje de descarga prismática.
+- La Cámara Cromática reutiliza exactamente el mismo componente `SapphireGem`:
+  - misma geometría WebGL;
+  - mismo giro vertical;
+  - misma flotación, halo, chispa y estela;
+  - respaldo SVG/CSS idéntico.
+- Dentro de la Cámara, el Zafiro completo realiza una órbita exterior de 15 segundos alrededor del Nexo.
+- Cambia de profundidad para pasar íntegramente por detrás y por delante del Nexo.
+- Su posición alimenta un reflejo azul móvil sobre las facetas grises; el reflejo es más intenso al pasar por delante y nunca sustituye el estado real de las facetas.
 
 ## 8. Soporte Gamepad / DualSense
 
@@ -221,15 +234,24 @@ Controles estándar:
 - Triángulo/Y: Comprar todo posible.
 - L1/LB: Núcleo.
 - R1/RB: Evoluciones.
-- Círculo/B: volver al Núcleo.
+- L1 + R1 / LB + RB: abrir Cámara Cromática cuando esté desbloqueada.
+- Círculo/B: volver al Núcleo o cerrar la Cámara.
 - Options/Menu: abrir o cerrar panel de mando.
 - Cruceta/stick: navegación espacial y ajuste de deslizadores.
+
+Dentro de la Cámara:
+
+- L1/R1 o cruceta izquierda/derecha recorren gemas.
+- Cruceta arriba enfoca regresar.
+- Cruceta abajo vuelve a la gema seleccionada.
+- X/A activa el control enfocado.
+- Círculo/B regresa al reactor.
 
 Protecciones y rendimiento:
 
 - Gamepad API estándar.
 - Detección por flancos para acciones discretas.
-- `requestAnimationFrame` solamente para sondeo del mando.
+- `requestAnimationFrame` solamente para sondeo del mando y animaciones visuales.
 - No se escribe estado React en cada cuadro.
 - Primer mando conectado como principal.
 - Pausa funcional con pestaña oculta.
@@ -270,15 +292,74 @@ Funcionamiento:
 
 Máximo técnico: 320 compras por pulsación.
 
-## 10. Arquitectura relevante
+## 10. Cámara Cromática y Nexo Prismático
+
+- Vista completa de metaprogresión montada sobre el reactor sin desmontarlo.
+- El reactor sigue produciendo, guardando y ejecutando temporizadores mientras la Cámara está abierta.
+- El Nexo Prismático comienza gris, apagado e incompleto.
+- Requiere cinco gemas a nivel 5:
+  - Zafiro;
+  - Esmeralda;
+  - Amarilla;
+  - Naranja;
+  - Roja.
+- El Zafiro usa `prestigeCount` como progreso real entre 0 y 5.
+- En P0–P4:
+  - acceso normal bloqueado;
+  - Nexo inerte;
+  - faceta azul apagada;
+  - Zafiro sin orbitar;
+  - Esmeralda sellada.
+- En P5:
+  - se habilita el acceso normal;
+  - el Zafiro orbita el Nexo;
+  - se activa la primera faceta azul;
+  - se contabiliza 1/5 órbitas completas;
+  - la Esmeralda aparece como siguiente frecuencia.
+- Las otras cuatro gemas todavía no tienen economía, compras ni bonificaciones.
+- El inspector lateral muestra nombre, nivel, progreso, estado y descripción de la gema seleccionada.
+- La vista respeta `prefers-reduced-motion` y es responsiva.
+
+### Acceso DEV
+
+- El panel de desarrollador contiene `Cámara Cromática — ABRIR`.
+- Puede abrir una inspección incluso en P0–P4.
+- Se identifica como `Vista DEV · Estado real`.
+- Nunca concede P5 ni modifica desbloqueos.
+- Permanece abierta si el progreso se reinicia para mostrar inmediatamente el estado posterior.
+
+### Control de cristalizaciones
+
+El panel DEV permite editar atómicamente:
+
+- Energía acumulada.
+- Clics del núcleo.
+- Cristalizaciones (`prestigeCount`).
+
+Reglas de cristalizaciones:
+
+- solamente enteros no negativos;
+- bloquea letras, signos, espacios, comas, decimales y notación científica;
+- máximo 1,000,000,000;
+- actualiza el multiplicador, indicador P#, planos, Cámara y guardado;
+- no ejecuta la animación ni el reinicio de una cristalización real.
+
+Consistencia de refracción al reducir prestigio:
+
+- P0 elimina nivel, progreso, facetas, PRISMA y recompensas de refracción.
+- Bajar entre P4, P3, P2 y P1 limita las facetas cargadas al nuevo máximo.
+
+## 11. Arquitectura relevante
 
 - `src/game.ts`: estado, migración, compras, reducer y multiplicadores.
 - `src/refraction.ts`: Matriz de refracción.
 - `src/bulkPurchase.ts`: perfiles y planificación de Comprar todo.
-- `src/App.tsx`: ciclo principal y aplicación de acciones.
+- `src/App.tsx`: ciclo principal, acciones y aplicación atómica de valores DEV.
 - `src/GameCore.tsx`: núcleo, estados y eventos visuales.
-- `src/SapphireGem3D.tsx`: gema WebGL.
-- `src/SapphireOrbit3D.tsx`: órbita y chispa WebGL.
+- `src/SapphireGem.tsx`: componente compartido del Zafiro.
+- `src/SapphireGem3D.tsx`: geometría y shader de la gema.
+- `src/SapphireOrbit3D.tsx`: órbita interna, chispa y estela WebGL.
+- `src/SapphireOrbitState.ts`: fase y posiciones orbitales compartidas.
 - `src/gamepad.ts`: ajustes y detección de mandos.
 - `src/GamepadController.tsx`: navegación y acciones discretas.
 - `src/GamepadEventHaptics.tsx`: vibraciones contextuales.
@@ -287,8 +368,14 @@ Máximo técnico: 320 compras por pulsación.
 - `src/PulseTriggerSystem.css` y `src/PulseTriggerLevel.css`: diseño del Gatillo.
 - `src/RegionFocusGuide.tsx`: guía visual mouse/mando.
 - `src/RegionFocusGuide.css`: borde neón de regiones.
+- `src/chromatic.ts`: protocolo, gemas y modos de apertura cromática.
+- `src/ChromaticChamberSystem.tsx`: acceso, escena, estados e inspector.
+- `src/ChromaticGamepadBridge.tsx`: navegación del mando dentro de la Cámara.
+- `src/ChromaticSapphireOrbit.tsx`: órbita exterior del Zafiro y posición de iluminación.
+- `src/ChromaticSapphireOrbit.css`: profundidad, escala y reflejo sobre el Nexo.
+- `src/DeveloperPanel.tsx`: acceso cromático y campos DEV.
 
-## 11. Validaciones y límites conocidos
+## 12. Validaciones y límites conocidos
 
 - No se añadieron dependencias.
 - Guardados anteriores reciben campos nuevos en cero.
@@ -296,9 +383,14 @@ Máximo técnico: 320 compras por pulsación.
 - Autoclics múltiples se procesan secuencialmente.
 - Gatillo y Autoclicker no autorrecargan la reserva.
 - El nivel 6 bloquea compras adicionales del Acelerador.
+- La Cámara no añade claves ni campos nuevos al guardado.
+- P0–P4 no montan Zafiro ni reflejo cromático.
+- El Zafiro cromático pasó comprobación TypeScript estricta aislada.
+- Se corrigió un error de nulabilidad detectado dentro del ciclo `requestAnimationFrame` antes de integrar.
 - Arturo validó físicamente DualSense, vibraciones, Gatillo y guía visual.
-- Arturo validó visualmente la posición y presentación del Gatillo escalable.
+- Arturo validó visualmente el Gatillo escalable, la Cámara Cromática y el Zafiro orbital con reflejo dinámico.
 - GitHub no tiene CI configurado para estos commits.
+- No se ejecutó el `build` completo en el entorno remoto por falta de checkout/dependencias accesibles.
 
 Comprobación local recomendada antes de publicar versiones:
 
@@ -308,35 +400,22 @@ npm run build
 npm run dev
 ```
 
-## 12. Próxima expansión — Cámara Cromática
+## 13. Próxima expansión
 
-Decisión conceptual aprobada para iniciar en una rama nueva después de integrar `Dev-Pulse-Trigger-Level`:
+La Cámara Cromática ya está estable como estructura visual y de navegación. El siguiente desarrollo debe definirse en una rama nueva creada desde `main`.
 
-- Nueva vista completa denominada **Cámara Cromática**.
-- Gema central denominada provisionalmente **Nexo Prismático**.
-- La gema central comienza gris, apagada e inerte.
-- Requiere cinco gemas orbitando a nivel 5:
-  - Zafiro;
-  - Esmeralda;
-  - Amarilla;
-  - Naranja;
-  - Roja.
-- Al llegar el Zafiro a nivel 5:
-  - se desbloquea la Cámara Cromática;
-  - el Zafiro comienza a orbitar el Nexo;
-  - se activa el primer sector azul;
-  - se anticipa la Esmeralda como siguiente progresión.
-- Antes del desbloqueo, el acceso debe estar visible pero apagado y mostrar `Zafiro X/5`.
-- La primera implementación debe centrarse en:
-  - acceso bloqueado/desbloqueado;
-  - transición de vista;
-  - gema central inerte;
-  - cinco posiciones orbitales;
-  - Zafiro orbitando a P5;
-  - regreso seguro a la pantalla principal;
-  - navegación con mouse, teclado y mando.
-- Las mecánicas y bonificaciones de Esmeralda, Amarilla, Naranja y Roja se definirán posteriormente.
+Opciones naturales:
 
-## 13. Inicio recomendado para otro chat
+- diseñar la economía y los cinco niveles de la Esmeralda;
+- definir qué sistemas existentes transforma la frecuencia verde;
+- diseñar la transición Zafiro P5 → desbloqueo de Esmeralda;
+- añadir sonido ambiental y señales acústicas de la Cámara;
+- continuar el pulido del Nexo sin activar prematuramente las otras facetas.
 
-> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD`. La rama estable incorpora soporte Gamepad, Gatillo de pulso, Acelerador escalable y guía de regiones. La siguiente rama activa debe dedicarse a la Cámara Cromática y al Nexo Prismático. No integrar cambios visuales nuevos a `main` hasta la aprobación de Arturo.
+Regla de diseño vigente:
+
+> Cada gema nueva debe transformar mecánicas existentes y no limitarse a añadir otra moneda o porcentaje aislado.
+
+## 14. Inicio recomendado para otro chat
+
+> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD` y comprueba la rama activa. `main` incorpora Gamepad/DualSense, Gatillo de pulso escalable, Matriz de refracción, Cámara Cromática, acceso DEV, edición de cristalizaciones y el Zafiro WebGL orbitando el Nexo con reflejo dinámico. Crea una rama nueva antes de desarrollar la Esmeralda u otra expansión importante. No integres cambios nuevos a `main` sin aprobación explícita de Arturo.
