@@ -1,3 +1,12 @@
+import {
+  advanceRefractionMatrix,
+  getRefractionBonusMultiplier,
+  getRefractionCost,
+  getRefractionFacetCount,
+  isRefractionActive,
+  REFRACTION_REQUIRED_PRESTIGE,
+} from './refraction'
+
 export const CLICK_UPGRADE_BASE_COST = 10
 export const GENERATOR_BASE_COST = 25
 export const RESONANCE_BASE_COST = 120
@@ -41,6 +50,12 @@ export type GameState = {
   overloadLevel: number
   overloadCharge: number
   overloadUntil: number
+  refractionLevel: number
+  refractionOrbitProgress: number
+  refractionFacetsCharged: number
+  refractionUntil: number
+  refractionDischargeCount: number
+  refractionLastReward: number
   prestigeCount: number
 }
 
@@ -54,6 +69,7 @@ export type GameAction =
   | { type: 'buy-cavitation' }
   | { type: 'buy-autoclicker' }
   | { type: 'buy-overload' }
+  | { type: 'buy-refraction' }
   | { type: 'crystallize' }
   | { type: 'reset' }
 
@@ -82,6 +98,12 @@ export const initialGameState: GameState = {
   overloadLevel: 0,
   overloadCharge: 0,
   overloadUntil: 0,
+  refractionLevel: 0,
+  refractionOrbitProgress: 0,
+  refractionFacetsCharged: 0,
+  refractionUntil: 0,
+  refractionDischargeCount: 0,
+  refractionLastReward: 0,
   prestigeCount: 0,
 }
 
@@ -120,6 +142,10 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
   }
 
   const candidate = value as Partial<GameState>
+  const prestigeCount = getSafeInteger(
+    candidate.prestigeCount,
+    fallback.prestigeCount,
+  )
   const cavitationLevel = getSafeInteger(
     candidate.cavitationLevel,
     fallback.cavitationLevel,
@@ -137,6 +163,15 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
   const overloadUntil = getSafeInteger(
     candidate.overloadUntil,
     fallback.overloadUntil,
+  )
+  const refractionLevel = getSafeInteger(
+    candidate.refractionLevel,
+    fallback.refractionLevel,
+  )
+  const refractionFacetCount = getRefractionFacetCount(prestigeCount)
+  const refractionUntil = getSafeInteger(
+    candidate.refractionUntil,
+    fallback.refractionUntil,
   )
 
   return {
@@ -192,10 +227,42 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
         : 0,
     overloadUntil:
       overloadLevel > 0 && overloadUntil > Date.now() ? overloadUntil : 0,
-    prestigeCount: getSafeInteger(
-      candidate.prestigeCount,
-      fallback.prestigeCount,
+    refractionLevel,
+    refractionOrbitProgress:
+      refractionLevel > 0 && prestigeCount >= REFRACTION_REQUIRED_PRESTIGE
+        ? Math.min(
+            roundProgress(
+              getSafeNumber(
+                candidate.refractionOrbitProgress,
+                fallback.refractionOrbitProgress,
+              ),
+            ),
+            0.9999,
+          )
+        : 0,
+    refractionFacetsCharged:
+      refractionLevel > 0 && prestigeCount >= REFRACTION_REQUIRED_PRESTIGE
+        ? Math.min(
+            getSafeInteger(
+              candidate.refractionFacetsCharged,
+              fallback.refractionFacetsCharged,
+            ),
+            refractionFacetCount - 1,
+          )
+        : 0,
+    refractionUntil:
+      refractionLevel > 0 && refractionUntil > Date.now()
+        ? refractionUntil
+        : 0,
+    refractionDischargeCount: getSafeInteger(
+      candidate.refractionDischargeCount,
+      fallback.refractionDischargeCount,
     ),
+    refractionLastReward: getSafeNumber(
+      candidate.refractionLastReward,
+      fallback.refractionLastReward,
+    ),
+    prestigeCount,
   }
 }
 
@@ -290,13 +357,13 @@ export function getClickPower(
   level: number,
   manualClicks = 0,
   pressureLevel = 0,
-  overloadMultiplier = 1,
+  activeMultiplier = 1,
   sapphireMultiplier = 1,
 ) {
   return roundEnergy(
     (level + 1) *
       getPressureMultiplier(manualClicks, pressureLevel) *
-      overloadMultiplier *
+      activeMultiplier *
       sapphireMultiplier,
   )
 }
@@ -310,14 +377,14 @@ export function getEnergyPerSecond(
   resonanceLevel: number,
   manualClicks = 0,
   pressureLevel = 0,
-  overloadMultiplier = 1,
+  activeMultiplier = 1,
   sapphireMultiplier = 1,
 ) {
   return roundEnergy(
     generatorLevel *
       getResonanceMultiplier(resonanceLevel) *
       getPressureMultiplier(manualClicks, pressureLevel) *
-      overloadMultiplier *
+      activeMultiplier *
       sapphireMultiplier,
   )
 }
@@ -338,7 +405,7 @@ export function getCavitationReward(
   manualClicks: number,
   pressureLevel: number,
   cavitationLevel: number,
-  overloadMultiplier = 1,
+  activeMultiplier = 1,
   sapphireMultiplier = 1,
 ) {
   return roundEnergy(
@@ -347,10 +414,21 @@ export function getCavitationReward(
       resonanceLevel,
       manualClicks,
       pressureLevel,
-      overloadMultiplier,
+      activeMultiplier,
       sapphireMultiplier,
     ) * getCavitationSeconds(cavitationLevel),
   )
+}
+
+function getActiveTemporaryMultiplier(state: GameState, now: number) {
+  const overloadMultiplier = isOverloadActive(state.overloadUntil, now)
+    ? getOverloadMultiplier(state.overloadLevel)
+    : 1
+  const refractionMultiplier = isRefractionActive(state.refractionUntil, now)
+    ? getRefractionBonusMultiplier(state.refractionLevel)
+    : 1
+
+  return overloadMultiplier * refractionMultiplier
 }
 
 export function getClickOutcome(
@@ -359,15 +437,13 @@ export function getClickOutcome(
 ): ClickOutcome {
   const nextManualClicks = state.manualClicks + 1
   const overloadWasActive = isOverloadActive(state.overloadUntil, now)
-  const activeOverloadMultiplier = overloadWasActive
-    ? getOverloadMultiplier(state.overloadLevel)
-    : 1
+  const activeMultiplier = getActiveTemporaryMultiplier(state, now)
   const sapphireMultiplier = getSapphireMultiplier(state.prestigeCount)
   const clickEnergy = getClickPower(
     state.clickLevel,
     nextManualClicks,
     state.pressureLevel,
-    activeOverloadMultiplier,
+    activeMultiplier,
     sapphireMultiplier,
   )
 
@@ -383,7 +459,7 @@ export function getClickOutcome(
         nextManualClicks,
         state.pressureLevel,
         state.cavitationLevel,
-        activeOverloadMultiplier,
+        activeMultiplier,
         sapphireMultiplier,
       )
     : 0
@@ -443,6 +519,8 @@ export function getAutoclickCost(level: number) {
 export function getOverloadCost(level: number) {
   return getScaledCost(OVERLOAD_BASE_COST, OVERLOAD_GROWTH, level)
 }
+
+export { getRefractionCost }
 
 export function loadGameState(fallback: GameState): GameState {
   try {
@@ -526,10 +604,21 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'tick': {
       const now = action.now ?? Date.now()
-      let nextState =
-        isOverloadActive(state.overloadUntil, now) || state.overloadUntil === 0
-          ? state
-          : { ...state, overloadUntil: 0 }
+      let nextState = state
+
+      if (
+        nextState.overloadUntil !== 0 &&
+        !isOverloadActive(nextState.overloadUntil, now)
+      ) {
+        nextState = { ...nextState, overloadUntil: 0 }
+      }
+
+      if (
+        nextState.refractionUntil !== 0 &&
+        !isRefractionActive(nextState.refractionUntil, now)
+      ) {
+        nextState = { ...nextState, refractionUntil: 0 }
+      }
 
       const autoclickRate = getAutoclickRate(nextState.autoclickLevel)
 
@@ -553,26 +642,59 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         nextState = { ...nextState, autoclickProgress: 0 }
       }
 
-      const overloadActive = isOverloadActive(nextState.overloadUntil, now)
-      const overloadMultiplier = overloadActive
+      const overloadMultiplier = isOverloadActive(nextState.overloadUntil, now)
         ? getOverloadMultiplier(nextState.overloadLevel)
         : 1
-      const production = getEnergyPerSecond(
+      const refractionMultiplier = isRefractionActive(
+        nextState.refractionUntil,
+        now,
+      )
+        ? getRefractionBonusMultiplier(nextState.refractionLevel)
+        : 1
+      const sapphireMultiplier = getSapphireMultiplier(nextState.prestigeCount)
+      const baseProduction = getEnergyPerSecond(
         nextState.generatorLevel,
         nextState.resonanceLevel,
         nextState.manualClicks,
         nextState.pressureLevel,
         overloadMultiplier,
-        getSapphireMultiplier(nextState.prestigeCount),
+        sapphireMultiplier,
       )
-
-      if (production === 0) {
-        return nextState
-      }
+      const production = getEnergyPerSecond(
+        nextState.generatorLevel,
+        nextState.resonanceLevel,
+        nextState.manualClicks,
+        nextState.pressureLevel,
+        overloadMultiplier * refractionMultiplier,
+        sapphireMultiplier,
+      )
+      const refractionAdvance = advanceRefractionMatrix(
+        {
+          level: nextState.refractionLevel,
+          orbitProgress: nextState.refractionOrbitProgress,
+          facetsCharged: nextState.refractionFacetsCharged,
+          refractionUntil: nextState.refractionUntil,
+          dischargeCount: nextState.refractionDischargeCount,
+          prestigeCount: nextState.prestigeCount,
+          manualClicks: nextState.manualClicks,
+        },
+        baseProduction,
+        now,
+      )
 
       return {
         ...nextState,
-        energy: roundEnergy(nextState.energy + production),
+        energy: roundEnergy(
+          nextState.energy + production + refractionAdvance.dischargeAmount,
+        ),
+        refractionOrbitProgress: refractionAdvance.orbitProgress,
+        refractionFacetsCharged: refractionAdvance.facetsCharged,
+        refractionUntil: refractionAdvance.refractionUntil,
+        refractionDischargeCount: refractionAdvance.dischargeCount,
+        refractionLastReward:
+          refractionAdvance.dischargesTriggered > 0
+            ? refractionAdvance.dischargeAmount
+            : nextState.refractionLastReward,
       }
     }
 
@@ -701,6 +823,24 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         energy: roundEnergy(state.energy - cost),
         overloadLevel: nextLevel,
         overloadCharge: Math.min(state.overloadCharge, nextThreshold - 1),
+      }
+    }
+
+    case 'buy-refraction': {
+      const cost = getRefractionCost(state.refractionLevel)
+
+      if (
+        state.prestigeCount < REFRACTION_REQUIRED_PRESTIGE ||
+        state.generatorLevel === 0 ||
+        state.energy < cost
+      ) {
+        return state
+      }
+
+      return {
+        ...state,
+        energy: roundEnergy(state.energy - cost),
+        refractionLevel: state.refractionLevel + 1,
       }
     }
 
