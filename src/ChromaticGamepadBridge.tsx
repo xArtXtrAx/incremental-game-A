@@ -44,7 +44,6 @@ export function ChromaticGamepadBridge() {
   const previousButtons = useRef<boolean[]>([])
   const previousCombo = useRef(false)
   const animationFrame = useRef(0)
-  const focusTimers = useRef<number[]>([])
 
   useEffect(() => {
     let controlsEnabled = loadGamepadSettings().enabled
@@ -110,10 +109,7 @@ export function ChromaticGamepadBridge() {
     }
 
     animationFrame.current = window.requestAnimationFrame(poll)
-    return () => {
-      window.cancelAnimationFrame(animationFrame.current)
-      focusTimers.current.forEach((timer) => window.clearTimeout(timer))
-    }
+    return () => window.cancelAnimationFrame(animationFrame.current)
   }, [])
 
   return null
