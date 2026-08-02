@@ -136,6 +136,7 @@ export function getButtonLabels(family: ControllerFamily) {
       action: 'Triángulo',
       leftBumper: 'L1',
       rightBumper: 'R1',
+      leftTrigger: 'L2',
       rightTrigger: 'R2',
       options: 'Options',
     }
@@ -149,6 +150,7 @@ export function getButtonLabels(family: ControllerFamily) {
       action: 'Y',
       leftBumper: 'LB',
       rightBumper: 'RB',
+      leftTrigger: 'LT',
       rightTrigger: 'RT',
       options: 'Menu',
     }
@@ -161,6 +163,7 @@ export function getButtonLabels(family: ControllerFamily) {
     action: 'Botón 4',
     leftBumper: 'L1',
     rightBumper: 'R1',
+    leftTrigger: 'L2',
     rightTrigger: 'R2',
     options: 'Menú',
   }
