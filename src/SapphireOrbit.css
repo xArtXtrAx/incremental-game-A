@@ -29,6 +29,7 @@
 .sapphire-orbit-back {
   z-index: 1;
   clip-path: inset(0 0 50% 0);
+  opacity: 0.7;
 }
 
 .sapphire-orbit-front {
@@ -177,12 +178,6 @@
   height: 13px;
   opacity: 0.08;
   filter: blur(3.6px);
-}
-
-.sapphire-orbit-back .sapphire-orbit-spark,
-.sapphire-orbit-back .sapphire-orbit-trail {
-  filter: brightness(0.62) saturate(0.85);
-  opacity: 0.54;
 }
 
 .sapphire-orbit-front .sapphire-orbit-spark {
