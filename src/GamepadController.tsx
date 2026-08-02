@@ -154,6 +154,43 @@ function pulseCore() {
   return true
 }
 
+function activateFocusedControl() {
+  const focused = getFocusedControl()
+  if (!focused) return false
+
+  if (focused instanceof HTMLButtonElement) {
+    if (focused.disabled) return false
+    focused.click()
+    return true
+  }
+
+  if (focused instanceof HTMLInputElement) {
+    if (focused.disabled) return false
+    if (
+      focused.type === 'checkbox' ||
+      focused.type === 'radio' ||
+      focused.type === 'button' ||
+      focused.type === 'submit' ||
+      focused.type === 'reset'
+    ) {
+      focused.click()
+      return true
+    }
+    return false
+  }
+
+  const role = focused.getAttribute('role')
+  if (
+    (role === 'button' || role === 'tab') &&
+    focused.getAttribute('aria-disabled') !== 'true'
+  ) {
+    focused.click()
+    return true
+  }
+
+  return false
+}
+
 function setNativeInputValue(input: HTMLInputElement, value: string) {
   const setter = Object.getOwnPropertyDescriptor(
     HTMLInputElement.prototype,
@@ -394,10 +431,10 @@ export function GamepadController() {
               if (buyEverything()) rumble(gamepad, 110, 0.35, 0.22)
             }
           } else {
-            // Se conservan los atajos anteriores para no romper el control existente.
             if (justPressed(STANDARD_BUTTON.secondary)) {
-              if (cyclePurchaseStrategy()) rumble(gamepad, 55, 0.2, 0.08)
+              if (activateFocusedControl()) rumble(gamepad, 55, 0.2, 0.08)
             }
+            // Se conserva Triángulo como atajo anterior de compra global.
             if (justPressed(STANDARD_BUTTON.action)) {
               if (buyEverything()) rumble(gamepad, 110, 0.35, 0.22)
             }
@@ -573,6 +610,9 @@ export function GamepadController() {
           <div className="gamepad-map" aria-label="Mapa de botones">
             <span>
               <kbd>{labels.primary}</kbd> pulsar siempre el núcleo
+            </span>
+            <span>
+              <kbd>{labels.secondary}</kbd> seleccionar / activar foco
             </span>
             <span>
               <kbd>{labels.rightTrigger}</kbd> Gatillo de pulso
