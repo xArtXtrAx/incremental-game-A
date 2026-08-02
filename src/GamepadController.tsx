@@ -69,9 +69,9 @@ function isVisible(element: HTMLElement) {
 }
 
 function getFocusableElements() {
-  return Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-    isVisible,
-  )
+  return Array.from(
+    document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+  ).filter(isVisible)
 }
 
 function getFocusedControl() {
@@ -82,7 +82,11 @@ function getFocusedControl() {
 function focusElement(element: HTMLElement | null) {
   if (!element) return
   element.focus({ preventScroll: true })
-  element.scrollIntoView({ block: 'nearest', inline: 'nearest', behavior: 'smooth' })
+  element.scrollIntoView({
+    block: 'nearest',
+    inline: 'nearest',
+    behavior: 'smooth',
+  })
 }
 
 function focusCore() {
@@ -112,7 +116,9 @@ function switchSection(section: 'core' | 'upgrades') {
 
 function cyclePurchaseStrategy() {
   const buttons = Array.from(
-    document.querySelectorAll<HTMLButtonElement>('.bulk-strategy-options button'),
+    document.querySelectorAll<HTMLButtonElement>(
+      '.bulk-strategy-options button',
+    ),
   ).filter((button) => !button.disabled && isVisible(button))
   if (buttons.length === 0) return false
 
@@ -136,7 +142,9 @@ function buyEverything() {
 }
 
 function pulseCore() {
-  const button = document.querySelector<HTMLButtonElement>('.click-button:not(:disabled)')
+  const button = document.querySelector<HTMLButtonElement>(
+    '.click-button:not(:disabled)',
+  )
   if (!button || !isVisible(button)) return false
   button.click()
   return true
@@ -222,9 +230,13 @@ function findDirectionalTarget(direction: Direction) {
     if (!valid) continue
 
     const primary =
-      direction === 'left' || direction === 'right' ? Math.abs(dx) : Math.abs(dy)
+      direction === 'left' || direction === 'right'
+        ? Math.abs(dx)
+        : Math.abs(dy)
     const secondary =
-      direction === 'left' || direction === 'right' ? Math.abs(dy) : Math.abs(dx)
+      direction === 'left' || direction === 'right'
+        ? Math.abs(dy)
+        : Math.abs(dx)
     const score = primary + secondary * 2.4
     if (!best || score < best.score) best = { element, score }
   }
@@ -254,15 +266,16 @@ function hasHaptics(gamepad: Gamepad) {
 }
 
 export function GamepadController() {
-  const [settings, setSettings] = useState<GamepadSettings>(loadGamepadSettings)
-  const [connection, setConnection] = useState<ConnectionState>(EMPTY_CONNECTION)
+  const [settings, setSettings] =
+    useState<GamepadSettings>(loadGamepadSettings)
+  const [connection, setConnection] =
+    useState<ConnectionState>(EMPTY_CONNECTION)
   const [expanded, setExpanded] = useState(false)
   const settingsRef = useRef(settings)
   const connectionRef = useRef(connection)
   const previousButtons = useRef<boolean[]>([])
   const animationFrame = useRef(0)
   const lastNavigationAt = useRef(0)
-  const lastPulseAt = useRef(0)
   const lastHapticAt = useRef(0)
 
   useEffect(() => {
@@ -316,12 +329,15 @@ export function GamepadController() {
         })
       } else if (actuator.pulse) {
         void actuator.pulse(
-          Math.min(1, Math.max(weakMagnitude, strongMagnitude) * intensity),
+          Math.min(
+            1,
+            Math.max(weakMagnitude, strongMagnitude) * intensity,
+          ),
           duration,
         )
       }
     } catch {
-      // La vibración es opcional; los controles siguen funcionando sin ella.
+      // La vibración es opcional.
     }
   }
 
@@ -363,7 +379,8 @@ export function GamepadController() {
       ) {
         const pressed = gamepad.buttons.map(isButtonPressed)
         const previous = previousButtons.current
-        const justPressed = (index: number) => pressed[index] && !previous[index]
+        const justPressed = (index: number) =>
+          pressed[index] && !previous[index]
 
         if (justPressed(STANDARD_BUTTON.primary)) {
           if (activateFocusedOrPulse()) rumble(gamepad, 45, 0.18, 0.08)
@@ -423,21 +440,6 @@ export function GamepadController() {
           }
         }
 
-        const triggerPressed =
-          gamepad.buttons[STANDARD_BUTTON.rightTrigger]?.value >= 0.55 ||
-          pressed[STANDARD_BUTTON.rightTrigger]
-        if (settingsRef.current.holdToPulse && triggerPressed) {
-          const interval = 1000 / settingsRef.current.holdPulseRate
-          if (now - lastPulseAt.current >= interval && pulseCore()) {
-            lastPulseAt.current = now
-            if (Math.floor(now / interval) % 3 === 0) {
-              rumble(gamepad, 28, 0.1, 0.04)
-            }
-          }
-        } else {
-          lastPulseAt.current = 0
-        }
-
         previousButtons.current = pressed
       } else {
         previousButtons.current = []
@@ -461,7 +463,9 @@ export function GamepadController() {
 
   return (
     <aside
-      className={`gamepad-panel${connection.connected ? ' is-connected' : ''}${expanded ? ' is-expanded' : ''}`}
+      className={`gamepad-panel${
+        connection.connected ? ' is-connected' : ''
+      }${expanded ? ' is-expanded' : ''}`}
       aria-label="Configuración del control"
     >
       <button
@@ -473,7 +477,9 @@ export function GamepadController() {
         <span className="gamepad-status-dot" aria-hidden="true" />
         <span>
           <strong>
-            {connection.connected ? 'Control conectado' : 'Control desconectado'}
+            {connection.connected
+              ? 'Control conectado'
+              : 'Control desconectado'}
           </strong>
           <small>
             {connection.connected
@@ -489,7 +495,8 @@ export function GamepadController() {
           <div className="gamepad-capabilities">
             <span>Mapeo: {connection.mapping || 'sin detectar'}</span>
             <span>
-              Vibración: {connection.haptics ? 'disponible' : 'no disponible'}
+              Vibración:{' '}
+              {connection.haptics ? 'disponible' : 'no disponible'}
             </span>
           </div>
 
@@ -497,19 +504,11 @@ export function GamepadController() {
             <input
               type="checkbox"
               checked={settings.enabled}
-              onChange={(event) => updateSettings({ enabled: event.target.checked })}
-            />
-            <span>Activar control</span>
-          </label>
-          <label className="gamepad-switch">
-            <input
-              type="checkbox"
-              checked={settings.holdToPulse}
               onChange={(event) =>
-                updateSettings({ holdToPulse: event.target.checked })
+                updateSettings({ enabled: event.target.checked })
               }
             />
-            <span>Pulsación continua con {labels.rightTrigger}</span>
+            <span>Activar control</span>
           </label>
           <label className="gamepad-switch">
             <input
@@ -523,21 +522,6 @@ export function GamepadController() {
             <span>Vibración compatible</span>
           </label>
 
-          <label className="gamepad-range">
-            <span>
-              Velocidad de {labels.rightTrigger}: {settings.holdPulseRate} clic/s
-            </span>
-            <input
-              type="range"
-              min="2"
-              max="12"
-              step="1"
-              value={settings.holdPulseRate}
-              onChange={(event) =>
-                updateSettings({ holdPulseRate: Number(event.target.value) })
-              }
-            />
-          </label>
           <label className="gamepad-range">
             <span>
               Zona muerta del stick: {Math.round(settings.deadzone * 100)}%
@@ -555,7 +539,8 @@ export function GamepadController() {
           </label>
           <label className="gamepad-range">
             <span>
-              Intensidad háptica: {Math.round(settings.hapticIntensity * 100)}%
+              Intensidad háptica:{' '}
+              {Math.round(settings.hapticIntensity * 100)}%
             </span>
             <input
               type="range"
@@ -565,7 +550,9 @@ export function GamepadController() {
               value={settings.hapticIntensity}
               disabled={!connection.haptics}
               onChange={(event) =>
-                updateSettings({ hapticIntensity: Number(event.target.value) })
+                updateSettings({
+                  hapticIntensity: Number(event.target.value),
+                })
               }
             />
           </label>
@@ -575,7 +562,7 @@ export function GamepadController() {
               <kbd>{labels.primary}</kbd> activar foco / pulsar núcleo
             </span>
             <span>
-              <kbd>{labels.rightTrigger}</kbd> pulsación continua
+              <kbd>{labels.rightTrigger}</kbd> Gatillo de pulso
             </span>
             <span>
               <kbd>{labels.secondary}</kbd> cambiar estrategia
