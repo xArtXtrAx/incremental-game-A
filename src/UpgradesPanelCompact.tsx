@@ -30,6 +30,19 @@ import {
   PRESSURE_REQUIRED_CLICKS,
   SPHERE_CLICK_CAPACITY,
 } from './game'
+import {
+  getRefractionBonusMultiplier,
+  getRefractionChargeRate,
+  getRefractionCost,
+  getRefractionDurationSeconds,
+  getRefractionFacetCount,
+  getRefractionOrbitDuration,
+  getRefractionRemainingSeconds,
+  getRefractionReward,
+  getRefractionRewardSeconds,
+  isRefractionActive,
+  REFRACTION_REQUIRED_PRESTIGE,
+} from './refraction'
 
 type UpgradeCategory = 'production' | 'core' | 'advanced'
 
@@ -80,8 +93,8 @@ const categories: Array<{
   {
     id: 'advanced',
     label: 'Avanzadas',
-    description: 'Estados temporales y sistemas de final de etapa.',
-    count: 1,
+    description: 'Estados temporales y sistemas ligados al zafiro.',
+    count: 2,
   },
 ]
 
@@ -167,8 +180,16 @@ export function UpgradesPanel({
     useState<UpgradeCategory>('production')
   const [expandedCard, setExpandedCard] = useState<string | null>(null)
 
-  const active = isOverloadActive(game.overloadUntil, clockNow)
-  const activeMultiplier = active ? getOverloadMultiplier(game.overloadLevel) : 1
+  const overloadActive = isOverloadActive(game.overloadUntil, clockNow)
+  const overloadActiveMultiplier = overloadActive
+    ? getOverloadMultiplier(game.overloadLevel)
+    : 1
+  const refractionActive = isRefractionActive(game.refractionUntil, clockNow)
+  const refractionActiveMultiplier = refractionActive
+    ? getRefractionBonusMultiplier(game.refractionLevel)
+    : 1
+  const activeMultiplier =
+    overloadActiveMultiplier * refractionActiveMultiplier
   const sapphireMultiplier = getSapphireMultiplier(game.prestigeCount)
   const blueprintsUnlocked = hasUnlockedBlueprints(game)
   const remaining = getOverloadRemainingSeconds(game.overloadUntil, clockNow)
@@ -250,6 +271,30 @@ export function UpgradesPanel({
   const overloadMultiplier = getOverloadMultiplier(game.overloadLevel)
   const nextOverloadLevel = game.overloadLevel + 1
 
+  const refractionFacetCount = getRefractionFacetCount(game.prestigeCount)
+  const refractionRemaining = getRefractionRemainingSeconds(
+    game.refractionUntil,
+    clockNow,
+  )
+  const baseProductionForRefraction = getEnergyPerSecond(
+    game.generatorLevel,
+    game.resonanceLevel,
+    game.manualClicks,
+    game.pressureLevel,
+    overloadActiveMultiplier,
+    sapphireMultiplier,
+  )
+  const currentRefractionReward = getRefractionReward(
+    baseProductionForRefraction,
+    game.refractionLevel,
+  )
+  const nextRefractionLevel = game.refractionLevel + 1
+  const nextRefractionReward = getRefractionReward(
+    baseProductionForRefraction,
+    nextRefractionLevel,
+  )
+  const refractionOrbitDuration = getRefractionOrbitDuration(game.manualClicks)
+
   const clickCost = getClickUpgradeCost(game.clickLevel)
   const generatorCost = getGeneratorCost(game.generatorLevel)
   const resonanceCost = getResonanceCost(game.resonanceLevel)
@@ -257,6 +302,7 @@ export function UpgradesPanel({
   const cavitationCost = getCavitationCost(game.cavitationLevel)
   const autoclickCost = getAutoclickCost(game.autoclickLevel)
   const overloadCost = getOverloadCost(game.overloadLevel)
+  const refractionCost = getRefractionCost(game.refractionLevel)
   const sphereFull = game.manualClicks >= SPHERE_CLICK_CAPACITY
   const pressureDiscoveryMissing =
     !blueprintsUnlocked && game.manualClicks < PRESSURE_REQUIRED_CLICKS
@@ -265,6 +311,8 @@ export function UpgradesPanel({
   const autoclickDiscoveryMissing =
     !blueprintsUnlocked && game.manualClicks < AUTOCLICK_REQUIRED_CLICKS
   const overloadDiscoveryMissing = !blueprintsUnlocked && !sphereFull
+  const refractionPrestigeMissing =
+    game.prestigeCount < REFRACTION_REQUIRED_PRESTIGE
   const category =
     categories.find((item) => item.id === activeCategory) ?? categories[0]
 
@@ -286,7 +334,7 @@ export function UpgradesPanel({
             <h2 id="upgrades-title">Mejoras</h2>
           </div>
           <span className="upgrade-total">
-            7 sistemas{blueprintsUnlocked ? ' · planos permanentes' : ''}
+            8 sistemas{blueprintsUnlocked ? ' · planos permanentes' : ''}
           </span>
         </div>
 
@@ -337,7 +385,7 @@ export function UpgradesPanel({
               title="Microgenerador"
               level={game.generatorLevel}
               summary={<>{format.format(generatorNext)} energía/s total</>}
-              description="Cada unidad recibe resonancia, presión, sobrecarga y el multiplicador permanente del zafiro."
+              description="Cada unidad recibe resonancia, presión, sobrecarga, refracción y el multiplicador permanente del zafiro."
               effect={<>Siguiente nivel: {format.format(generatorNext)} energía/s total</>}
               label="Construir"
               detail={`${format.format(generatorCost)} energía`}
@@ -446,7 +494,7 @@ export function UpgradesPanel({
                   ? `${game.cavitationCharge}/${cavitationThreshold} · +${format.format(cavitationReward)}`
                   : 'Cámara inactiva'
               }
-              description="Los clics cargan la cámara y liberan varios segundos de producción automática, incluido el multiplicador del zafiro."
+              description="Los clics cargan la cámara y liberan varios segundos de producción automática, incluidos los multiplicadores temporales."
               effect={
                 <>
                   <span>
@@ -480,48 +528,96 @@ export function UpgradesPanel({
         )}
 
         {activeCategory === 'advanced' && (
-          <Card
-            id="overload-valve"
-            number="Evolución 06"
-            title="Válvula de sobrecarga"
-            level={game.overloadLevel}
-            summary={
-              game.overloadLevel === 0
-                ? 'Válvula inactiva'
-                : active
-                  ? `ACTIVA ×${format.format(overloadMultiplier)} · ${remaining.toFixed(1)} s`
-                  : `${game.overloadCharge}/${overloadThreshold} · ×${format.format(overloadMultiplier)}`
-            }
-            description="Los clics posteriores a llenar la esfera cargan una fase temporal que multiplica toda la energía. Puede instalarse antes tras conservar su plano."
-            effect={
-              <>
-                <span>
-                  Actual: ×{format.format(overloadMultiplier)} durante {overloadDuration} s
-                </span>
-                <small>
-                  Próximo: cada {getOverloadClicksRequired(nextOverloadLevel)} clics · ×
-                  {format.format(getOverloadMultiplier(nextOverloadLevel))} durante{' '}
-                  {getOverloadDurationSeconds(nextOverloadLevel)} s
-                </small>
-              </>
-            }
-            label="Instalar válvula"
-            detail={
-              overloadDiscoveryMissing
-                ? `Requiere esfera llena (${SPHERE_CLICK_CAPACITY} clics)`
-                : game.cavitationLevel === 0
-                  ? 'Requiere cavitación nivel 1'
-                  : `${format.format(overloadCost)} energía`
-            }
-            disabled={
-              overloadDiscoveryMissing ||
-              game.cavitationLevel === 0 ||
-              game.energy < overloadCost
-            }
-            expanded={expandedCard === 'overload-valve'}
-            onToggle={() => toggleCard('overload-valve')}
-            onClick={() => dispatch({ type: 'buy-overload' })}
-          />
+          <>
+            <Card
+              id="overload-valve"
+              number="Evolución 06"
+              title="Válvula de sobrecarga"
+              level={game.overloadLevel}
+              summary={
+                game.overloadLevel === 0
+                  ? 'Válvula inactiva'
+                  : overloadActive
+                    ? `ACTIVA ×${format.format(overloadMultiplier)} · ${remaining.toFixed(1)} s`
+                    : `${game.overloadCharge}/${overloadThreshold} · ×${format.format(overloadMultiplier)}`
+              }
+              description="Los clics posteriores a llenar la esfera cargan una fase temporal que multiplica toda la energía. Puede instalarse antes tras conservar su plano."
+              effect={
+                <>
+                  <span>
+                    Actual: ×{format.format(overloadMultiplier)} durante {overloadDuration} s
+                  </span>
+                  <small>
+                    Próximo: cada {getOverloadClicksRequired(nextOverloadLevel)} clics · ×
+                    {format.format(getOverloadMultiplier(nextOverloadLevel))} durante{' '}
+                    {getOverloadDurationSeconds(nextOverloadLevel)} s
+                  </small>
+                </>
+              }
+              label="Instalar válvula"
+              detail={
+                overloadDiscoveryMissing
+                  ? `Requiere esfera llena (${SPHERE_CLICK_CAPACITY} clics)`
+                  : game.cavitationLevel === 0
+                    ? 'Requiere cavitación nivel 1'
+                    : `${format.format(overloadCost)} energía`
+              }
+              disabled={
+                overloadDiscoveryMissing ||
+                game.cavitationLevel === 0 ||
+                game.energy < overloadCost
+              }
+              expanded={expandedCard === 'overload-valve'}
+              onToggle={() => toggleCard('overload-valve')}
+              onClick={() => dispatch({ type: 'buy-overload' })}
+            />
+
+            <Card
+              id="refraction-matrix"
+              number="Evolución 08"
+              title="Matriz de refracción"
+              level={game.refractionLevel}
+              summary={
+                game.refractionLevel === 0
+                  ? 'Matriz inactiva'
+                  : refractionActive
+                    ? `PRISMA ×${format.format(getRefractionBonusMultiplier(game.refractionLevel))} · ${refractionRemaining.toFixed(1)} s`
+                    : `${game.refractionFacetsCharged}/${refractionFacetCount} facetas · ${format.format(game.refractionOrbitProgress * 100)}% de vuelta`
+              }
+              description="La chispa orbital carga una faceta por ciclo. Al completar el zafiro libera una descarga prismática y activa una bonificación global temporal."
+              effect={
+                <>
+                  <span>
+                    Actual: +{format.format(currentRefractionReward)} · ×
+                    {format.format(getRefractionBonusMultiplier(game.refractionLevel))} durante{' '}
+                    {getRefractionDurationSeconds(game.refractionLevel)} s
+                  </span>
+                  <small>
+                    Próximo: {format.format(getRefractionChargeRate(nextRefractionLevel))} facetas/vuelta · +
+                    {format.format(nextRefractionReward)} ({getRefractionRewardSeconds(nextRefractionLevel)} s de producción) · ×
+                    {format.format(getRefractionBonusMultiplier(nextRefractionLevel))} durante{' '}
+                    {getRefractionDurationSeconds(nextRefractionLevel)} s. Vuelta actual: {refractionOrbitDuration.toFixed(2)} s.
+                  </small>
+                </>
+              }
+              label="Calibrar matriz"
+              detail={
+                refractionPrestigeMissing
+                  ? `Requiere prestigio ${REFRACTION_REQUIRED_PRESTIGE}`
+                  : game.generatorLevel === 0
+                    ? 'Requiere microgenerador'
+                    : `${format.format(refractionCost)} energía`
+              }
+              disabled={
+                refractionPrestigeMissing ||
+                game.generatorLevel === 0 ||
+                game.energy < refractionCost
+              }
+              expanded={expandedCard === 'refraction-matrix'}
+              onToggle={() => toggleCard('refraction-matrix')}
+              onClick={() => dispatch({ type: 'buy-refraction' })}
+            />
+          </>
         )}
       </div>
 
