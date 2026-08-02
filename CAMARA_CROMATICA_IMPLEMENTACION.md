@@ -34,6 +34,24 @@ La implementación introduce una vista completa de metaprogresión sin modificar
 - Si la partida se reinicia durante una inspección DEV, la Cámara permanece abierta y actualiza el estado mostrado a P0.
 - Al cerrar, el foco regresa al control desde el que se abrió la escena.
 
+### Control de cristalizaciones en el panel DEV
+
+- El panel contiene un tercer campo `Cristalizaciones` enlazado directamente con `game.prestigeCount`.
+- Acepta solamente enteros no negativos.
+- Bloquea signos, letras, espacios, comas, notación científica y decimales.
+- Máximo permitido: `1,000,000,000`.
+- Participa en `Aplicar valores` y `Restaurar actuales` junto con energía y clics.
+- Cambiarlo actualiza inmediatamente:
+  - el indicador `P#`;
+  - el multiplicador del Zafiro;
+  - los planos desbloqueados por prestigio;
+  - el acceso normal a la Cámara;
+  - el estado real mostrado en la inspección DEV;
+  - el guardado principal.
+- La edición no ejecuta la animación ni el reinicio de una cristalización normal; establece directamente el valor solicitado para pruebas.
+- Al bajar a P0 se limpian nivel, carga, progreso, PRISMA, contador y última recompensa de la Matriz de refracción, porque requiere P1.
+- Al bajar entre P4, P3, P2 y P1, las facetas cargadas se limitan automáticamente al nuevo máximo para evitar estados imposibles o descargas accidentales.
+
 ### Escena
 
 - Vista de pantalla completa sobre el reactor.
@@ -67,7 +85,7 @@ Control:
 - `X/A`: activar el control enfocado, incluido el acceso del panel DEV.
 - `Círculo/B`: volver al reactor.
 
-El puente cromático trabaja sobre la Gamepad API existente y no modifica el reducer.
+El puente cromático trabaja sobre la Gamepad API existente y no modifica el reducer principal de la Cámara.
 
 ## Arquitectura
 
@@ -76,12 +94,13 @@ El puente cromático trabaja sobre la Gamepad API existente y no modifica el red
 - `src/ChromaticChamberSystem.css`: Nexo, facetas, órbitas, gemas y diseño responsivo.
 - `src/ChromaticDeveloperPreview.css`: etiqueta DEV y apariencia inerte previa a P5.
 - `src/ChromaticChamberGuard.css`: aísla visualmente el reactor durante la escena.
-- `src/DeveloperPanel.tsx`: botón de inspección cromática.
+- `src/DeveloperPanel.tsx`: botón de inspección y campos DEV de energía, clics y cristalizaciones.
 - `src/DeveloperChromaticAccess.css`: diseño del acceso dentro del panel.
+- `src/App.tsx`: aplica atómicamente los tres valores y conserva la validez de la refracción.
 - `src/ChromaticGamepadBridge.tsx`: combinación de entrada y navegación orbital.
 - `src/main.tsx`: monta las capas cromáticas y carga los estilos adicionales.
 
-La Cámara lee el prestigio desde `incremental-game-a:save:v1`. No añade claves de almacenamiento ni campos nuevos.
+La Cámara y el campo DEV utilizan `prestigeCount` dentro de `incremental-game-a:save:v1`. No añaden claves de almacenamiento ni campos nuevos al guardado.
 
 ## Protecciones
 
@@ -92,6 +111,8 @@ La Cámara lee el prestigio desde `incremental-game-a:save:v1`. No añade claves
 - Cambiar de vista no pausa la producción ni reinicia temporizadores.
 - La escena no intercepta el guardado principal.
 - Las otras cuatro gemas son solamente representación y anticipación; no conceden bonificaciones ni aceptan compras.
+- Los valores DEV se sanitizan antes de aplicarse.
+- Reducir prestigio conserva un estado válido de la Matriz de refracción.
 - Se respeta `prefers-reduced-motion`.
 - La distribución se adapta a escritorio, tableta y móvil.
 
@@ -109,7 +130,11 @@ La Cámara lee el prestigio desde `incremental-game-a:save:v1`. No añade claves
   - P5 muestra una órbita completa y el primer sector enlazado;
   - reiniciar por debajo de P5 cierra la escena normal;
   - reiniciar en modo DEV conserva la escena y actualiza el estado;
-  - no se escribe ningún dato nuevo en la partida;
+  - `Cristalizaciones` rechaza valores negativos, decimales y caracteres no numéricos;
+  - el valor se limita al máximo permitido y se guarda como entero;
+  - cambiar P4→P2 limita las facetas cargadas a 7;
+  - cambiar P1→P0 limpia completamente la Matriz de refracción;
+  - no se añade ninguna clave ni campo nuevo a la partida;
   - el recorrido orbital envuelve de Roja a Zafiro y viceversa.
 
 ## Validación local pendiente
@@ -122,15 +147,16 @@ npm run dev
 
 Prueba visual recomendada:
 
-1. Con Zafiro P0, abrir desde el panel DEV.
-2. Confirmar `0 / 5`, Nexo inerte, faceta azul apagada y Zafiro sin orbitar.
-3. Probar P1–P4 y confirmar el progreso real del Zafiro.
-4. Cerrar y confirmar que el foco regrese al botón DEV.
-5. Alcanzar P5 y confirmar que el acceso normal se active.
-6. Entrar por mouse y por `L1 + R1`.
-7. Revisar el Nexo con el sector azul encendido.
-8. Confirmar la órbita continua del Zafiro.
-9. Recorrer las cinco gemas con mouse, L1/R1 y cruceta.
-10. Dejar la Cámara abierta varios segundos y confirmar que la energía del reactor siguió creciendo.
-11. Reiniciar dentro de la vista DEV y confirmar que cambie inmediatamente a P0 sin cerrarse.
-12. Probar escritorio y una ventana estrecha.
+1. Escribir letras, signos, espacios, comas y decimales en `Cristalizaciones`; deben rechazarse.
+2. Aplicar P0, P1, P4 y P5 y confirmar el indicador superior y el multiplicador.
+3. Confirmar que P5 activa el acceso normal a la Cámara y P4 vuelve a bloquearlo.
+4. Con Zafiro P0, abrir desde el panel DEV.
+5. Confirmar `0 / 5`, Nexo inerte, faceta azul apagada y Zafiro sin orbitar.
+6. Probar P1–P4 y confirmar el progreso real del Zafiro.
+7. Cerrar y confirmar que el foco regrese al botón DEV.
+8. Entrar en P5 por mouse y por `L1 + R1`.
+9. Revisar el Nexo con el sector azul encendido y la órbita continua del Zafiro.
+10. Recorrer las cinco gemas con mouse, L1/R1 y cruceta.
+11. Dejar la Cámara abierta varios segundos y confirmar que la energía del reactor siguió creciendo.
+12. Reiniciar dentro de la vista DEV y confirmar que cambie inmediatamente a P0 sin cerrarse.
+13. Probar escritorio y una ventana estrecha.
