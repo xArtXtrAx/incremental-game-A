@@ -42,6 +42,7 @@ import {
   type GameAction,
   type GameState,
 } from './game'
+import { PULSE_TRIGGER_BUY_EVENT } from './pulseTrigger'
 import {
   getRefractionBonusMultiplier,
   isRefractionActive,
@@ -145,6 +146,21 @@ function App() {
 
     return () => window.clearInterval(id)
   }, [])
+
+  useEffect(() => {
+    const handlePulseTriggerBuy = () => {
+      if (!isCrystallizing) {
+        dispatch({ type: 'buy-pulse-trigger' })
+      }
+    }
+
+    document.addEventListener(PULSE_TRIGGER_BUY_EVENT, handlePulseTriggerBuy)
+    return () =>
+      document.removeEventListener(
+        PULSE_TRIGGER_BUY_EVENT,
+        handlePulseTriggerBuy,
+      )
+  }, [isCrystallizing])
 
   useEffect(() => {
     const now = Date.now()
