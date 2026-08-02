@@ -8,6 +8,8 @@ import {
   CHROMATIC_OPEN_EVENT,
   CHROMATIC_REQUIRED_SAPPHIRE_LEVEL,
   type ChromaticGemId,
+  type ChromaticOpenDetail,
+  type ChromaticOpenMode,
 } from './chromatic'
 
 function readPrestigeCount() {
@@ -33,32 +35,70 @@ function getGemLevel(id: ChromaticGemId, prestigeCount: number) {
     : 0
 }
 
+function getGemSummary(
+  id: ChromaticGemId,
+  level: number,
+  sapphireComplete: boolean,
+) {
+  if (id === 'sapphire') {
+    return sapphireComplete
+      ? 'Nivel 5 · En órbita'
+      : `Nivel ${level}/5 · En desarrollo`
+  }
+
+  if (id === 'emerald') {
+    return sapphireComplete ? 'Próxima gema' : 'Requiere Zafiro 5'
+  }
+
+  return 'Bloqueada'
+}
+
 export function ChromaticChamberSystem() {
   const [headerHost, setHeaderHost] = useState<HTMLElement | null>(null)
   const [prestigeCount, setPrestigeCount] = useState(readPrestigeCount)
   const [isOpen, setIsOpen] = useState(false)
+  const [developerPreview, setDeveloperPreview] = useState(false)
   const [selectedGem, setSelectedGem] =
     useState<ChromaticGemId>('sapphire')
   const previousFocus = useRef<HTMLElement | null>(null)
   const unlocked = prestigeCount >= CHROMATIC_REQUIRED_SAPPHIRE_LEVEL
+  const linkedFrequencies = unlocked ? 1 : 0
 
   const closeChamber = useCallback(() => {
     setIsOpen(false)
     window.setTimeout(() => {
+      const previous = previousFocus.current
       const access = document.querySelector<HTMLElement>(
         '.chromatic-access-button:not(:disabled)',
       )
-      access?.focus({ preventScroll: true })
+      const fallback = document.querySelector<HTMLElement>(
+        '.developer-chromatic-button',
+      )
+      const target = previous?.isConnected ? previous : access ?? fallback
+      target?.focus({ preventScroll: true })
+      previousFocus.current = null
+      setDeveloperPreview(false)
     }, 0)
   }, [])
 
-  const openChamber = useCallback(() => {
-    if (readPrestigeCount() < CHROMATIC_REQUIRED_SAPPHIRE_LEVEL) return
+  const openChamber = useCallback((mode: ChromaticOpenMode = 'normal') => {
+    const nextPrestigeCount = readPrestigeCount()
+    const preview = mode === 'developer-preview'
+
+    if (
+      !preview &&
+      nextPrestigeCount < CHROMATIC_REQUIRED_SAPPHIRE_LEVEL
+    ) {
+      return
+    }
+
     previousFocus.current =
       document.activeElement instanceof HTMLElement
         ? document.activeElement
         : null
+    setPrestigeCount(nextPrestigeCount)
     setSelectedGem('sapphire')
+    setDeveloperPreview(preview)
     setIsOpen(true)
   }, [])
 
@@ -84,7 +124,17 @@ export function ChromaticChamberSystem() {
   }, [])
 
   useEffect(() => {
-    const handleOpen = () => openChamber()
+    const handleOpen = (event: Event) => {
+      const detail =
+        event instanceof CustomEvent
+          ? (event.detail as ChromaticOpenDetail | undefined)
+          : undefined
+      openChamber(
+        detail?.mode === 'developer-preview'
+          ? 'developer-preview'
+          : 'normal',
+      )
+    }
     const handleClose = () => closeChamber()
 
     document.addEventListener(CHROMATIC_OPEN_EVENT, handleOpen)
@@ -96,9 +146,9 @@ export function ChromaticChamberSystem() {
   }, [closeChamber, openChamber])
 
   useEffect(() => {
-    if (unlocked || !isOpen) return
+    if (unlocked || developerPreview || !isOpen) return
     closeChamber()
-  }, [closeChamber, isOpen, unlocked])
+  }, [closeChamber, developerPreview, isOpen, unlocked])
 
   useEffect(() => {
     if (!isOpen) return
@@ -138,7 +188,17 @@ export function ChromaticChamberSystem() {
     CHROMATIC_GEMS[0]
   const selectedLevel = getGemLevel(selectedGem, prestigeCount)
   const selectedComplete = selectedLevel >= 5
-  const selectedIsNext = selectedGem === 'emerald'
+  const selectedIsSapphire = selectedGem === 'sapphire'
+  const selectedIsNext = selectedGem === 'emerald' && unlocked
+  const selectedStatus = selectedIsSapphire
+    ? selectedComplete
+      ? 'Primera órbita completa'
+      : `Desarrollo ${selectedLevel}/5`
+    : selectedGem === 'emerald'
+      ? unlocked
+        ? 'Siguiente resonancia'
+        : 'Requiere Zafiro 5'
+      : selectedDefinition.status
 
   const accessPortal = headerHost
     ? createPortal(
@@ -147,7 +207,7 @@ export function ChromaticChamberSystem() {
             type="button"
             className={`chromatic-access-button${unlocked ? ' is-unlocked' : ''}`}
             disabled={!unlocked}
-            onClick={openChamber}
+            onClick={() => openChamber('normal')}
             aria-label={
               unlocked
                 ? 'Abrir Cámara Cromática'
@@ -183,7 +243,12 @@ export function ChromaticChamberSystem() {
             <span className="chromatic-star star-five" />
           </div>
 
-          <section className="chromatic-chamber" aria-labelledby="chromatic-title">
+          <section
+            className={`chromatic-chamber${
+              developerPreview ? ' is-developer-preview' : ''
+            }`}
+            aria-labelledby="chromatic-title"
+          >
             <header className="chromatic-header">
               <button
                 type="button"
@@ -194,14 +259,19 @@ export function ChromaticChamberSystem() {
                 Volver al reactor
               </button>
 
-              <div>
+              <div className="chromatic-title-stack">
+                {developerPreview && (
+                  <span className="chromatic-preview-badge">
+                    Vista DEV · Estado real
+                  </span>
+                )}
                 <p>Metaprogresión espectral</p>
                 <h2 id="chromatic-title">Cámara Cromática</h2>
               </div>
 
               <div className="chromatic-header-status">
                 <span>Órbitas completas</span>
-                <strong>1 / 5</strong>
+                <strong>{linkedFrequencies} / 5</strong>
               </div>
             </header>
 
@@ -211,13 +281,19 @@ export function ChromaticChamberSystem() {
                 <div className="chromatic-orbit orbit-middle" aria-hidden="true" />
                 <div className="chromatic-orbit orbit-inner" aria-hidden="true" />
 
-                <div className="chromatic-sapphire-orbit" aria-hidden="true">
-                  <span className="chromatic-sapphire-gem">
-                    <i />
-                  </span>
-                </div>
+                {unlocked && (
+                  <div className="chromatic-sapphire-orbit" aria-hidden="true">
+                    <span className="chromatic-sapphire-gem">
+                      <i />
+                    </span>
+                  </div>
+                )}
 
-                <div className="prismatic-nexus is-partially-awake">
+                <div
+                  className={`prismatic-nexus${
+                    unlocked ? ' is-partially-awake' : ''
+                  }`}
+                >
                   <span className="nexus-aura" aria-hidden="true" />
                   <span className="nexus-facet facet-blue" aria-hidden="true" />
                   <span className="nexus-facet facet-green" aria-hidden="true" />
@@ -227,8 +303,12 @@ export function ChromaticChamberSystem() {
                   <span className="nexus-core" aria-hidden="true" />
                   <div className="nexus-label">
                     <span>Nexo Prismático</span>
-                    <strong>Espectro incompleto</strong>
-                    <small>1 de 5 frecuencias enlazadas</small>
+                    <strong>
+                      {unlocked ? 'Espectro incompleto' : 'Espectro inerte'}
+                    </strong>
+                    <small>
+                      {linkedFrequencies} de 5 frecuencias enlazadas
+                    </small>
                   </div>
                 </div>
 
@@ -236,7 +316,7 @@ export function ChromaticChamberSystem() {
                   {CHROMATIC_GEMS.map((gem, index) => {
                     const level = getGemLevel(gem.id, prestigeCount)
                     const complete = level >= 5
-                    const next = gem.id === 'emerald'
+                    const next = gem.id === 'emerald' && unlocked
                     return (
                       <button
                         type="button"
@@ -253,11 +333,7 @@ export function ChromaticChamberSystem() {
                         <span>
                           <strong>{gem.name}</strong>
                           <small>
-                            {complete
-                              ? 'Nivel 5 · En órbita'
-                              : next
-                                ? 'Próxima gema'
-                                : 'Bloqueada'}
+                            {getGemSummary(gem.id, level, unlocked)}
                           </small>
                         </span>
                       </button>
@@ -280,21 +356,29 @@ export function ChromaticChamberSystem() {
                   <span style={{ width: `${(selectedLevel / 5) * 100}%` }} />
                 </div>
                 <p>
-                  {selectedComplete
-                    ? 'El Zafiro completó su ciclo y ahora alimenta permanentemente el primer sector azul del Nexo.'
+                  {selectedIsSapphire
+                    ? selectedComplete
+                      ? 'El Zafiro completó su ciclo y ahora alimenta permanentemente el primer sector azul del Nexo.'
+                      : `El Zafiro se encuentra en nivel ${selectedLevel} de 5. La primera órbita y la faceta azul siguen inactivas.`
                     : selectedIsNext
                       ? 'La Esmeralda será la siguiente frecuencia en desarrollarse. Sus mecánicas todavía están por definir.'
-                      : 'Esta frecuencia permanece sellada hasta completar las gemas anteriores.'}
+                      : selectedGem === 'emerald'
+                        ? 'La Esmeralda permanece sellada hasta que el Zafiro complete su quinto nivel.'
+                        : 'Esta frecuencia permanece sellada hasta completar las gemas anteriores.'}
                 </p>
                 <div className="chromatic-inspector-status">
                   <span>Estado</span>
-                  <strong>{selectedDefinition.status}</strong>
+                  <strong>{selectedStatus}</strong>
                 </div>
               </aside>
             </div>
 
             <footer className="chromatic-footer">
-              <span>Mouse/teclado: selecciona una gema · Esc para volver</span>
+              <span>
+                {developerPreview
+                  ? 'Vista DEV: inspección solamente · No modifica niveles ni desbloqueos'
+                  : 'Mouse/teclado: selecciona una gema · Esc para volver'}
+              </span>
               <span>Control: L1 + R1 para entrar · Círculo/B para volver</span>
             </footer>
           </section>
