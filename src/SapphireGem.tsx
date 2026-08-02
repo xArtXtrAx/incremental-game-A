@@ -2,6 +2,7 @@ import { useCallback, useState } from 'react'
 import { motion } from 'motion/react'
 import './SapphireOrbit.css'
 import { SapphireGem3D } from './SapphireGem3D'
+import { SapphireOrbit3D } from './SapphireOrbit3D'
 
 export type SapphireGemSize = 'core' | 'dock'
 
@@ -35,12 +36,24 @@ function SapphireFallback() {
   return (
     <svg viewBox="0 0 120 150" role="presentation">
       <defs>
-        <linearGradient id="sapphire-fallback-upper" x1="0" y1="0" x2="1" y2="1">
+        <linearGradient
+          id="sapphire-fallback-upper"
+          x1="0"
+          y1="0"
+          x2="1"
+          y2="1"
+        >
           <stop offset="0" stopColor="#d9fbff" />
           <stop offset="0.35" stopColor="#49d9ff" />
           <stop offset="1" stopColor="#0754bd" />
         </linearGradient>
-        <linearGradient id="sapphire-fallback-lower" x1="0" y1="0" x2="0.8" y2="1">
+        <linearGradient
+          id="sapphire-fallback-lower"
+          x1="0"
+          y1="0"
+          x2="0.8"
+          y2="1"
+        >
           <stop offset="0" stopColor="#1baeff" />
           <stop offset="0.48" stopColor="#083fae" />
           <stop offset="1" stopColor="#020d46" />
@@ -52,12 +65,36 @@ function SapphireFallback() {
         stroke="#aef6ff"
         strokeWidth="2"
       />
-      <polygon points="60,4 60,58 14,39" fill="url(#sapphire-fallback-upper)" opacity="0.96" />
-      <polygon points="60,4 106,39 60,58" fill="#158be4" opacity="0.92" />
-      <polygon points="14,39 60,58 29,112" fill="#0879d8" opacity="0.88" />
-      <polygon points="106,39 91,112 60,58" fill="#0348ad" opacity="0.96" />
-      <polygon points="29,112 60,58 60,146" fill="url(#sapphire-fallback-lower)" opacity="0.95" />
-      <polygon points="60,58 91,112 60,146" fill="#021d72" opacity="0.95" />
+      <polygon
+        points="60,4 60,58 14,39"
+        fill="url(#sapphire-fallback-upper)"
+        opacity="0.96"
+      />
+      <polygon
+        points="60,4 106,39 60,58"
+        fill="#158be4"
+        opacity="0.92"
+      />
+      <polygon
+        points="14,39 60,58 29,112"
+        fill="#0879d8"
+        opacity="0.88"
+      />
+      <polygon
+        points="106,39 91,112 60,58"
+        fill="#0348ad"
+        opacity="0.96"
+      />
+      <polygon
+        points="29,112 60,58 60,146"
+        fill="url(#sapphire-fallback-lower)"
+        opacity="0.95"
+      />
+      <polygon
+        points="60,58 91,112 60,146"
+        fill="#021d72"
+        opacity="0.95"
+      />
     </svg>
   )
 }
@@ -84,11 +121,17 @@ export function SapphireGem({
   className = '',
 }: SapphireGemProps) {
   const [webglUnavailable, setWebglUnavailable] = useState(false)
+  const [orbitUnavailable, setOrbitUnavailable] = useState(false)
   const handleUnavailable = useCallback(() => setWebglUnavailable(true), [])
+  const handleOrbitUnavailable = useCallback(
+    () => setOrbitUnavailable(true),
+    [],
+  )
+  const useFallbackOrbit = webglUnavailable || orbitUnavailable
 
   return (
     <motion.span
-      className={`sapphire-gem sapphire-gem-${size}${energized ? ' is-energized' : ''}${webglUnavailable ? ' is-webgl-fallback' : ''} ${className}`.trim()}
+      className={`sapphire-gem sapphire-gem-${size}${energized ? ' is-energized' : ''}${webglUnavailable ? ' is-webgl-fallback' : ''}${useFallbackOrbit ? ' is-orbit-fallback' : ''} ${className}`.trim()}
       animate={{ y: energized ? [0, -5, 1, -3, 0] : [0, -4, 0] }}
       transition={{
         duration: energized ? 1.1 : 3.4,
@@ -98,7 +141,15 @@ export function SapphireGem({
       aria-hidden="true"
     >
       <span className="sapphire-gem-halo" />
-      <SapphireOrbitLayer depth="back" />
+      {useFallbackOrbit ? (
+        <SapphireOrbitLayer depth="back" />
+      ) : (
+        <SapphireOrbit3D
+          depth="back"
+          energized={energized}
+          onUnavailable={handleOrbitUnavailable}
+        />
+      )}
       {!webglUnavailable ? (
         <SapphireGem3D
           energized={energized}
@@ -114,7 +165,15 @@ export function SapphireGem({
           <SapphireFallback />
         </motion.span>
       )}
-      <SapphireOrbitLayer depth="front" />
+      {useFallbackOrbit ? (
+        <SapphireOrbitLayer depth="front" />
+      ) : (
+        <SapphireOrbit3D
+          depth="front"
+          energized={energized}
+          onUnavailable={handleOrbitUnavailable}
+        />
+      )}
       <motion.span
         className="sapphire-gem-glint"
         initial={{
