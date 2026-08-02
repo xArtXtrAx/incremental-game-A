@@ -9,6 +9,12 @@ import { createPortal } from 'react-dom'
 import './PulseTriggerSystem.css'
 import { GAME_STORAGE_KEY } from './game'
 import {
+  getFirstConnectedGamepad,
+  isButtonPressed,
+  loadGamepadSettings,
+  STANDARD_BUTTON,
+} from './gamepad'
+import {
   clearTriggerClickMarkers,
   consumeTriggerClickMarker,
   EMPTY_PULSE_TRIGGER_STATE,
@@ -116,6 +122,7 @@ export function PulseTriggerSystem() {
   const stateRef = useRef(triggerState)
   const activeSources = useRef(new Set<PulseTriggerInputSource>())
   const previousGameSnapshot = useRef<GameSnapshot | null>(readGameSnapshot())
+  const previousGamepadTrigger = useRef(false)
 
   const commitTriggerState = useCallback((next: PulseTriggerStoredState) => {
     stateRef.current = next
@@ -236,6 +243,43 @@ export function PulseTriggerSystem() {
   }, [updateInputSource])
 
   useEffect(() => {
+    let animationFrame = 0
+    let controlsEnabled = loadGamepadSettings().enabled
+    let lastSettingsRead = 0
+
+    const pollGamepadTrigger = (now: number) => {
+      if (now - lastSettingsRead >= 400) {
+        controlsEnabled = loadGamepadSettings().enabled
+        lastSettingsRead = now
+      }
+
+      const gamepad = getFirstConnectedGamepad()
+      const triggerPressed = Boolean(
+        controlsEnabled &&
+          document.visibilityState === 'visible' &&
+          gamepad &&
+          (isButtonPressed(gamepad.buttons[STANDARD_BUTTON.rightTrigger]) ||
+            (gamepad.buttons[STANDARD_BUTTON.rightTrigger]?.value ?? 0) >=
+              0.55),
+      )
+
+      if (triggerPressed !== previousGamepadTrigger.current) {
+        previousGamepadTrigger.current = triggerPressed
+        setPulseTriggerInput('gamepad', triggerPressed)
+      }
+
+      animationFrame = window.requestAnimationFrame(pollGamepadTrigger)
+    }
+
+    animationFrame = window.requestAnimationFrame(pollGamepadTrigger)
+    return () => {
+      window.cancelAnimationFrame(animationFrame)
+      previousGamepadTrigger.current = false
+      setPulseTriggerInput('gamepad', false)
+    }
+  }, [])
+
+  useEffect(() => {
     const handleCoreClick = (event: MouseEvent) => {
       const target = event.target
       if (!(target instanceof Element) || !target.closest('.click-button')) {
@@ -343,6 +387,7 @@ export function PulseTriggerSystem() {
       stopAllInputs()
       setPulseTriggerInput('pointer', false)
       setPulseTriggerInput('keyboard', false)
+      setPulseTriggerInput('gamepad', false)
     },
     [stopAllInputs],
   )
