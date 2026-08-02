@@ -53,6 +53,8 @@ const FOCUSABLE_SELECTOR = [
   '.game-screen button:not(:disabled)',
   '.game-screen [role="button"]:not([aria-disabled="true"])',
   '.game-screen [role="tab"]:not([aria-disabled="true"])',
+  '.gamepad-panel button:not(:disabled)',
+  '.gamepad-panel input:not(:disabled)',
 ].join(',')
 
 function isVisible(element: HTMLElement) {
@@ -67,14 +69,14 @@ function isVisible(element: HTMLElement) {
 }
 
 function getFocusableElements() {
-  return Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR))
-    .filter(isVisible)
-    .filter((element) => !element.closest('.gamepad-panel'))
+  return Array.from(document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
+    isVisible,
+  )
 }
 
-function getFocusedButton() {
+function getFocusedControl() {
   const active = document.activeElement
-  return active instanceof HTMLButtonElement && !active.disabled ? active : null
+  return active instanceof HTMLElement && isVisible(active) ? active : null
 }
 
 function focusElement(element: HTMLElement | null) {
@@ -84,15 +86,19 @@ function focusElement(element: HTMLElement | null) {
 }
 
 function focusCore() {
-  const coreButton = document.querySelector<HTMLElement>('.click-button')
-  focusElement(coreButton)
+  focusElement(document.querySelector<HTMLElement>('.click-button'))
 }
 
 function focusUpgrades() {
-  const upgradeButton = document.querySelector<HTMLElement>(
-    '.bulk-purchase-button:not(:disabled), .upgrade-tabs button:not(:disabled), .upgrade-button:not(:disabled)',
+  focusElement(
+    document.querySelector<HTMLElement>(
+      '.bulk-purchase-button:not(:disabled), .upgrade-tabs button:not(:disabled), .upgrade-button:not(:disabled)',
+    ),
   )
-  focusElement(upgradeButton)
+}
+
+function focusGamepadPanel() {
+  focusElement(document.querySelector<HTMLElement>('.gamepad-panel-toggle'))
 }
 
 function switchSection(section: 'core' | 'upgrades') {
@@ -137,21 +143,58 @@ function pulseCore() {
 }
 
 function activateFocusedOrPulse() {
-  const focused = getFocusedButton()
-  if (focused && !focused.closest('.gamepad-panel')) {
+  const focused = getFocusedControl()
+
+  if (focused instanceof HTMLButtonElement && !focused.disabled) {
     focused.click()
     return true
   }
+
+  if (focused instanceof HTMLInputElement && !focused.disabled) {
+    if (focused.type === 'checkbox' || focused.type === 'radio') {
+      focused.click()
+      return true
+    }
+  }
+
   return pulseCore()
+}
+
+function setNativeInputValue(input: HTMLInputElement, value: string) {
+  const setter = Object.getOwnPropertyDescriptor(
+    HTMLInputElement.prototype,
+    'value',
+  )?.set
+  setter?.call(input, value)
+  input.dispatchEvent(new Event('input', { bubbles: true }))
+  input.dispatchEvent(new Event('change', { bubbles: true }))
+}
+
+function adjustFocusedRange(direction: 'left' | 'right') {
+  const focused = getFocusedControl()
+  if (!(focused instanceof HTMLInputElement) || focused.type !== 'range') {
+    return false
+  }
+
+  const minimum = Number(focused.min || 0)
+  const maximum = Number(focused.max || 100)
+  const step = Number(focused.step || 1)
+  const current = Number(focused.value)
+  const next = Math.min(
+    maximum,
+    Math.max(minimum, current + (direction === 'right' ? step : -step)),
+  )
+
+  if (next === current) return false
+  setNativeInputValue(focused, String(next))
+  return true
 }
 
 function findDirectionalTarget(direction: Direction) {
   const elements = getFocusableElements()
   if (elements.length === 0) return null
 
-  const active = document.activeElement instanceof HTMLElement
-    ? document.activeElement
-    : null
+  const active = getFocusedControl()
   if (!active || !elements.includes(active)) {
     return direction === 'left' || direction === 'up'
       ? elements[elements.length - 1]
@@ -178,8 +221,10 @@ function findDirectionalTarget(direction: Direction) {
       (direction === 'up' && dy < -8)
     if (!valid) continue
 
-    const primary = direction === 'left' || direction === 'right' ? Math.abs(dx) : Math.abs(dy)
-    const secondary = direction === 'left' || direction === 'right' ? Math.abs(dy) : Math.abs(dx)
+    const primary =
+      direction === 'left' || direction === 'right' ? Math.abs(dx) : Math.abs(dy)
+    const secondary =
+      direction === 'left' || direction === 'right' ? Math.abs(dy) : Math.abs(dx)
     const score = primary + secondary * 2.4
     if (!best || score < best.score) best = { element, score }
   }
@@ -188,6 +233,13 @@ function findDirectionalTarget(direction: Direction) {
 }
 
 function navigate(direction: Direction) {
+  if (
+    (direction === 'left' || direction === 'right') &&
+    adjustFocusedRange(direction)
+  ) {
+    return true
+  }
+
   const target = findDirectionalTarget(direction)
   focusElement(target)
   return Boolean(target)
@@ -230,6 +282,14 @@ export function GamepadController() {
 
   function updateSettings(patch: Partial<GamepadSettings>) {
     setSettings((current) => ({ ...current, ...patch }))
+  }
+
+  function togglePanelFromController() {
+    setExpanded((current) => {
+      const next = !current
+      window.setTimeout(next ? focusGamepadPanel : focusCore, 0)
+      return next
+    })
   }
 
   function rumble(
@@ -296,7 +356,11 @@ export function GamepadController() {
       const gamepad = getFirstConnectedGamepad()
       updateConnection(gamepad)
 
-      if (gamepad && settingsRef.current.enabled && document.visibilityState === 'visible') {
+      if (
+        gamepad &&
+        settingsRef.current.enabled &&
+        document.visibilityState === 'visible'
+      ) {
         const pressed = gamepad.buttons.map(isButtonPressed)
         const previous = previousButtons.current
         const justPressed = (index: number) => pressed[index] && !previous[index]
@@ -323,7 +387,7 @@ export function GamepadController() {
           rumble(gamepad, 35, 0.12, 0.04)
         }
         if (justPressed(STANDARD_BUTTON.options)) {
-          setExpanded((current) => !current)
+          togglePanelFromController()
           rumble(gamepad, 45, 0.14, 0.05)
         }
 
@@ -331,10 +395,27 @@ export function GamepadController() {
         if (navigationReady) {
           const deadzone = settingsRef.current.deadzone
           let direction: Direction | null = null
-          if (pressed[STANDARD_BUTTON.dpadUp] || (gamepad.axes[1] ?? 0) < -deadzone) direction = 'up'
-          else if (pressed[STANDARD_BUTTON.dpadDown] || (gamepad.axes[1] ?? 0) > deadzone) direction = 'down'
-          else if (pressed[STANDARD_BUTTON.dpadLeft] || (gamepad.axes[0] ?? 0) < -deadzone) direction = 'left'
-          else if (pressed[STANDARD_BUTTON.dpadRight] || (gamepad.axes[0] ?? 0) > deadzone) direction = 'right'
+          if (
+            pressed[STANDARD_BUTTON.dpadUp] ||
+            (gamepad.axes[1] ?? 0) < -deadzone
+          ) {
+            direction = 'up'
+          } else if (
+            pressed[STANDARD_BUTTON.dpadDown] ||
+            (gamepad.axes[1] ?? 0) > deadzone
+          ) {
+            direction = 'down'
+          } else if (
+            pressed[STANDARD_BUTTON.dpadLeft] ||
+            (gamepad.axes[0] ?? 0) < -deadzone
+          ) {
+            direction = 'left'
+          } else if (
+            pressed[STANDARD_BUTTON.dpadRight] ||
+            (gamepad.axes[0] ?? 0) > deadzone
+          ) {
+            direction = 'right'
+          }
 
           if (direction && navigate(direction)) {
             lastNavigationAt.current = now
@@ -391,7 +472,9 @@ export function GamepadController() {
       >
         <span className="gamepad-status-dot" aria-hidden="true" />
         <span>
-          <strong>{connection.connected ? 'Control conectado' : 'Control desconectado'}</strong>
+          <strong>
+            {connection.connected ? 'Control conectado' : 'Control desconectado'}
+          </strong>
           <small>
             {connection.connected
               ? getControllerLabel(connection.id)
@@ -405,7 +488,9 @@ export function GamepadController() {
         <div className="gamepad-panel-body">
           <div className="gamepad-capabilities">
             <span>Mapeo: {connection.mapping || 'sin detectar'}</span>
-            <span>Vibración: {connection.haptics ? 'disponible' : 'no disponible'}</span>
+            <span>
+              Vibración: {connection.haptics ? 'disponible' : 'no disponible'}
+            </span>
           </div>
 
           <label className="gamepad-switch">
@@ -420,7 +505,9 @@ export function GamepadController() {
             <input
               type="checkbox"
               checked={settings.holdToPulse}
-              onChange={(event) => updateSettings({ holdToPulse: event.target.checked })}
+              onChange={(event) =>
+                updateSettings({ holdToPulse: event.target.checked })
+              }
             />
             <span>Pulsación continua con {labels.rightTrigger}</span>
           </label>
@@ -429,24 +516,47 @@ export function GamepadController() {
               type="checkbox"
               checked={settings.hapticsEnabled}
               disabled={!connection.haptics}
-              onChange={(event) => updateSettings({ hapticsEnabled: event.target.checked })}
+              onChange={(event) =>
+                updateSettings({ hapticsEnabled: event.target.checked })
+              }
             />
             <span>Vibración compatible</span>
           </label>
 
           <label className="gamepad-range">
-            <span>Velocidad de {labels.rightTrigger}: {settings.holdPulseRate} clic/s</span>
+            <span>
+              Velocidad de {labels.rightTrigger}: {settings.holdPulseRate} clic/s
+            </span>
             <input
               type="range"
               min="2"
               max="12"
               step="1"
               value={settings.holdPulseRate}
-              onChange={(event) => updateSettings({ holdPulseRate: Number(event.target.value) })}
+              onChange={(event) =>
+                updateSettings({ holdPulseRate: Number(event.target.value) })
+              }
             />
           </label>
           <label className="gamepad-range">
-            <span>Intensidad háptica: {Math.round(settings.hapticIntensity * 100)}%</span>
+            <span>
+              Zona muerta del stick: {Math.round(settings.deadzone * 100)}%
+            </span>
+            <input
+              type="range"
+              min="0.25"
+              max="0.9"
+              step="0.05"
+              value={settings.deadzone}
+              onChange={(event) =>
+                updateSettings({ deadzone: Number(event.target.value) })
+              }
+            />
+          </label>
+          <label className="gamepad-range">
+            <span>
+              Intensidad háptica: {Math.round(settings.hapticIntensity * 100)}%
+            </span>
             <input
               type="range"
               min="0"
@@ -454,19 +564,40 @@ export function GamepadController() {
               step="0.1"
               value={settings.hapticIntensity}
               disabled={!connection.haptics}
-              onChange={(event) => updateSettings({ hapticIntensity: Number(event.target.value) })}
+              onChange={(event) =>
+                updateSettings({ hapticIntensity: Number(event.target.value) })
+              }
             />
           </label>
 
           <div className="gamepad-map" aria-label="Mapa de botones">
-            <span><kbd>{labels.primary}</kbd> activar foco / pulsar núcleo</span>
-            <span><kbd>{labels.rightTrigger}</kbd> pulsación continua</span>
-            <span><kbd>{labels.secondary}</kbd> cambiar estrategia</span>
-            <span><kbd>{labels.action}</kbd> comprar todo</span>
-            <span><kbd>{labels.leftBumper}/{labels.rightBumper}</kbd> cambiar sección</span>
-            <span><kbd>Cruceta / stick</kbd> navegar</span>
-            <span><kbd>{labels.back}</kbd> volver al núcleo</span>
-            <span><kbd>{labels.options}</kbd> abrir este panel</span>
+            <span>
+              <kbd>{labels.primary}</kbd> activar foco / pulsar núcleo
+            </span>
+            <span>
+              <kbd>{labels.rightTrigger}</kbd> pulsación continua
+            </span>
+            <span>
+              <kbd>{labels.secondary}</kbd> cambiar estrategia
+            </span>
+            <span>
+              <kbd>{labels.action}</kbd> comprar todo
+            </span>
+            <span>
+              <kbd>
+                {labels.leftBumper}/{labels.rightBumper}
+              </kbd>{' '}
+              cambiar sección
+            </span>
+            <span>
+              <kbd>Cruceta / stick</kbd> navegar y ajustar
+            </span>
+            <span>
+              <kbd>{labels.back}</kbd> volver al núcleo
+            </span>
+            <span>
+              <kbd>{labels.options}</kbd> abrir este panel
+            </span>
           </div>
 
           <button
