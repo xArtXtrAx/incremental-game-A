@@ -6,6 +6,12 @@ export const CHROMATIC_PREVIOUS_GEM_EVENT =
 export const CHROMATIC_NEXT_GEM_EVENT =
   'incremental-game-a:chromatic-next-gem'
 
+export type ChromaticOpenMode = 'normal' | 'developer-preview'
+
+export type ChromaticOpenDetail = {
+  mode: ChromaticOpenMode
+}
+
 export type ChromaticGemId =
   | 'sapphire'
   | 'emerald'
@@ -53,8 +59,20 @@ export const CHROMATIC_GEMS: readonly ChromaticGemDefinition[] = [
   },
 ]
 
+function dispatchChromaticOpen(mode: ChromaticOpenMode) {
+  document.dispatchEvent(
+    new CustomEvent<ChromaticOpenDetail>(CHROMATIC_OPEN_EVENT, {
+      detail: { mode },
+    }),
+  )
+}
+
 export function requestChromaticOpen() {
-  document.dispatchEvent(new Event(CHROMATIC_OPEN_EVENT))
+  dispatchChromaticOpen('normal')
+}
+
+export function requestChromaticDeveloperPreview() {
+  dispatchChromaticOpen('developer-preview')
 }
 
 export function requestChromaticClose() {
