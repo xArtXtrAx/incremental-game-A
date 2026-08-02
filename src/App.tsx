@@ -3,6 +3,11 @@ import './App.css'
 import './ProposalA.css'
 import './PrestigeSapphire.css'
 import {
+  DeveloperPanel,
+  sanitizeDeveloperValues,
+  type DeveloperValues,
+} from './DeveloperPanel'
+import {
   GameCore,
   type ClickBurst,
   type EnergyBurst,
@@ -27,14 +32,36 @@ import {
   loadGameState,
   saveGameState,
   SPHERE_CLICK_CAPACITY,
+  type GameAction,
+  type GameState,
 } from './game'
 
 type MobileView = 'core' | 'upgrades'
+type AppAction =
+  | GameAction
+  | { type: 'developer-set-values'; values: DeveloperValues }
 
 const format = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 })
 
+function appReducer(state: GameState, action: AppAction): GameState {
+  if (action.type === 'developer-set-values') {
+    const values = sanitizeDeveloperValues(action.values)
+    const sphereBelowCapacity = values.manualClicks < SPHERE_CLICK_CAPACITY
+
+    return {
+      ...state,
+      energy: values.energy,
+      manualClicks: values.manualClicks,
+      overloadCharge: sphereBelowCapacity ? 0 : state.overloadCharge,
+      overloadUntil: sphereBelowCapacity ? 0 : state.overloadUntil,
+    }
+  }
+
+  return gameReducer(state, action)
+}
+
 function App() {
-  const [game, dispatch] = useReducer(gameReducer, initialGameState, loadGameState)
+  const [game, dispatch] = useReducer(appReducer, initialGameState, loadGameState)
   const [bursts, setBursts] = useState<ClickBurst[]>([])
   const [cavitationBurst, setCavitationBurst] = useState<EnergyBurst | null>(null)
   const [overloadBurst, setOverloadBurst] = useState<OverloadBurst | null>(null)
@@ -100,7 +127,7 @@ function App() {
 
     setClockNow(now)
     const id = window.setInterval(() => setClockNow(Date.now()), 100)
-    return () => window.clearInterval(id)
+    return () => window.clearTimeout(id)
   }, [game.overloadUntil])
 
   useEffect(() => saveGameState(game), [game])
@@ -173,10 +200,7 @@ function App() {
   }
 
   function handleCrystallize() {
-    if (
-      isCrystallizing ||
-      game.manualClicks < SPHERE_CLICK_CAPACITY
-    ) {
+    if (isCrystallizing || game.manualClicks < SPHERE_CLICK_CAPACITY) {
       return
     }
 
@@ -218,113 +242,133 @@ function App() {
     setResetArmed(false)
   }
 
+  function handleDeveloperValues(values: DeveloperValues) {
+    if (isCrystallizing) {
+      return
+    }
+
+    setClockNow(Date.now())
+    dispatch({ type: 'developer-set-values', values })
+  }
+
   return (
     <main className="game-screen">
-      <section className="game-panel">
-        <header className="game-header">
-          <div className="header-copy">
-            <p className="eyebrow">Prototipo incremental</p>
-            <h1>Incremental Game A</h1>
-            <p className="instructions">
-              Llena el núcleo, cristaliza su energía y fortalece el zafiro permanente.
-            </p>
-          </div>
+      <div className="game-workspace">
+        <section className="game-panel">
+          <header className="game-header">
+            <div className="header-copy">
+              <p className="eyebrow">Prototipo incremental</p>
+              <h1>Incremental Game A</h1>
+              <p className="instructions">
+                Llena el núcleo, cristaliza su energía y fortalece el zafiro permanente.
+              </p>
+            </div>
 
-          <div className="summary-strip" aria-label="Resumen de producción">
-            <div className="summary-item">
-              <span>Energía</span>
-              <strong>{format.format(game.energy)}</strong>
+            <div className="summary-strip" aria-label="Resumen de producción">
+              <div className="summary-item">
+                <span>Energía</span>
+                <strong>{format.format(game.energy)}</strong>
+              </div>
+              <div className="summary-item">
+                <span>Por clic</span>
+                <strong>+{format.format(clickPower)}</strong>
+              </div>
+              <div className="summary-item">
+                <span>Producción</span>
+                <strong>
+                  +{format.format(production)}/s
+                  {autoclickRate > 0
+                    ? ` · ${format.format(autoclickRate)} clic/s`
+                    : ''}
+                </strong>
+              </div>
+              <div className="summary-item">
+                <span>Presión</span>
+                <strong>+{format.format(pressureBonus)}%</strong>
+              </div>
+              <div className={`summary-item${overloadActive ? ' is-active' : ''}`}>
+                <span>Sobrecarga</span>
+                <strong>
+                  {overloadActive
+                    ? `×${format.format(overloadMultiplier)} · ${overloadRemaining.toFixed(1)} s`
+                    : `${game.overloadCharge}`}
+                </strong>
+              </div>
+              <div
+                className={`summary-item sapphire-summary${game.prestigeCount > 0 ? ' is-active' : ''}`}
+              >
+                <span>Zafiro</span>
+                <strong>
+                  {game.prestigeCount > 0
+                    ? `×${format.format(sapphireMultiplier)} · P${game.prestigeCount}`
+                    : 'Sin cristalizar'}
+                </strong>
+              </div>
             </div>
-            <div className="summary-item">
-              <span>Por clic</span>
-              <strong>+{format.format(clickPower)}</strong>
+          </header>
+
+          <nav className="mobile-section-tabs" aria-label="Secciones principales">
+            <button
+              type="button"
+              className={mobileView === 'core' ? 'is-active' : ''}
+              aria-pressed={mobileView === 'core'}
+              onClick={() => setMobileView('core')}
+            >
+              Núcleo
+            </button>
+            <button
+              type="button"
+              className={mobileView === 'upgrades' ? 'is-active' : ''}
+              aria-pressed={mobileView === 'upgrades'}
+              onClick={() => setMobileView('upgrades')}
+            >
+              Evoluciones
+            </button>
+          </nav>
+
+          <div className="game-layout">
+            <div
+              className={`layout-section core-layout-section${
+                mobileView === 'core' ? ' is-mobile-active' : ''
+              }`}
+            >
+              <GameCore
+                game={game}
+                clockNow={clockNow}
+                bursts={bursts}
+                cavitationBurst={cavitationBurst}
+                overloadBurst={overloadBurst}
+                sapphireBirthId={sapphireBirthId}
+                isCrystallizing={isCrystallizing}
+                prestigeAnnouncement={prestigeAnnouncement}
+                onClick={handleClick}
+                onCrystallize={handleCrystallize}
+              />
             </div>
-            <div className="summary-item">
-              <span>Producción</span>
-              <strong>
-                +{format.format(production)}/s
-                {autoclickRate > 0
-                  ? ` · ${format.format(autoclickRate)} clic/s`
-                  : ''}
-              </strong>
-            </div>
-            <div className="summary-item">
-              <span>Presión</span>
-              <strong>+{format.format(pressureBonus)}%</strong>
-            </div>
-            <div className={`summary-item${overloadActive ? ' is-active' : ''}`}>
-              <span>Sobrecarga</span>
-              <strong>
-                {overloadActive
-                  ? `×${format.format(overloadMultiplier)} · ${overloadRemaining.toFixed(1)} s`
-                  : `${game.overloadCharge}`}
-              </strong>
-            </div>
-            <div className={`summary-item sapphire-summary${game.prestigeCount > 0 ? ' is-active' : ''}`}>
-              <span>Zafiro</span>
-              <strong>
-                {game.prestigeCount > 0
-                  ? `×${format.format(sapphireMultiplier)} · P${game.prestigeCount}`
-                  : 'Sin cristalizar'}
-              </strong>
+
+            <div
+              className={`layout-section upgrades-layout-section${
+                mobileView === 'upgrades' ? ' is-mobile-active' : ''
+              }`}
+            >
+              <UpgradesPanel
+                game={game}
+                clockNow={clockNow}
+                dispatch={dispatch}
+                resetArmed={resetArmed}
+                onReset={handleReset}
+              />
             </div>
           </div>
-        </header>
+        </section>
 
-        <nav className="mobile-section-tabs" aria-label="Secciones principales">
-          <button
-            type="button"
-            className={mobileView === 'core' ? 'is-active' : ''}
-            aria-pressed={mobileView === 'core'}
-            onClick={() => setMobileView('core')}
-          >
-            Núcleo
-          </button>
-          <button
-            type="button"
-            className={mobileView === 'upgrades' ? 'is-active' : ''}
-            aria-pressed={mobileView === 'upgrades'}
-            onClick={() => setMobileView('upgrades')}
-          >
-            Evoluciones
-          </button>
-        </nav>
-
-        <div className="game-layout">
-          <div
-            className={`layout-section core-layout-section${
-              mobileView === 'core' ? ' is-mobile-active' : ''
-            }`}
-          >
-            <GameCore
-              game={game}
-              clockNow={clockNow}
-              bursts={bursts}
-              cavitationBurst={cavitationBurst}
-              overloadBurst={overloadBurst}
-              sapphireBirthId={sapphireBirthId}
-              isCrystallizing={isCrystallizing}
-              prestigeAnnouncement={prestigeAnnouncement}
-              onClick={handleClick}
-              onCrystallize={handleCrystallize}
-            />
-          </div>
-
-          <div
-            className={`layout-section upgrades-layout-section${
-              mobileView === 'upgrades' ? ' is-mobile-active' : ''
-            }`}
-          >
-            <UpgradesPanel
-              game={game}
-              clockNow={clockNow}
-              dispatch={dispatch}
-              resetArmed={resetArmed}
-              onReset={handleReset}
-            />
-          </div>
-        </div>
-      </section>
+        <DeveloperPanel
+          energy={game.energy}
+          manualClicks={game.manualClicks}
+          disabled={isCrystallizing}
+          onApply={handleDeveloperValues}
+        />
+      </div>
     </main>
   )
 }
