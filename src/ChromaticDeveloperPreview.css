@@ -1,0 +1,50 @@
+.chromatic-title-stack {
+  display: grid;
+  justify-items: center;
+}
+
+.chromatic-preview-badge {
+  margin-bottom: 5px;
+  padding: 4px 8px;
+  border: 1px solid rgba(210, 168, 255, 0.48);
+  border-radius: 999px;
+  color: #ead8ff;
+  background: rgba(88, 42, 143, 0.38);
+  box-shadow: 0 0 16px rgba(168, 104, 255, 0.14);
+  font-size: 0.52rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.chromatic-chamber.is-developer-preview .chromatic-header-status {
+  border-color: rgba(194, 151, 255, 0.32);
+  background: rgba(73, 37, 111, 0.22);
+}
+
+.prismatic-nexus:not(.is-partially-awake) .facet-blue {
+  opacity: 0.13;
+  background: #536777;
+  filter: none;
+  animation: none;
+}
+
+.prismatic-nexus:not(.is-partially-awake) .nexus-aura {
+  opacity: 0.32;
+  background: radial-gradient(circle, rgba(128, 146, 158, 0.1), transparent 67%);
+  animation: none;
+}
+
+.prismatic-nexus:not(.is-partially-awake) {
+  box-shadow:
+    inset 16px 10px 28px rgba(231, 246, 250, 0.05),
+    inset -20px -26px 34px rgba(0, 0, 0, 0.68),
+    0 0 38px rgba(83, 101, 112, 0.08);
+}
+
+@media (max-width: 760px) {
+  .chromatic-title-stack {
+    order: -1;
+    grid-column: 1 / -1;
+  }
+}
