@@ -105,6 +105,10 @@ function focusGamepadPanel() {
   focusElement(document.querySelector<HTMLElement>('.gamepad-panel-toggle'))
 }
 
+function isChromaticChamberOpen() {
+  return Boolean(document.querySelector('.chromatic-overlay'))
+}
+
 function switchSection(section: 'core' | 'upgrades') {
   const tabs = Array.from(
     document.querySelectorAll<HTMLButtonElement>('.mobile-section-tabs button'),
@@ -381,6 +385,10 @@ export function GamepadController() {
         const previous = previousButtons.current
         const justPressed = (index: number) =>
           pressed[index] && !previous[index]
+        const leftTriggerHeld = Boolean(
+          pressed[STANDARD_BUTTON.leftTrigger],
+        )
+        const chamberOpen = isChromaticChamberOpen()
 
         if (justPressed(STANDARD_BUTTON.primary)) {
           if (activateFocusedOrPulse()) rumble(gamepad, 45, 0.18, 0.08)
@@ -389,18 +397,40 @@ export function GamepadController() {
           switchSection('core')
           rumble(gamepad, 35, 0.12, 0.04)
         }
-        if (justPressed(STANDARD_BUTTON.secondary)) {
-          if (cyclePurchaseStrategy()) rumble(gamepad, 55, 0.2, 0.08)
+
+        if (!chamberOpen && leftTriggerHeld) {
+          if (justPressed(STANDARD_BUTTON.action)) {
+            if (cyclePurchaseStrategy()) rumble(gamepad, 55, 0.2, 0.08)
+          }
+          if (justPressed(STANDARD_BUTTON.secondary)) {
+            if (buyEverything()) rumble(gamepad, 110, 0.35, 0.22)
+          }
+        } else {
+          // Se conservan los atajos anteriores para no romper el control existente.
+          if (justPressed(STANDARD_BUTTON.secondary)) {
+            if (cyclePurchaseStrategy()) rumble(gamepad, 55, 0.2, 0.08)
+          }
+          if (justPressed(STANDARD_BUTTON.action)) {
+            if (buyEverything()) rumble(gamepad, 110, 0.35, 0.22)
+          }
         }
-        if (justPressed(STANDARD_BUTTON.action)) {
-          if (buyEverything()) rumble(gamepad, 110, 0.35, 0.22)
-        }
-        if (justPressed(STANDARD_BUTTON.leftBumper)) {
+
+        if (!chamberOpen && justPressed(STANDARD_BUTTON.leftBumper)) {
           switchSection('core')
           rumble(gamepad, 35, 0.12, 0.04)
         }
-        if (justPressed(STANDARD_BUTTON.rightBumper)) {
+        if (!chamberOpen && justPressed(STANDARD_BUTTON.rightBumper)) {
           switchSection('upgrades')
+          rumble(gamepad, 35, 0.12, 0.04)
+        }
+        if (!chamberOpen && justPressed(STANDARD_BUTTON.dpadLeft)) {
+          switchSection('core')
+          lastNavigationAt.current = now
+          rumble(gamepad, 35, 0.12, 0.04)
+        }
+        if (!chamberOpen && justPressed(STANDARD_BUTTON.dpadRight)) {
+          switchSection('upgrades')
+          lastNavigationAt.current = now
           rumble(gamepad, 35, 0.12, 0.04)
         }
         if (justPressed(STANDARD_BUTTON.options)) {
@@ -422,15 +452,9 @@ export function GamepadController() {
             (gamepad.axes[1] ?? 0) > deadzone
           ) {
             direction = 'down'
-          } else if (
-            pressed[STANDARD_BUTTON.dpadLeft] ||
-            (gamepad.axes[0] ?? 0) < -deadzone
-          ) {
+          } else if ((gamepad.axes[0] ?? 0) < -deadzone) {
             direction = 'left'
-          } else if (
-            pressed[STANDARD_BUTTON.dpadRight] ||
-            (gamepad.axes[0] ?? 0) > deadzone
-          ) {
+          } else if ((gamepad.axes[0] ?? 0) > deadzone) {
             direction = 'right'
           }
 
@@ -565,10 +589,16 @@ export function GamepadController() {
               <kbd>{labels.rightTrigger}</kbd> Gatillo de pulso
             </span>
             <span>
-              <kbd>{labels.secondary}</kbd> cambiar estrategia
+              <kbd>
+                {labels.leftTrigger} + {labels.action}
+              </kbd>{' '}
+              cambiar estrategia
             </span>
             <span>
-              <kbd>{labels.action}</kbd> comprar todo
+              <kbd>
+                {labels.leftTrigger} + {labels.secondary}
+              </kbd>{' '}
+              comprar todo
             </span>
             <span>
               <kbd>
@@ -577,7 +607,10 @@ export function GamepadController() {
               cambiar sección
             </span>
             <span>
-              <kbd>Cruceta / stick</kbd> navegar y ajustar
+              <kbd>Cruceta ←/→</kbd> cambiar sección al instante
+            </span>
+            <span>
+              <kbd>Cruceta ↑/↓ · stick</kbd> navegar y ajustar
             </span>
             <span>
               <kbd>{labels.back}</kbd> volver al núcleo
