@@ -13,27 +13,34 @@
 - La cruceta arriba/abajo mantiene la navegación direccional repetible.
 - El stick conserva navegación en las cuatro direcciones y ajuste de controles deslizantes.
 
+## X dedicado al núcleo
+
+- X siempre pulsa la esfera sin depender del control que tenga el foco.
+- X no activa compras, pestañas, estrategias ni controles del panel.
+- Mientras L2 está presionado, X no pulsa la esfera y queda reservado para combinaciones presentes o futuras.
+- X tampoco pulsa el núcleo por detrás de la Cámara Cromática.
+
+## Cuadrado como selector general
+
+- Cuadrado activa el elemento que tenga el foco.
+- Permite comprar una mejora individual, seleccionar pestañas o estrategias y activar botones, radios y casillas.
+- Si no existe un foco compatible, Cuadrado no ejecuta ninguna acción.
+- Cuadrado no usa la esfera como acción alternativa; esa función queda reservada para X.
+- L2 + Cuadrado conserva prioridad y ejecuta `Comprar todo lo posible`.
+
 ## L2 como modificador
 
 - Mantener L2 + Triángulo recorre `Equilibrado`, `Juego activo` y `Automático`.
 - Mantener L2 + Cuadrado ejecuta `Comprar todo lo posible`.
 - L2 por sí solo no ejecuta ninguna acción.
 - Las combinaciones se disparan una sola vez por pulsación del botón acompañante.
-- Los atajos anteriores sin L2 se conservan por compatibilidad.
+- Triángulo sin L2 conserva el atajo anterior de compra global.
 - Las combinaciones quedan suspendidas mientras la Cámara Cromática está abierta.
-
-## X dedicado al Núcleo
-
-- X pulsa siempre la esfera, independientemente del elemento que tenga el foco.
-- X ya no activa botones, compras, pestañas ni controles del panel.
-- Mientras L2 está presionado, la acción base de X queda suspendida para reservar `L2 + X` como hotkey presente o futuro.
-- X no pulsa la esfera por detrás de la Cámara Cromática cuando el overlay está abierto.
-- Cada pulsación conserva la vibración breve del clic manual.
 
 ## Compatibilidad
 
-- DualSense / PlayStation: L2, Triángulo, Cuadrado y X.
-- Xbox: LT, Y, X y A.
+- DualSense / PlayStation: X, Cuadrado, L2 y Triángulo.
+- Xbox: A, X, LT y Y.
 - R2/RT continúa reservado para el Gatillo de pulso.
 - No se modifican economía, compras, guardado ni progresión.
 
