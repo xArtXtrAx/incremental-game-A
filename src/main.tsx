@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
 import { GamepadController } from './GamepadController'
+import { GamepadEventHaptics } from './GamepadEventHaptics'
 
 const editableSelector =
   'input, textarea, [contenteditable="true"], [data-allow-selection="true"]'
@@ -21,5 +22,6 @@ createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
     <GamepadController />
+    <GamepadEventHaptics />
   </StrictMode>,
 )
