@@ -1,0 +1,99 @@
+.developer-chromatic-access {
+  display: grid;
+  gap: 7px;
+  margin: 0 0 14px;
+  padding: 11px;
+  border: 1px solid rgba(173, 130, 255, 0.22);
+  border-radius: 13px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(159, 104, 255, 0.13), transparent 62%),
+    rgba(14, 11, 37, 0.64);
+  box-shadow: inset 0 0 22px rgba(129, 81, 255, 0.045);
+}
+
+.developer-tool-label {
+  color: rgba(197, 177, 255, 0.62);
+  font-size: 0.54rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.developer-panel .developer-chromatic-button {
+  min-height: 50px;
+  padding: 8px 9px;
+  border-color: rgba(185, 139, 255, 0.44);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  color: #f4edff;
+  background:
+    radial-gradient(circle at 40% 0%, rgba(185, 132, 255, 0.18), transparent 58%),
+    linear-gradient(135deg, rgba(58, 27, 112, 0.92), rgba(22, 31, 82, 0.94));
+  box-shadow:
+    inset 0 0 18px rgba(188, 139, 255, 0.08),
+    0 0 18px rgba(119, 72, 255, 0.07);
+  text-align: left;
+}
+
+.developer-panel .developer-chromatic-button:hover {
+  border-color: rgba(216, 185, 255, 0.82);
+  box-shadow:
+    inset 0 0 22px rgba(197, 153, 255, 0.14),
+    0 0 22px rgba(139, 93, 255, 0.16);
+}
+
+.developer-chromatic-button > span:nth-child(2),
+.developer-chromatic-button strong,
+.developer-chromatic-button small {
+  display: block;
+  min-width: 0;
+}
+
+.developer-chromatic-button strong {
+  font-size: 0.66rem;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+}
+
+.developer-chromatic-button small {
+  margin-top: 3px;
+  overflow: hidden;
+  color: rgba(214, 202, 241, 0.62);
+  font-size: 0.53rem;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.developer-chromatic-button b {
+  color: #d9bbff;
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+  text-shadow: 0 0 10px rgba(178, 119, 255, 0.5);
+}
+
+.developer-chromatic-glyph {
+  width: 29px;
+  height: 29px;
+  border: 1px solid rgba(216, 184, 255, 0.72);
+  border-radius: 8px;
+  display: grid;
+  place-items: center;
+  color: #e7d4ff;
+  font-size: 1rem;
+  transform: rotate(45deg);
+  box-shadow: 0 0 13px rgba(161, 100, 255, 0.18);
+}
+
+@media (max-width: 360px) {
+  .developer-panel .developer-chromatic-button {
+    grid-template-columns: auto minmax(0, 1fr);
+  }
+
+  .developer-chromatic-button b {
+    display: none;
+  }
+}
