@@ -13,6 +13,7 @@ import {
   type EnergyBurst,
   type OverloadBurst,
   type PrestigeAnnouncement,
+  type RefractionBurst,
 } from './GameCore'
 import { UpgradesPanel } from './UpgradesPanelCompact'
 import {
@@ -35,6 +36,10 @@ import {
   type GameAction,
   type GameState,
 } from './game'
+import {
+  getRefractionBonusMultiplier,
+  isRefractionActive,
+} from './refraction'
 
 type MobileView = 'core' | 'upgrades'
 type AppAction =
@@ -65,6 +70,8 @@ function App() {
   const [bursts, setBursts] = useState<ClickBurst[]>([])
   const [cavitationBurst, setCavitationBurst] = useState<EnergyBurst | null>(null)
   const [overloadBurst, setOverloadBurst] = useState<OverloadBurst | null>(null)
+  const [refractionBurst, setRefractionBurst] =
+    useState<RefractionBurst | null>(null)
   const [clockNow, setClockNow] = useState(() => Date.now())
   const [resetArmed, setResetArmed] = useState(false)
   const [mobileView, setMobileView] = useState<MobileView>('core')
@@ -75,19 +82,28 @@ function App() {
   const nextBurstId = useRef(0)
   const nextCavitationId = useRef(0)
   const nextOverloadId = useRef(0)
+  const nextRefractionId = useRef(0)
   const previousClicks = useRef(game.manualClicks)
+  const previousRefractionDischargeCount = useRef(
+    game.refractionDischargeCount,
+  )
   const crystallizeTimers = useRef<number[]>([])
 
   const overloadActive = isOverloadActive(game.overloadUntil, clockNow)
   const overloadMultiplier = overloadActive
     ? getOverloadMultiplier(game.overloadLevel)
     : 1
+  const refractionActive = isRefractionActive(game.refractionUntil, clockNow)
+  const refractionMultiplier = refractionActive
+    ? getRefractionBonusMultiplier(game.refractionLevel)
+    : 1
+  const activeMultiplier = overloadMultiplier * refractionMultiplier
   const sapphireMultiplier = getSapphireMultiplier(game.prestigeCount)
   const clickPower = getClickPower(
     game.clickLevel,
     game.manualClicks,
     game.pressureLevel,
-    overloadMultiplier,
+    activeMultiplier,
     sapphireMultiplier,
   )
   const production = getEnergyPerSecond(
@@ -95,7 +111,7 @@ function App() {
     game.resonanceLevel,
     game.manualClicks,
     game.pressureLevel,
-    overloadMultiplier,
+    activeMultiplier,
     sapphireMultiplier,
   )
   const autoclickRate = getAutoclickRate(game.autoclickLevel)
@@ -121,14 +137,14 @@ function App() {
   useEffect(() => {
     const now = Date.now()
 
-    if (game.overloadUntil <= now) {
+    if (game.overloadUntil <= now && game.refractionUntil <= now) {
       return
     }
 
     setClockNow(now)
     const id = window.setInterval(() => setClockNow(Date.now()), 100)
-    return () => window.clearTimeout(id)
-  }, [game.overloadUntil])
+    return () => window.clearInterval(id)
+  }, [game.overloadUntil, game.refractionUntil])
 
   useEffect(() => saveGameState(game), [game])
 
@@ -142,6 +158,32 @@ function App() {
 
     previousClicks.current = game.manualClicks
   }, [game.manualClicks])
+
+  useEffect(() => {
+    const previousCount = previousRefractionDischargeCount.current
+
+    if (game.refractionDischargeCount > previousCount) {
+      const id = nextRefractionId.current++
+      setRefractionBurst({
+        id,
+        amount: game.refractionLastReward,
+        multiplier: getRefractionBonusMultiplier(game.refractionLevel),
+      })
+      const timer = window.setTimeout(() => {
+        setRefractionBurst((item) => (item?.id === id ? null : item))
+      }, 1900)
+
+      previousRefractionDischargeCount.current =
+        game.refractionDischargeCount
+      return () => window.clearTimeout(timer)
+    }
+
+    previousRefractionDischargeCount.current = game.refractionDischargeCount
+  }, [
+    game.refractionDischargeCount,
+    game.refractionLastReward,
+    game.refractionLevel,
+  ])
 
   useEffect(() => {
     if (!resetArmed) {
@@ -214,6 +256,7 @@ function App() {
     crystallizeTimers.current.push(
       window.setTimeout(() => {
         dispatch({ type: 'crystallize' })
+        setRefractionBurst(null)
         setPrestigeAnnouncement({
           prestigeCount: nextPrestigeCount,
           multiplier: nextMultiplier,
@@ -237,6 +280,7 @@ function App() {
     setBursts([])
     setCavitationBurst(null)
     setOverloadBurst(null)
+    setRefractionBurst(null)
     setPrestigeAnnouncement(null)
     setIsCrystallizing(false)
     setResetArmed(false)
@@ -338,6 +382,7 @@ function App() {
                 bursts={bursts}
                 cavitationBurst={cavitationBurst}
                 overloadBurst={overloadBurst}
+                refractionBurst={refractionBurst}
                 sapphireBirthId={sapphireBirthId}
                 isCrystallizing={isCrystallizing}
                 prestigeAnnouncement={prestigeAnnouncement}
