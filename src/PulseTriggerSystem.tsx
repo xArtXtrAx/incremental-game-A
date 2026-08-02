@@ -15,6 +15,7 @@ import {
   STANDARD_BUTTON,
 } from './gamepad'
 import {
+  chargePulseTriggerFromDirectClick,
   clearTriggerClickMarkers,
   consumeTriggerClickMarker,
   EMPTY_PULSE_TRIGGER_STATE,
@@ -28,8 +29,8 @@ import {
   PULSE_TRIGGER_MAX_RESERVE_MS,
   PULSE_TRIGGER_PULSE_EVENT,
   PULSE_TRIGGER_RATE,
-  PULSE_TRIGGER_RESERVE_GAIN_MS,
   savePulseTriggerState,
+  spendPulseTriggerPulse,
   setPulseTriggerInput,
   type PulseTriggerInputDetail,
   type PulseTriggerInputSource,
@@ -53,11 +54,6 @@ type GameSnapshot = {
   overloadLevel: number
   refractionLevel: number
   prestigeCount: number
-}
-
-function roundTriggerTime(value: number) {
-  const rounded = Math.round((value + Number.EPSILON) * 10_000) / 10_000
-  return rounded < 0.01 ? 0 : rounded
 }
 
 function isVisible(element: HTMLElement) {
@@ -158,33 +154,20 @@ export function PulseTriggerSystem() {
 
   const chargeFromDirectClick = useCallback(() => {
     const current = stateRef.current
-    if (current.reserveMs >= PULSE_TRIGGER_MAX_RESERVE_MS) return
+    const result = chargePulseTriggerFromDirectClick(current)
+    if (result.state === current) return
 
-    let reserveMs = current.reserveMs
-    let chargeClicks = current.chargeClicks + 1
-    let charged = false
+    commitTriggerState(result.state)
 
-    if (chargeClicks >= PULSE_TRIGGER_CHARGE_CLICKS) {
-      reserveMs = Math.min(
-        PULSE_TRIGGER_MAX_RESERVE_MS,
-        reserveMs + PULSE_TRIGGER_RESERVE_GAIN_MS,
-      )
-      chargeClicks = 0
-      charged = true
-    }
-
-    commitTriggerState({ reserveMs, chargeClicks })
-
-    if (charged) {
+    if (result.charged) {
       document.dispatchEvent(new Event(PULSE_TRIGGER_CHARGED_EVENT))
     }
   }, [commitTriggerState])
 
   const fireTriggerPulse = useCallback(() => {
     const current = stateRef.current
-    if (current.reserveMs + 0.001 < PULSE_TRIGGER_INTERVAL_MS) {
-      return false
-    }
+    const nextState = spendPulseTriggerPulse(current)
+    if (!nextState) return false
 
     const coreButton = document.querySelector<HTMLButtonElement>(
       '.click-button:not(:disabled)',
@@ -193,17 +176,10 @@ export function PulseTriggerSystem() {
 
     markNextCoreClickAsTrigger()
     coreButton.click()
-
-    const reserveMs = roundTriggerTime(
-      Math.max(0, current.reserveMs - PULSE_TRIGGER_INTERVAL_MS),
-    )
-    commitTriggerState({
-      reserveMs,
-      chargeClicks: current.chargeClicks,
-    })
+    commitTriggerState(nextState)
     document.dispatchEvent(new Event(PULSE_TRIGGER_PULSE_EVENT))
 
-    if (reserveMs + 0.001 < PULSE_TRIGGER_INTERVAL_MS) {
+    if (nextState.reserveMs + 0.001 < PULSE_TRIGGER_INTERVAL_MS) {
       document.dispatchEvent(new Event(PULSE_TRIGGER_DEPLETED_EVENT))
     }
 
