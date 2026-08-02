@@ -1,0 +1,9 @@
+body.is-chromatic-open .game-workspace {
+  visibility: hidden;
+  pointer-events: none;
+}
+
+body.is-chromatic-open .chromatic-overlay {
+  visibility: visible;
+  pointer-events: auto;
+}
