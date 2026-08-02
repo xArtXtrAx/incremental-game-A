@@ -46,6 +46,7 @@ import { PULSE_TRIGGER_BUY_EVENT } from './pulseTrigger'
 import {
   getRefractionBonusMultiplier,
   isRefractionActive,
+  REFRACTION_REQUIRED_PRESTIGE,
 } from './refraction'
 
 type MobileView = 'core' | 'upgrades'
@@ -64,13 +65,30 @@ function appReducer(state: GameState, action: AppAction): GameState {
   if (action.type === 'developer-set-values') {
     const values = sanitizeDeveloperValues(action.values)
     const sphereBelowCapacity = values.manualClicks < SPHERE_CLICK_CAPACITY
+    const refractionAllowed =
+      values.prestigeCount >= REFRACTION_REQUIRED_PRESTIGE
 
     return {
       ...state,
       energy: values.energy,
       manualClicks: values.manualClicks,
+      prestigeCount: values.prestigeCount,
       overloadCharge: sphereBelowCapacity ? 0 : state.overloadCharge,
       overloadUntil: sphereBelowCapacity ? 0 : state.overloadUntil,
+      refractionLevel: refractionAllowed ? state.refractionLevel : 0,
+      refractionOrbitProgress: refractionAllowed
+        ? state.refractionOrbitProgress
+        : 0,
+      refractionFacetsCharged: refractionAllowed
+        ? state.refractionFacetsCharged
+        : 0,
+      refractionUntil: refractionAllowed ? state.refractionUntil : 0,
+      refractionDischargeCount: refractionAllowed
+        ? state.refractionDischargeCount
+        : 0,
+      refractionLastReward: refractionAllowed
+        ? state.refractionLastReward
+        : 0,
     }
   }
 
@@ -461,6 +479,7 @@ function App() {
         <DeveloperPanel
           energy={game.energy}
           manualClicks={game.manualClicks}
+          prestigeCount={game.prestigeCount}
           disabled={isCrystallizing}
           onApply={handleDeveloperValues}
         />
