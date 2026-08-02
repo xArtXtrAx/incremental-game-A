@@ -1,0 +1,87 @@
+.core-layout-section,
+.upgrades-layout-section {
+  isolation: isolate;
+}
+
+.upgrades-layout-section {
+  position: relative;
+}
+
+.core-layout-section::after,
+.upgrades-layout-section::after {
+  content: '';
+  position: absolute;
+  inset: -8px;
+  z-index: 20;
+  border: 1px solid transparent;
+  border-radius: 29px;
+  pointer-events: none;
+  opacity: 0;
+  box-shadow:
+    0 0 0 1px transparent,
+    inset 0 0 0 1px transparent,
+    inset 0 0 32px transparent,
+    0 0 30px transparent;
+  transition:
+    opacity 150ms ease,
+    border-color 150ms ease,
+    box-shadow 180ms ease;
+}
+
+.core-layout-section.is-region-highlighted::after,
+.upgrades-layout-section.is-region-highlighted::after {
+  opacity: 1;
+  border-color: rgba(103, 224, 255, 0.58);
+  box-shadow:
+    0 0 0 1px rgba(48, 177, 232, 0.12),
+    inset 0 0 0 1px rgba(171, 244, 255, 0.04),
+    inset 0 0 34px rgba(18, 151, 217, 0.055),
+    0 0 26px rgba(22, 192, 255, 0.16);
+}
+
+.core-layout-section.is-pointer-region::after,
+.upgrades-layout-section.is-pointer-region::after {
+  border-color: rgba(121, 232, 255, 0.5);
+  box-shadow:
+    0 0 0 1px rgba(56, 189, 238, 0.1),
+    inset 0 0 0 1px rgba(180, 248, 255, 0.035),
+    inset 0 0 30px rgba(16, 142, 206, 0.045),
+    0 0 22px rgba(24, 187, 246, 0.12);
+}
+
+.core-layout-section.is-navigation-region::after,
+.upgrades-layout-section.is-navigation-region::after {
+  animation: region-focus-arrival 420ms ease-out;
+}
+
+@keyframes region-focus-arrival {
+  0% {
+    opacity: 0.2;
+    transform: scale(0.992);
+    box-shadow:
+      0 0 0 1px rgba(56, 189, 238, 0.08),
+      inset 0 0 0 1px transparent,
+      inset 0 0 16px rgba(18, 151, 217, 0.02),
+      0 0 10px rgba(22, 192, 255, 0.05);
+  }
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 760px) {
+  .core-layout-section::after,
+  .upgrades-layout-section::after {
+    inset: -5px;
+    border-radius: 25px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .core-layout-section::after,
+  .upgrades-layout-section::after {
+    animation: none !important;
+    transition: none;
+  }
+}
