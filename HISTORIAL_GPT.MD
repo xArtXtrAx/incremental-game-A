@@ -7,15 +7,12 @@
 
 - Repositorio: `xArtXtrAx/incremental-game-A`.
 - Rama estable: `main`.
-- Rama experimental activa: `Dev-Matriz-Refraccion-Test`.
-- Ramas históricas: `Dev-Prestigio-Test` y `Dev-Orbita-Zafiro-Test`.
+- Ramas históricas: `Dev-Prestigio-Test`, `Dev-Orbita-Zafiro-Test` y `Dev-Matriz-Refraccion-Test`.
 - Entorno: React + TypeScript + Vite + Motion.
 - Guardado estable: `incremental-game-a:save:v1`.
 - Última actualización: **2 de agosto de 2026**.
 
-`main` contiene el prestigio del zafiro, el render WebGL, el pulso progresivo, la órbita WebGL y la iluminación dinámica producida por la chispa orbital. Arturo validó visualmente esos sistemas antes de integrarlos.
-
-`Dev-Matriz-Refraccion-Test` parte del `main` aprobado y añade la Evolución 08 — Matriz de refracción, el bloqueo global de selección/cursor y el sistema experimental de compra total estratégica. No debe integrarse a `main` sin la validación visual y funcional de Arturo.
+`main` contiene el prestigio del zafiro, el render WebGL, el pulso progresivo, la órbita WebGL, la iluminación dinámica de la chispa, la Evolución 08 — Matriz de refracción, el bloqueo global de selección/cursor y Comprar todo estratégico. Arturo aprobó visualmente estos sistemas antes de integrarlos.
 
 ## 2. Forma de trabajo
 
@@ -34,10 +31,11 @@
 - Tarjetas expandibles.
 - Navegación móvil entre Núcleo y Evoluciones.
 - Panel de desarrollador a la derecha en pantallas amplias y debajo en pantallas estrechas.
-- Selección de texto deshabilitada globalmente salvo dentro de campos editables.
+- Selección de texto deshabilitada globalmente salvo en campos editables.
 - Flecha normal sobre textos, mano sobre controles y cursor de texto solo en campos editables.
+- Un listener global de `selectstart` evita selecciones iniciadas desde el fondo exterior.
 
-## 4. Evoluciones estables
+## 4. Evoluciones
 
 ### Evolución 01 — Amplificador de pulso
 
@@ -91,6 +89,22 @@
 - Costo inicial: 5,000.
 - Crecimiento: ×2.8.
 
+### Evolución 08 — Matriz de refracción
+
+- Requiere prestigio 1 y un microgenerador.
+- Costo inicial: 25,000.
+- Crecimiento: ×3.15.
+- Facetas requeridas: P1=6, P2=8, P3=10, P4+=12.
+- Carga: `1 + 0.15 × (nivel − 1)` facetas por vuelta.
+- Usa la misma duración orbital 20→3 segundos del zafiro.
+- Recompensa: producción base × `(8 + 3 × nivel)` segundos.
+- Multiplicador PRISMA: `1.20 + 0.05 × nivel`.
+- Duración PRISMA: `4 + nivel` segundos.
+- Nivel 1: 1 faceta/vuelta, 11 segundos de producción, ×1.25 durante 5 segundos.
+- PRISMA se combina multiplicativamente con sobrecarga y afecta clics, producción y cavitación.
+- Las descargas posteriores extienden la duración activa.
+- Al cristalizar se reinician nivel, progreso, facetas y bonificación.
+
 ## 5. Prestigio del zafiro
 
 - El núcleo se llena a 5,000 clics.
@@ -107,13 +121,13 @@ Multiplicadores:
 - P5: ×3.05.
 - Posteriores: +0.50 por cristalización.
 
-El prestigio multiplica clics, producción, presión, resonancia, cavitación, sobrecarga y autoclics. Al cristalizar se reinician energía, clics, evoluciones temporales y sus cargas; se conservan prestigio, zafiro, multiplicador y planos descubiertos.
+Al cristalizar se reinician energía, clics, evoluciones temporales y cargas. Se conservan prestigio, zafiro, multiplicador y planos descubiertos.
 
-## 6. Zafiro, órbita e iluminación estables
+## 6. Zafiro, órbita e iluminación
 
 - Zafiro WebGL con geometría real, caras triangulares, normales y shaders.
 - P1: 6 sectores; P2: 8; P3: 10; P4+: 12.
-- Órbita elíptica WebGL con capa trasera y delantera transparentes.
+- Órbita elíptica WebGL separada en capa trasera y delantera transparentes.
 - Chispa cian con núcleo blanco y estela de doce partículas.
 - La chispa funciona como fuente de luz dinámica sobre las facetas.
 - El antiguo destello diagonal 2D fue retirado.
@@ -125,165 +139,57 @@ duración = 3 + 17 × (1 − clics / 5000)^1.6
 
 - Núcleo vacío: 20 segundos por vuelta.
 - Núcleo lleno: 3 segundos por vuelta.
-- La fase se conserva de forma continua al cambiar la velocidad.
-- SVG y órbita CSS permanecen como respaldo cuando WebGL falla.
+- La fase se conserva al cambiar la velocidad.
+- SVG y órbita CSS permanecen como respaldo si WebGL falla.
+- La Matriz muestra indicadores alrededor del zafiro y genera halo, haces y mensaje de descarga prismática.
 
-## 7. Propuesta experimental — Evolución 08: Matriz de refracción
+## 7. Comprar todo estratégico
 
-Implementada solamente en `Dev-Matriz-Refraccion-Test`.
+Perfiles disponibles:
 
-### Requisitos y costo
-
-- Requiere al menos prestigio 1.
-- Requiere un microgenerador.
-- Costo inicial: 25,000 de energía.
-- Crecimiento de costo: ×3.15 por nivel.
-- No altera la clave ni la versión actual del guardado.
-- Partidas anteriores reciben los nuevos campos con valores seguros en cero.
-
-### Carga de facetas
-
-La matriz utiliza la misma curva de duración 20→3 segundos de la órbita visual. El ciclo se procesa dentro del `tick` del juego y acumula progreso fraccionario de vuelta.
-
-Número de facetas requeridas:
-
-- Prestigio 1: 6.
-- Prestigio 2: 8.
-- Prestigio 3: 10.
-- Prestigio 4 o superior: 12.
-
-Velocidad de carga:
-
-```text
-facetas por vuelta = 1 + 0.15 × (nivel − 1)
-```
-
-Nivel 1 carga una faceta por vuelta completa. Los niveles posteriores pueden acumular más de una faceta por vuelta mediante progreso fraccionario.
-
-### Descarga prismática
-
-Al completar todas las facetas:
-
-1. La carga de facetas vuelve a cero.
-2. Se entrega una recompensa inmediata basada en producción.
-3. Se activa el estado temporal `PRISMA`.
-4. Las descargas posteriores extienden la duración activa en vez de reemplazarla.
-
-Recompensa:
-
-```text
-segundos recompensados = 8 + 3 × nivel
-recompensa = producción base por segundo × segundos recompensados
-```
-
-La producción base de la descarga incluye presión, resonancia, zafiro y sobrecarga activa, pero excluye el multiplicador de refracción para evitar retroalimentación recursiva.
-
-Bonificación temporal:
-
-```text
-multiplicador PRISMA = 1.20 + 0.05 × nivel
-duración = 4 + nivel segundos
-```
-
-Nivel 1:
-
-- 1 faceta por vuelta.
-- Recompensa equivalente a 11 segundos de producción.
-- Multiplicador ×1.25.
-- Duración 5 segundos.
-
-El multiplicador PRISMA se combina multiplicativamente con sobrecarga y afecta clics, producción automática y recompensas de cavitación.
-
-### Reinicio y persistencia
-
-- Nivel, progreso orbital, facetas cargadas y estado PRISMA se guardan automáticamente.
-- Un estado PRISMA vencido no se restaura al cargar la partida.
-- Al cristalizar se reinician nivel, progreso, facetas y bonificación, igual que las demás evoluciones temporales.
-- El contador interno de descargas permite detectar cada evento visual sin confundirlo con una actualización normal.
-
-### Representación visual
-
-- El soporte permanente muestra 6, 8, 10 o 12 indicadores alrededor del zafiro.
-- Cada indicador encendido representa una faceta cargada.
-- Durante PRISMA, los indicadores pulsan y el núcleo recibe un halo prismático giratorio.
-- La descarga genera un anillo expansivo, haces radiales y el mensaje `DESCARGA PRISMÁTICA`.
-- El estado del núcleo muestra facetas cargadas, porcentaje de la vuelta actual y recompensa prevista.
-- La tarjeta de Evolución 08 muestra costo, requisitos, carga, recompensa, multiplicador, duración y tiempo actual por vuelta.
-
-Los indicadores rodean visualmente el zafiro; no modifican todavía la geometría ni colorean individualmente las caras del shader WebGL.
-
-## 8. Propuesta experimental — Comprar todo estratégico
-
-Implementada solamente en `Dev-Matriz-Refraccion-Test`.
-
-### Perfiles disponibles
-
-- `Equilibrado`: combina clics, producción automática, presión y apertura de sistemas.
+- `Equilibrado`: combina clics, producción, presión y apertura de sistemas.
 - `Juego activo`: favorece Amplificador, Presión, Cavitación y Sobrecarga.
 - `Automático`: favorece Microgenerador, Resonancia, Autoclicker y Refracción.
 
-El perfil elegido se conserva mientras el componente permanece montado, pero todavía no se guarda en `localStorage`.
+Funcionamiento:
 
-### Funcionamiento
-
-1. Simula cada siguiente nivel que puede comprarse mediante el reducer real.
-2. Descarta automáticamente cualquier compra bloqueada o inasequible.
-3. Calcula el valor esperado del estado resultante según el perfil.
+1. Simula cada siguiente compra mediante el reducer real.
+2. Descarta compras bloqueadas o inasequibles.
+3. Calcula el valor esperado según el perfil.
 4. Divide la ganancia estimada entre el costo.
-5. Aplica pesos estratégicos, bonos de apertura y una penalización suave por concentración.
+5. Aplica pesos, bonos de apertura y penalización suave por concentración.
 6. Compra virtualmente la mejor opción.
-7. Recalcula desde el nuevo estado y repite hasta que no queda ninguna compra posible.
-8. Aplica el estado final de una sola vez para evitar decenas de renders consecutivos.
+7. Recalcula hasta que no queda ninguna compra posible.
+8. Al confirmar, vuelve a calcular sobre el estado autoritativo y aplica el resultado de una sola vez.
 
-La estimación considera por separado:
+La estimación considera clic, producción por segundo, cavitación, autoclics, sobrecarga, refracción, clics acumulados, prestigio y dependencias.
 
-- energía por clic;
-- producción por segundo;
-- recompensa media de cavitación por clic;
-- clics automáticos;
-- disponibilidad y ciclo esperado de sobrecarga;
-- recompensa y tiempo activo estimados de refracción;
-- cantidad actual de clics, prestigio, planos y dependencias.
+Suposiciones internas para comparar estrategias:
 
-Los perfiles suponen aproximadamente:
+- Equilibrado: 1.5 clics manuales/s.
+- Juego activo: 5 clics manuales/s.
+- Automático: 0.05 clics manuales/s.
 
-- Equilibrado: 1.5 clics manuales por segundo.
-- Juego activo: 5 clics manuales por segundo.
-- Automático: 0.05 clics manuales por segundo.
+Estas tasas no alteran el juego.
 
-Estas tasas no alteran el juego; solo sirven para comparar compras.
+Interfaz:
 
-### Interfaz
-
-- Panel independiente sobre las tarjetas de evoluciones.
-- Tres botones de estrategia con `radiogroup` accesible.
-- Vista previa de niveles, energía gastada y saldo posterior.
-- Resumen de las tres categorías con más niveles propuestos.
+- Panel sobre las evoluciones.
+- Selector accesible con tres estrategias.
+- Vista previa de niveles, gasto, saldo posterior y categorías principales.
 - Botón `COMPRAR TODO POSIBLE`.
-- Mensaje posterior con niveles comprados, gasto y perfil utilizado.
-- El botón se deshabilita durante cristalización o cuando no existe ninguna compra posible.
+- Recibo posterior con niveles comprados, gasto y perfil.
+- Máximo técnico: 320 compras por pulsación; no corta compras válidas con la energía máxima admitida.
 
-### Límites y seguridad
+Escenario de referencia: 5,000 clics, 5,000 energía, P0 y ninguna evolución.
 
-- Máximo técnico: 320 compras en una pulsación.
-- Con la energía máxima permitida por el panel de desarrollador y los costos exponenciales, el máximo teórico conjunto es menor a 320 niveles; el límite no corta compras válidas.
-- No modifica clics, prestigio, cargas ni temporizadores por fuera de lo que hace cada acción individual del reducer.
-- No compra evoluciones bloqueadas ni omite prerrequisitos.
-- La vista previa usa exactamente el mismo estado que se aplica al confirmar.
+- Equilibrado: Pulso 6, Generador 6, Resonancia 3, Presión 1, Cavitación 1; gasto 4,830.
+- Juego activo: Pulso 7, Generador 5, Resonancia 3, Presión 1, Cavitación 1; gasto 4,599.
+- Automático: Pulso 6, Generador 7, Resonancia 4, Presión 1; gasto 4,959.
 
-Escenario de referencia con 5,000 clics, 5,000 de energía, prestigio 0 y ninguna evolución:
-
-- Equilibrado: Pulso 6, Generador 6, Resonancia 3, Presión 1 y Cavitación 1; gasto 4,830.
-- Juego activo: Pulso 7, Generador 5, Resonancia 3, Presión 1 y Cavitación 1; gasto 4,599.
-- Automático: Pulso 6, Generador 7, Resonancia 4 y Presión 1; gasto 4,959.
-
-Estos resultados son una base inicial de balance, no una promesa de optimalidad matemática absoluta.
-
-## 9. Panel de desarrollador
+## 8. Panel de desarrollador
 
 Permite modificar únicamente energía acumulada y clics del núcleo.
-
-Protecciones:
 
 - Sin negativos, letras, signos, comas ni notación científica.
 - Energía con máximo dos decimales.
@@ -292,43 +198,37 @@ Protecciones:
 - Clics máximos: 1,000,000,000.
 - No modifica niveles, prestigios ni multiplicadores.
 
-## 10. Arquitectura relevante
+## 9. Arquitectura relevante
 
-- `src/game.ts`: estado, migración, compras, reducer y combinación de multiplicadores.
-- `src/refraction.ts`: costos, duración orbital, facetas, recompensa y avance de la matriz.
-- `src/bulkPurchase.ts`: simulación, perfiles, puntuación adaptativa y plan final de compras.
-- `src/BulkPurchaseControls.tsx`: selector de estrategia, vista previa, confirmación y recibo.
-- `src/BulkPurchase.css`: diseño responsivo del panel de compra estratégica.
-- `src/App.tsx`: ciclo principal, aplicación atómica del plan y detección de descargas prismáticas.
-- `src/GameCore.tsx`: estado visual del núcleo, halo PRISMA y descarga radial.
-- `src/SapphireGem.tsx`: indicadores de facetas alrededor del zafiro permanente.
-- `src/UpgradesPanelCompact.tsx`: tarjeta de Evolución 08 y cálculos de vista previa.
-- `src/SapphireGem3D.tsx`: geometría, shaders, pulso e iluminación orbital estable.
+- `src/game.ts`: estado, migración, compras, reducer y multiplicadores.
+- `src/refraction.ts`: costos, órbita, facetas, recompensa y avance de la matriz.
+- `src/bulkPurchase.ts`: simulación, perfiles, puntuación y plan de compras.
+- `src/BulkPurchaseControls.tsx`: selector, vista previa, confirmación y recibo.
+- `src/BulkPurchase.css`: diseño responsivo del panel.
+- `src/App.tsx`: ciclo principal, aplicación atómica y eventos visuales.
+- `src/GameCore.tsx`: núcleo, PRISMA y descarga radial.
+- `src/SapphireGem.tsx`: soporte e indicadores de facetas.
+- `src/UpgradesPanelCompact.tsx`: tarjetas de evoluciones.
+- `src/SapphireGem3D.tsx`: geometría, shaders e iluminación orbital.
 - `src/SapphireOrbit3D.tsx`: anillo, chispa y estela WebGL.
 - `src/SapphireOrbitState.ts`: fase y posición 3D compartidas.
+- `src/index.css`: bloqueo global de selección y cursores.
+- `src/main.tsx`: bloqueo nativo de `selectstart`.
 
-## 11. Validaciones de la rama experimental
+## 10. Compatibilidad y validaciones
 
-Validaciones aisladas realizadas:
+- Guardado: `incremental-game-a:save:v1`.
+- Partidas anteriores reciben campos de refracción con valores seguros en cero.
+- Estados temporales vencidos no se restauran.
+- No existe progreso fuera de línea.
+- Autoclics múltiples se procesan secuencialmente.
+- No se añadieron dependencias.
+- TypeScript estricto aislado pasó para los archivos modificados y nuevos.
+- Se probaron compra, requisitos, vueltas de 20/3 segundos, descarga, recompensa, PRISMA, migración, reinicio y combinación con sobrecarga/cavitación.
+- Comprar todo se probó con energía baja/alta, pocos/muchos clics, prestigio 0/1 y los tres perfiles.
+- Arturo validó visualmente la Matriz, Comprar todo, el bloqueo de selección y el comportamiento del cursor.
 
-- TypeScript estricto de `game.ts`, `refraction.ts`, `App.tsx`, `GameCore.tsx`, `SapphireGem.tsx` y `UpgradesPanelCompact.tsx` mediante stubs de React, Motion y CSS.
-- TypeScript estricto de `bulkPurchase.ts`, `BulkPurchaseControls.tsx` y la integración actualizada de `App.tsx`.
-- Compra de nivel 1 de refracción y descuento de costo.
-- Una faceta después de una vuelta de 20 segundos con núcleo vacío.
-- Una faceta exactamente después de tres pulsos con núcleo lleno.
-- Descarga al completar la sexta faceta en prestigio 1.
-- Recompensa inmediata y activación de ×1.25 durante 5 segundos.
-- Multiplicador aplicado a los clics.
-- Migración de partidas anteriores sin campos de refracción.
-- Reinicio completo de la matriz al cristalizar.
-- Corrección de precisión numérica para vueltas de 3 segundos.
-- Temporizador visual persistente aunque se compre otro nivel durante la animación.
-- Compra total probada con poca/mucha energía, pocos/muchos clics y prestigio 0/1.
-- Diferenciación comprobada entre Equilibrado, Juego activo y Automático.
-- Límite de 320 compras contrastado con el máximo de energía del panel.
-- Sin dependencias nuevas.
-
-No se ejecutaron con las dependencias reales del equipo local:
+No se ejecutaron remotamente con las dependencias reales del equipo local:
 
 ```powershell
 npm run lint
@@ -336,28 +236,6 @@ npm run build
 npm run dev
 ```
 
-Prueba visual pendiente por Arturo:
+## 11. Inicio recomendado para otro chat
 
-1. Cambiar a `Dev-Matriz-Refraccion-Test`.
-2. Confirmar que el panel `Comprar todo` aparece arriba de las evoluciones.
-3. Probar cada perfil con la misma energía y comparar la vista previa.
-4. Confirmar que no se compran evoluciones bloqueadas.
-5. Verificar que niveles, gasto y saldo coinciden con la vista previa.
-6. Probar 5,000 clics con energía baja, media y alta.
-7. Probar prestigio 0 y prestigio 1 para incluir o excluir Refracción.
-8. Probar Matriz de refracción: carga, descarga, recompensa y PRISMA.
-9. Probar simultáneamente PRISMA, cavitación y sobrecarga.
-10. Confirmar que cristalizar reinicia la evolución y no conserva compras temporales.
-11. Volver a `main` y confirmar que la versión estable permanece intacta.
-
-## 12. Compatibilidad
-
-- Guardado estable: `incremental-game-a:save:v1`.
-- La antigua clave experimental de prestigio se migra una sola vez y se elimina.
-- No existe progreso fuera de línea.
-- Los autoclics múltiples se procesan secuencialmente.
-- `main` no contiene todavía la Matriz de refracción ni Comprar todo.
-
-## 13. Inicio recomendado para otro chat
-
-> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD`. La rama estable es `main`; la rama experimental activa es `Dev-Matriz-Refraccion-Test`. Prueba y ajusta la Evolución 08 y Comprar todo sin integrarlos a `main` hasta que Arturo los apruebe visualmente.
+> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD` y trabaja desde `main`. Las ramas `Dev-Prestigio-Test`, `Dev-Orbita-Zafiro-Test` y `Dev-Matriz-Refraccion-Test` son referencias históricas. Crea una rama nueva para la siguiente evolución importante.
