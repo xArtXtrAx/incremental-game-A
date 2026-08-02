@@ -3,7 +3,11 @@ import './App.css'
 import './ProposalA.css'
 import './PrestigeSapphire.css'
 import { BulkPurchaseControls } from './BulkPurchaseControls'
-import type { BulkPurchasePlan } from './bulkPurchase'
+import {
+  planBulkPurchases,
+  type BulkPurchasePlan,
+  type BulkPurchaseStrategy,
+} from './bulkPurchase'
 import {
   DeveloperPanel,
   sanitizeDeveloperValues,
@@ -47,13 +51,13 @@ type MobileView = 'core' | 'upgrades'
 type AppAction =
   | GameAction
   | { type: 'developer-set-values'; values: DeveloperValues }
-  | { type: 'apply-bulk-purchase'; state: GameState }
+  | { type: 'apply-bulk-purchase'; strategy: BulkPurchaseStrategy }
 
 const format = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 })
 
 function appReducer(state: GameState, action: AppAction): GameState {
   if (action.type === 'apply-bulk-purchase') {
-    return action.state
+    return planBulkPurchases(state, action.strategy).finalState
   }
 
   if (action.type === 'developer-set-values') {
@@ -318,7 +322,7 @@ function App() {
       return
     }
 
-    dispatch({ type: 'apply-bulk-purchase', state: plan.finalState })
+    dispatch({ type: 'apply-bulk-purchase', strategy: plan.strategy })
   }
 
   return (
