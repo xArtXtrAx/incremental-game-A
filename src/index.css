@@ -50,6 +50,7 @@ body * {
   -webkit-user-select: none;
   user-select: none;
   -webkit-touch-callout: none;
+  cursor: default;
 }
 
 input,
@@ -58,6 +59,21 @@ textarea,
   -webkit-user-select: text;
   user-select: text;
   -webkit-touch-callout: default;
+  cursor: text;
+}
+
+button,
+a[href],
+select,
+[role='button'],
+[role='tab'],
+[role='switch'] {
+  cursor: pointer;
+}
+
+button:disabled,
+[aria-disabled='true'] {
+  cursor: not-allowed;
 }
 
 img,
