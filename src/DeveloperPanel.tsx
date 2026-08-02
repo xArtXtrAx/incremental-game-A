@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
 import './DeveloperPanel.css'
 
-export const DEVELOPER_MAX_ENERGY = 1_000_000_000_000_000
+export const DEVELOPER_MAX_ENERGY = 90_000_000_000_000
 export const DEVELOPER_MAX_CLICKS = 1_000_000_000
 
 export type DeveloperValues = {
@@ -28,7 +28,7 @@ export function sanitizeDeveloperValues(
   return {
     energy:
       Math.round(
-        clamp(values.energy, DEVELOPER_MAX_ENERGY) * 100 + Number.EPSILON,
+        (clamp(values.energy, DEVELOPER_MAX_ENERGY) + Number.EPSILON) * 100,
       ) / 100,
     manualClicks: Math.floor(
       clamp(values.manualClicks, DEVELOPER_MAX_CLICKS),
@@ -78,7 +78,7 @@ export function DeveloperPanel({
   }, [dirty, energy, manualClicks])
 
   function updateEnergy(value: string) {
-    if (!/^\d*(?:\.\d{0,2})?$/.test(value)) {
+    if (!/^(?:\d+(?:\.\d{0,2})?)?$/.test(value)) {
       setMessage('Energía admite solamente números y hasta dos decimales.')
       return
     }
@@ -182,12 +182,12 @@ export function DeveloperPanel({
             autoComplete="off"
             spellCheck={false}
             value={energyInput}
-            maxLength={19}
+            maxLength={17}
             disabled={disabled}
             onKeyDown={(event) => blockUnsafeKeys(event, true)}
             onChange={(event) => updateEnergy(event.currentTarget.value)}
           />
-          <small>Máximo: 1,000 billones · 2 decimales</small>
+          <small>Máximo: 90 billones · 2 decimales</small>
         </label>
 
         <label htmlFor="developer-clicks">
