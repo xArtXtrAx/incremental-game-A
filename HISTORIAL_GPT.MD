@@ -7,12 +7,15 @@
 
 - Repositorio: `xArtXtrAx/incremental-game-A`.
 - Rama estable: `main`.
-- Ramas históricas: `Dev-Prestigio-Test`, `Dev-Orbita-Zafiro-Test` y `Dev-Matriz-Refraccion-Test`.
+- Rama aprobada para integración: `Dev-Pulse-Trigger-Level`.
+- Ramas históricas: `Dev-Prestigio-Test`, `Dev-Orbita-Zafiro-Test`, `Dev-Matriz-Refraccion-Test` y `Dev-Gamepad-Test`.
 - Entorno: React + TypeScript + Vite + Motion.
-- Guardado estable: `incremental-game-a:save:v1`.
+- Guardado principal: `incremental-game-a:save:v1`.
+- Ajustes de mando: `incremental-game-a:gamepad:v1`.
+- Reserva del Gatillo: `incremental-game-a:pulse-trigger:v1`.
 - Última actualización: **2 de agosto de 2026**.
 
-`main` contiene el prestigio del zafiro, el render WebGL, el pulso progresivo, la órbita WebGL, la iluminación dinámica de la chispa, la Evolución 08 — Matriz de refracción, el bloqueo global de selección/cursor y Comprar todo estratégico. Arturo aprobó visualmente estos sistemas antes de integrarlos.
+Arturo aprobó visualmente y funcionalmente el soporte de mando, la vibración, el Gatillo de pulso, la guía neón de regiones y el Acelerador de pulso escalable. `Dev-Pulse-Trigger-Level` debe integrarse a `main` mediante fast-forward limpio antes de comenzar la progresión de gemas de la Cámara Cromática.
 
 ## 2. Forma de trabajo
 
@@ -22,6 +25,7 @@
 - Integrar a `main` solamente después de la validación de Arturo.
 - Evitar ZIP, manifiestos y hashes salvo necesidad técnica o petición expresa.
 - Agrupar pruebas y registrar aquí las decisiones relevantes.
+- No afirmar que se ejecutó `npm run build`, `lint` o pruebas físicas cuando el entorno remoto no dispone del checkout y dependencias reales.
 
 ## 3. Interfaz estable
 
@@ -34,8 +38,15 @@
 - Selección de texto deshabilitada globalmente salvo en campos editables.
 - Flecha normal sobre textos, mano sobre controles y cursor de texto solo en campos editables.
 - Un listener global de `selectstart` evita selecciones iniciadas desde el fondo exterior.
+- Guía visual por regiones:
+  - L1 ilumina Núcleo.
+  - R1 ilumina Evoluciones.
+  - El mouse ilumina temporalmente la región bajo el cursor.
+  - Al salir, reaparece la última selección del mando.
+  - La última entrada tiene prioridad.
+  - El borde es un neón azul tenue, no bloquea clics y respeta movimiento reducido.
 
-## 4. Evoluciones
+## 4. Evoluciones y sistemas del núcleo
 
 ### Evolución 01 — Amplificador de pulso
 
@@ -105,7 +116,63 @@
 - Las descargas posteriores extienden la duración activa.
 - Al cristalizar se reinician nivel, progreso, facetas y bonificación.
 
-## 5. Prestigio del zafiro
+### Acelerador de pulso — mejora del Gatillo
+
+- `pulseTriggerLevel` forma parte del estado principal.
+- Nivel inicial: 0.
+- Nivel máximo: 6.
+- Cadencia:
+
+```text
+pulsos/s = min(9, 6 + 0.5 × nivel)
+```
+
+- Costo:
+
+```text
+costo = ceil(6000 × 2.25^nivel)
+```
+
+| Nivel | Cadencia | Costo siguiente |
+|---:|---:|---:|
+| 0 | 6.0/s | 6,000 |
+| 1 | 6.5/s | 13,500 |
+| 2 | 7.0/s | 30,375 |
+| 3 | 7.5/s | 68,344 |
+| 4 | 8.0/s | 153,774 |
+| 5 | 8.5/s | 345,991 |
+| 6 | 9.0/s | Máximo |
+
+- Partidas anteriores reciben nivel 0.
+- Valores inválidos se limitan a nivel 6.
+- Cristalizar y reiniciar devuelven el nivel a 0.
+- Participa en Comprar todo:
+  - prioridad alta en Juego activo;
+  - moderada en Equilibrado;
+  - muy baja en Automático.
+
+## 5. Gatillo de pulso
+
+- La tarjeta aparece inmediatamente debajo de la esfera y antes del estado del núcleo.
+- 10 clics directos generan 1 segundo de reserva.
+- Reserva máxima: 10 segundos.
+- El Gatillo consume la reserva a la cadencia determinada por `pulseTriggerLevel`.
+- Se activa manteniendo:
+  - el botón visual con mouse;
+  - R2/RT;
+  - Espacio o Enter cuando el botón tiene foco.
+- Los pulsos del Gatillo no recargan su propia reserva.
+- El Autoclicker tampoco recarga la reserva.
+- X/A sobre el núcleo sí cuenta como clic directo.
+- Usa el mismo botón real del núcleo, por lo que mantiene energía, presión, cavitación, sobrecarga, partículas y demás reglas.
+- Se detiene al soltar, agotar la reserva, ocultar la pestaña, perder foco o desconectar/desactivar el mando.
+- La reserva temporal se guarda separada del estado principal y se reinicia al cristalizar o borrar progreso.
+- Vibración:
+  - pulso ligero por disparo;
+  - doble toque al ganar un segundo;
+  - golpe corto al agotar la reserva.
+
+## 6. Prestigio del zafiro
 
 - El núcleo se llena a 5,000 clics.
 - El prestigio se confirma con `CRISTALIZAR`; nunca ocurre automáticamente.
@@ -119,18 +186,17 @@ Multiplicadores:
 - P3: ×2.20.
 - P4: ×2.60.
 - P5: ×3.05.
-- Posteriores: +0.50 por cristalización.
+- Posteriores: +0.50 por cristalización mientras se define la progresión cromática.
 
-Al cristalizar se reinician energía, clics, evoluciones temporales y cargas. Se conservan prestigio, zafiro, multiplicador y planos descubiertos.
+Al cristalizar se reinician energía, clics, evoluciones temporales, Acelerador del Gatillo y cargas. Se conservan prestigio, zafiro, multiplicador y planos descubiertos.
 
-## 6. Zafiro, órbita e iluminación
+## 7. Zafiro, órbita e iluminación
 
 - Zafiro WebGL con geometría real, caras triangulares, normales y shaders.
 - P1: 6 sectores; P2: 8; P3: 10; P4+: 12.
 - Órbita elíptica WebGL separada en capa trasera y delantera transparentes.
 - Chispa cian con núcleo blanco y estela de doce partículas.
 - La chispa funciona como fuente de luz dinámica sobre las facetas.
-- El antiguo destello diagonal 2D fue retirado.
 - Duración de órbita y pulso:
 
 ```text
@@ -143,92 +209,98 @@ duración = 3 + 17 × (1 − clics / 5000)^1.6
 - SVG y órbita CSS permanecen como respaldo si WebGL falla.
 - La Matriz muestra indicadores alrededor del zafiro y genera halo, haces y mensaje de descarga prismática.
 
-## 7. Comprar todo estratégico
+## 8. Soporte Gamepad / DualSense
 
-Perfiles disponibles:
+La capa de mando acciona los controles reales del DOM y no duplica las fórmulas del reducer.
 
-- `Equilibrado`: combina clics, producción, presión y apertura de sistemas.
-- `Juego activo`: favorece Amplificador, Presión, Cavitación y Sobrecarga.
-- `Automático`: favorece Microgenerador, Resonancia, Autoclicker y Refracción.
+Controles estándar:
+
+- X/A: activar control enfocado o pulsar el núcleo.
+- R2/RT: Gatillo de pulso con reserva.
+- Cuadrado/X: cambiar estrategia de Comprar todo.
+- Triángulo/Y: Comprar todo posible.
+- L1/LB: Núcleo.
+- R1/RB: Evoluciones.
+- Círculo/B: volver al Núcleo.
+- Options/Menu: abrir o cerrar panel de mando.
+- Cruceta/stick: navegación espacial y ajuste de deslizadores.
+
+Protecciones y rendimiento:
+
+- Gamepad API estándar.
+- Detección por flancos para acciones discretas.
+- `requestAnimationFrame` solamente para sondeo del mando.
+- No se escribe estado React en cada cuadro.
+- Primer mando conectado como principal.
+- Pausa funcional con pestaña oculta.
+- Funciona simultáneamente con mouse y teclado.
+- Sin WebHID por ahora; no hay gatillos adaptativos, barra de luz, altavoz, touchpad avanzado ni giroscopio propietarios.
+
+Vibraciones contextuales opcionales:
+
+- navegación;
+- clic normal;
+- Gatillo;
+- Cavitación;
+- Sobrecarga;
+- Descarga prismática;
+- cristalización del zafiro;
+- Comprar todo.
+
+La ausencia o fallo del actuador háptico nunca bloquea acciones.
+
+## 9. Comprar todo estratégico
+
+Perfiles:
+
+- `Equilibrado`: clics, producción, presión y apertura de sistemas.
+- `Juego activo`: Amplificador, Gatillo, Presión, Cavitación y Sobrecarga.
+- `Automático`: Microgenerador, Resonancia, Autoclicker y Refracción; Gatillo con prioridad mínima.
 
 Funcionamiento:
 
-1. Simula cada siguiente compra mediante el reducer real.
+1. Simula compras mediante el reducer real.
 2. Descarta compras bloqueadas o inasequibles.
-3. Calcula el valor esperado según el perfil.
-4. Divide la ganancia estimada entre el costo.
-5. Aplica pesos, bonos de apertura y penalización suave por concentración.
+3. Calcula utilidad según perfil.
+4. Divide ganancia entre costo.
+5. Aplica pesos, bonos de apertura y penalización de concentración.
 6. Compra virtualmente la mejor opción.
-7. Recalcula hasta que no queda ninguna compra posible.
-8. Al confirmar, vuelve a calcular sobre el estado autoritativo y aplica el resultado de una sola vez.
+7. Recalcula hasta que no haya compras posibles.
+8. Al confirmar, recalcula sobre el estado autoritativo y aplica una sola actualización.
 
-La estimación considera clic, producción por segundo, cavitación, autoclics, sobrecarga, refracción, clics acumulados, prestigio y dependencias.
+Máximo técnico: 320 compras por pulsación.
 
-Suposiciones internas para comparar estrategias:
-
-- Equilibrado: 1.5 clics manuales/s.
-- Juego activo: 5 clics manuales/s.
-- Automático: 0.05 clics manuales/s.
-
-Estas tasas no alteran el juego.
-
-Interfaz:
-
-- Panel sobre las evoluciones.
-- Selector accesible con tres estrategias.
-- Vista previa de niveles, gasto, saldo posterior y categorías principales.
-- Botón `COMPRAR TODO POSIBLE`.
-- Recibo posterior con niveles comprados, gasto y perfil.
-- Máximo técnico: 320 compras por pulsación; no corta compras válidas con la energía máxima admitida.
-
-Escenario de referencia: 5,000 clics, 5,000 energía, P0 y ninguna evolución.
-
-- Equilibrado: Pulso 6, Generador 6, Resonancia 3, Presión 1, Cavitación 1; gasto 4,830.
-- Juego activo: Pulso 7, Generador 5, Resonancia 3, Presión 1, Cavitación 1; gasto 4,599.
-- Automático: Pulso 6, Generador 7, Resonancia 4, Presión 1; gasto 4,959.
-
-## 8. Panel de desarrollador
-
-Permite modificar únicamente energía acumulada y clics del núcleo.
-
-- Sin negativos, letras, signos, comas ni notación científica.
-- Energía con máximo dos decimales.
-- Clics enteros.
-- Energía máxima: 90,000,000,000,000.
-- Clics máximos: 1,000,000,000.
-- No modifica niveles, prestigios ni multiplicadores.
-
-## 9. Arquitectura relevante
+## 10. Arquitectura relevante
 
 - `src/game.ts`: estado, migración, compras, reducer y multiplicadores.
-- `src/refraction.ts`: costos, órbita, facetas, recompensa y avance de la matriz.
-- `src/bulkPurchase.ts`: simulación, perfiles, puntuación y plan de compras.
-- `src/BulkPurchaseControls.tsx`: selector, vista previa, confirmación y recibo.
-- `src/BulkPurchase.css`: diseño responsivo del panel.
-- `src/App.tsx`: ciclo principal, aplicación atómica y eventos visuales.
-- `src/GameCore.tsx`: núcleo, PRISMA y descarga radial.
-- `src/SapphireGem.tsx`: soporte e indicadores de facetas.
-- `src/UpgradesPanelCompact.tsx`: tarjetas de evoluciones.
-- `src/SapphireGem3D.tsx`: geometría, shaders e iluminación orbital.
-- `src/SapphireOrbit3D.tsx`: anillo, chispa y estela WebGL.
-- `src/SapphireOrbitState.ts`: fase y posición 3D compartidas.
-- `src/index.css`: bloqueo global de selección y cursores.
-- `src/main.tsx`: bloqueo nativo de `selectstart`.
+- `src/refraction.ts`: Matriz de refracción.
+- `src/bulkPurchase.ts`: perfiles y planificación de Comprar todo.
+- `src/App.tsx`: ciclo principal y aplicación de acciones.
+- `src/GameCore.tsx`: núcleo, estados y eventos visuales.
+- `src/SapphireGem3D.tsx`: gema WebGL.
+- `src/SapphireOrbit3D.tsx`: órbita y chispa WebGL.
+- `src/gamepad.ts`: ajustes y detección de mandos.
+- `src/GamepadController.tsx`: navegación y acciones discretas.
+- `src/GamepadEventHaptics.tsx`: vibraciones contextuales.
+- `src/pulseTrigger.ts`: reserva, fórmulas, nivel y protocolo del Gatillo.
+- `src/PulseTriggerSystem.tsx`: interfaz, mouse, teclado, R2 y descargas.
+- `src/PulseTriggerSystem.css` y `src/PulseTriggerLevel.css`: diseño del Gatillo.
+- `src/RegionFocusGuide.tsx`: guía visual mouse/mando.
+- `src/RegionFocusGuide.css`: borde neón de regiones.
 
-## 10. Compatibilidad y validaciones
+## 11. Validaciones y límites conocidos
 
-- Guardado: `incremental-game-a:save:v1`.
-- Partidas anteriores reciben campos de refracción con valores seguros en cero.
-- Estados temporales vencidos no se restauran.
-- No existe progreso fuera de línea.
-- Autoclics múltiples se procesan secuencialmente.
 - No se añadieron dependencias.
-- TypeScript estricto aislado pasó para los archivos modificados y nuevos.
-- Se probaron compra, requisitos, vueltas de 20/3 segundos, descarga, recompensa, PRISMA, migración, reinicio y combinación con sobrecarga/cavitación.
-- Comprar todo se probó con energía baja/alta, pocos/muchos clics, prestigio 0/1 y los tres perfiles.
-- Arturo validó visualmente la Matriz, Comprar todo, el bloqueo de selección y el comportamiento del cursor.
+- Guardados anteriores reciben campos nuevos en cero.
+- Estados temporales vencidos no se restauran.
+- Autoclics múltiples se procesan secuencialmente.
+- Gatillo y Autoclicker no autorrecargan la reserva.
+- El nivel 6 bloquea compras adicionales del Acelerador.
+- Arturo validó físicamente DualSense, vibraciones, Gatillo y guía visual.
+- Arturo validó visualmente la posición y presentación del Gatillo escalable.
+- GitHub no tiene CI configurado para estos commits.
 
-No se ejecutaron remotamente con las dependencias reales del equipo local:
+Comprobación local recomendada antes de publicar versiones:
 
 ```powershell
 npm run lint
@@ -236,6 +308,35 @@ npm run build
 npm run dev
 ```
 
-## 11. Inicio recomendado para otro chat
+## 12. Próxima expansión — Cámara Cromática
 
-> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD` y trabaja desde `main`. Las ramas `Dev-Prestigio-Test`, `Dev-Orbita-Zafiro-Test` y `Dev-Matriz-Refraccion-Test` son referencias históricas. Crea una rama nueva para la siguiente evolución importante.
+Decisión conceptual aprobada para iniciar en una rama nueva después de integrar `Dev-Pulse-Trigger-Level`:
+
+- Nueva vista completa denominada **Cámara Cromática**.
+- Gema central denominada provisionalmente **Nexo Prismático**.
+- La gema central comienza gris, apagada e inerte.
+- Requiere cinco gemas orbitando a nivel 5:
+  - Zafiro;
+  - Esmeralda;
+  - Amarilla;
+  - Naranja;
+  - Roja.
+- Al llegar el Zafiro a nivel 5:
+  - se desbloquea la Cámara Cromática;
+  - el Zafiro comienza a orbitar el Nexo;
+  - se activa el primer sector azul;
+  - se anticipa la Esmeralda como siguiente progresión.
+- Antes del desbloqueo, el acceso debe estar visible pero apagado y mostrar `Zafiro X/5`.
+- La primera implementación debe centrarse en:
+  - acceso bloqueado/desbloqueado;
+  - transición de vista;
+  - gema central inerte;
+  - cinco posiciones orbitales;
+  - Zafiro orbitando a P5;
+  - regreso seguro a la pantalla principal;
+  - navegación con mouse, teclado y mando.
+- Las mecánicas y bonificaciones de Esmeralda, Amarilla, Naranja y Roja se definirán posteriormente.
+
+## 13. Inicio recomendado para otro chat
+
+> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD`. La rama estable incorpora soporte Gamepad, Gatillo de pulso, Acelerador escalable y guía de regiones. La siguiente rama activa debe dedicarse a la Cámara Cromática y al Nexo Prismático. No integrar cambios visuales nuevos a `main` hasta la aprobación de Arturo.
