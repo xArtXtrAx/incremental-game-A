@@ -1,10 +1,4 @@
-import {
-  type CSSProperties,
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from 'react'
+import { type CSSProperties, useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import './PulseTriggerSystem.css'
 import { GAME_STORAGE_KEY } from './game'
@@ -19,16 +13,19 @@ import {
   clearTriggerClickMarkers,
   consumeTriggerClickMarker,
   EMPTY_PULSE_TRIGGER_STATE,
+  getPulseTriggerIntervalMs,
+  getPulseTriggerRate,
+  getPulseTriggerUpgradeCost,
   loadPulseTriggerState,
   markNextCoreClickAsTrigger,
   PULSE_TRIGGER_CHARGED_EVENT,
   PULSE_TRIGGER_CHARGE_CLICKS,
   PULSE_TRIGGER_DEPLETED_EVENT,
   PULSE_TRIGGER_INPUT_EVENT,
-  PULSE_TRIGGER_INTERVAL_MS,
+  PULSE_TRIGGER_MAX_LEVEL,
   PULSE_TRIGGER_MAX_RESERVE_MS,
   PULSE_TRIGGER_PULSE_EVENT,
-  PULSE_TRIGGER_RATE,
+  requestPulseTriggerUpgrade,
   savePulseTriggerState,
   spendPulseTriggerPulse,
   setPulseTriggerInput,
@@ -44,154 +41,112 @@ type TriggerStyle = CSSProperties & {
 
 type GameSnapshot = {
   energy: number
-  manualClicks: number
-  clickLevel: number
-  generatorLevel: number
-  resonanceLevel: number
-  pressureLevel: number
-  cavitationLevel: number
-  autoclickLevel: number
-  overloadLevel: number
-  refractionLevel: number
+  pulseTriggerLevel: number
   prestigeCount: number
+  hasProgress: boolean
 }
 
-function isVisible(element: HTMLElement) {
-  const rect = element.getBoundingClientRect()
-  const style = window.getComputedStyle(element)
-  return (
-    rect.width > 0 &&
-    rect.height > 0 &&
-    style.display !== 'none' &&
-    style.visibility !== 'hidden'
-  )
-}
+const format = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 })
 
 function readGameSnapshot(): GameSnapshot | null {
   try {
     const raw = window.localStorage.getItem(GAME_STORAGE_KEY)
     if (!raw) return null
-    const parsed = JSON.parse(raw) as { state?: Partial<GameSnapshot> }
+    const parsed = JSON.parse(raw) as { state?: Record<string, unknown> }
     const state = parsed.state
     if (!state) return null
 
     return {
       energy: Number(state.energy ?? 0),
-      manualClicks: Number(state.manualClicks ?? 0),
-      clickLevel: Number(state.clickLevel ?? 0),
-      generatorLevel: Number(state.generatorLevel ?? 0),
-      resonanceLevel: Number(state.resonanceLevel ?? 0),
-      pressureLevel: Number(state.pressureLevel ?? 0),
-      cavitationLevel: Number(state.cavitationLevel ?? 0),
-      autoclickLevel: Number(state.autoclickLevel ?? 0),
-      overloadLevel: Number(state.overloadLevel ?? 0),
-      refractionLevel: Number(state.refractionLevel ?? 0),
+      pulseTriggerLevel: Number(state.pulseTriggerLevel ?? 0),
       prestigeCount: Number(state.prestigeCount ?? 0),
+      hasProgress: Object.entries(state).some(
+        ([key, value]) =>
+          key !== 'prestigeCount' && typeof value === 'number' && value > 0,
+      ),
     }
   } catch {
     return null
   }
 }
 
-function hasRunProgress(snapshot: GameSnapshot | null) {
-  if (!snapshot) return false
+function sameSnapshot(a: GameSnapshot | null, b: GameSnapshot | null) {
   return (
-    snapshot.energy > 0 ||
-    snapshot.manualClicks > 0 ||
-    snapshot.clickLevel > 0 ||
-    snapshot.generatorLevel > 0 ||
-    snapshot.resonanceLevel > 0 ||
-    snapshot.pressureLevel > 0 ||
-    snapshot.cavitationLevel > 0 ||
-    snapshot.autoclickLevel > 0 ||
-    snapshot.overloadLevel > 0 ||
-    snapshot.refractionLevel > 0 ||
-    snapshot.prestigeCount > 0
+    a?.energy === b?.energy &&
+    a?.pulseTriggerLevel === b?.pulseTriggerLevel &&
+    a?.prestigeCount === b?.prestigeCount &&
+    a?.hasProgress === b?.hasProgress
   )
 }
 
 export function PulseTriggerSystem() {
+  const initialSnapshot = readGameSnapshot()
   const [host, setHost] = useState<HTMLElement | null>(null)
+  const [snapshot, setSnapshot] = useState<GameSnapshot | null>(initialSnapshot)
   const [triggerState, setTriggerState] =
     useState<PulseTriggerStoredState>(loadPulseTriggerState)
   const [isActive, setIsActive] = useState(false)
+  const snapshotRef = useRef(initialSnapshot)
   const stateRef = useRef(triggerState)
+  const previousSnapshot = useRef(initialSnapshot)
   const activeSources = useRef(new Set<PulseTriggerInputSource>())
-  const previousGameSnapshot = useRef<GameSnapshot | null>(readGameSnapshot())
-  const previousGamepadTrigger = useRef(false)
+  const previousR2 = useRef(false)
 
-  const commitTriggerState = useCallback((next: PulseTriggerStoredState) => {
+  const commitState = useCallback((next: PulseTriggerStoredState) => {
     stateRef.current = next
     setTriggerState(next)
   }, [])
 
-  const stopAllInputs = useCallback(() => {
+  const stopAll = useCallback(() => {
     activeSources.current.clear()
     clearTriggerClickMarkers()
     setIsActive(false)
   }, [])
 
-  const resetTriggerState = useCallback(() => {
-    stopAllInputs()
-    commitTriggerState(EMPTY_PULSE_TRIGGER_STATE)
-  }, [commitTriggerState, stopAllInputs])
+  const resetTrigger = useCallback(() => {
+    stopAll()
+    commitState(EMPTY_PULSE_TRIGGER_STATE)
+  }, [commitState, stopAll])
 
-  const updateInputSource = useCallback(
+  const updateSource = useCallback(
     (source: PulseTriggerInputSource, active: boolean) => {
-      if (
-        active &&
-        stateRef.current.reserveMs + 0.001 >= PULSE_TRIGGER_INTERVAL_MS
-      ) {
+      const interval = getPulseTriggerIntervalMs(
+        snapshotRef.current?.pulseTriggerLevel ?? 0,
+      )
+      if (active && stateRef.current.reserveMs + 0.001 >= interval) {
         activeSources.current.add(source)
       } else {
         activeSources.current.delete(source)
       }
-
       setIsActive(activeSources.current.size > 0)
     },
     [],
   )
 
-  const chargeFromDirectClick = useCallback(() => {
-    const current = stateRef.current
-    const result = chargePulseTriggerFromDirectClick(current)
-    if (result.state === current) return
-
-    commitTriggerState(result.state)
-
-    if (result.charged) {
-      document.dispatchEvent(new Event(PULSE_TRIGGER_CHARGED_EVENT))
-    }
-  }, [commitTriggerState])
-
-  const fireTriggerPulse = useCallback(() => {
-    const current = stateRef.current
-    const nextState = spendPulseTriggerPulse(current)
-    if (!nextState) return false
-
-    const coreButton = document.querySelector<HTMLButtonElement>(
+  const firePulse = useCallback(() => {
+    const level = snapshotRef.current?.pulseTriggerLevel ?? 0
+    const next = spendPulseTriggerPulse(stateRef.current, level)
+    const button = document.querySelector<HTMLButtonElement>(
       '.click-button:not(:disabled)',
     )
-    if (!coreButton || !isVisible(coreButton)) return false
+    if (!next || !button) return false
 
     markNextCoreClickAsTrigger()
-    coreButton.click()
-    commitTriggerState(nextState)
+    button.click()
+    commitState(next)
     document.dispatchEvent(new Event(PULSE_TRIGGER_PULSE_EVENT))
 
-    if (nextState.reserveMs + 0.001 < PULSE_TRIGGER_INTERVAL_MS) {
+    if (next.reserveMs + 0.001 < getPulseTriggerIntervalMs(level)) {
       document.dispatchEvent(new Event(PULSE_TRIGGER_DEPLETED_EVENT))
     }
-
     return true
-  }, [commitTriggerState])
+  }, [commitState])
 
   useEffect(() => {
     const resolveHost = () => {
       const next = document.querySelector<HTMLElement>('.core-column')
       if (next) setHost(next)
     }
-
     resolveHost()
     const observer = new MutationObserver(resolveHost)
     observer.observe(document.body, { childList: true, subtree: true })
@@ -199,200 +154,145 @@ export function PulseTriggerSystem() {
   }, [])
 
   useEffect(() => {
-    const timer = window.setTimeout(
-      () => savePulseTriggerState(triggerState),
-      120,
-    )
+    const timer = window.setTimeout(() => savePulseTriggerState(triggerState), 120)
     return () => window.clearTimeout(timer)
   }, [triggerState])
 
   useEffect(() => {
-    const handleTriggerInput = (event: Event) => {
+    const handleInput = (event: Event) => {
       const detail = (event as CustomEvent<PulseTriggerInputDetail>).detail
-      if (!detail) return
-      updateInputSource(detail.source, detail.active)
+      if (detail) updateSource(detail.source, detail.active)
     }
-
-    document.addEventListener(PULSE_TRIGGER_INPUT_EVENT, handleTriggerInput)
-    return () =>
-      document.removeEventListener(PULSE_TRIGGER_INPUT_EVENT, handleTriggerInput)
-  }, [updateInputSource])
+    document.addEventListener(PULSE_TRIGGER_INPUT_EVENT, handleInput)
+    return () => document.removeEventListener(PULSE_TRIGGER_INPUT_EVENT, handleInput)
+  }, [updateSource])
 
   useEffect(() => {
-    let animationFrame = 0
+    const handleCoreClick = (event: MouseEvent) => {
+      const target = event.target
+      if (!(target instanceof Element) || !target.closest('.click-button')) return
+      if (consumeTriggerClickMarker()) return
+
+      const result = chargePulseTriggerFromDirectClick(stateRef.current)
+      if (result.state === stateRef.current) return
+      commitState(result.state)
+      if (result.charged) {
+        document.dispatchEvent(new Event(PULSE_TRIGGER_CHARGED_EVENT))
+      }
+    }
+    document.addEventListener('click', handleCoreClick, true)
+    return () => document.removeEventListener('click', handleCoreClick, true)
+  }, [commitState])
+
+  useEffect(() => {
+    let frame = 0
     let controlsEnabled = loadGamepadSettings().enabled
     let lastSettingsRead = 0
 
-    const pollGamepadTrigger = (now: number) => {
+    const poll = (now: number) => {
       if (now - lastSettingsRead >= 400) {
         controlsEnabled = loadGamepadSettings().enabled
         lastSettingsRead = now
       }
-
       const gamepad = getFirstConnectedGamepad()
-      const triggerPressed = Boolean(
+      const pressed = Boolean(
         controlsEnabled &&
           document.visibilityState === 'visible' &&
           gamepad &&
-          (isButtonPressed(gamepad.buttons[STANDARD_BUTTON.rightTrigger]) ||
-            (gamepad.buttons[STANDARD_BUTTON.rightTrigger]?.value ?? 0) >=
-              0.55),
+          isButtonPressed(gamepad.buttons[STANDARD_BUTTON.rightTrigger]),
       )
-
-      if (triggerPressed !== previousGamepadTrigger.current) {
-        previousGamepadTrigger.current = triggerPressed
-        setPulseTriggerInput('gamepad', triggerPressed)
+      if (pressed !== previousR2.current) {
+        previousR2.current = pressed
+        setPulseTriggerInput('gamepad', pressed)
       }
-
-      animationFrame = window.requestAnimationFrame(pollGamepadTrigger)
+      frame = window.requestAnimationFrame(poll)
     }
 
-    animationFrame = window.requestAnimationFrame(pollGamepadTrigger)
+    frame = window.requestAnimationFrame(poll)
     return () => {
-      window.cancelAnimationFrame(animationFrame)
-      previousGamepadTrigger.current = false
+      window.cancelAnimationFrame(frame)
       setPulseTriggerInput('gamepad', false)
     }
   }, [])
 
   useEffect(() => {
-    const handleCoreClick = (event: MouseEvent) => {
-      const target = event.target
-      if (!(target instanceof Element) || !target.closest('.click-button')) {
-        return
-      }
-
-      if (consumeTriggerClickMarker()) return
-      chargeFromDirectClick()
-    }
-
-    document.addEventListener('click', handleCoreClick, true)
-    return () => document.removeEventListener('click', handleCoreClick, true)
-  }, [chargeFromDirectClick])
-
-  useEffect(() => {
     if (!isActive) return
-
-    let animationFrame = 0
-    let previousTime = performance.now()
-    let accumulatedTime = 0
-
-    const run = (now: number) => {
-      if (document.visibilityState !== 'visible') {
-        stopAllInputs()
-        return
-      }
-
-      accumulatedTime += Math.min(250, Math.max(0, now - previousTime))
-      previousTime = now
-
-      while (accumulatedTime + 0.001 >= PULSE_TRIGGER_INTERVAL_MS) {
-        if (!fireTriggerPulse()) {
-          stopAllInputs()
-          return
-        }
-        accumulatedTime -= PULSE_TRIGGER_INTERVAL_MS
-
-        if (
-          stateRef.current.reserveMs + 0.001 <
-          PULSE_TRIGGER_INTERVAL_MS
-        ) {
-          stopAllInputs()
-          return
-        }
-      }
-
-      animationFrame = window.requestAnimationFrame(run)
-    }
-
-    animationFrame = window.requestAnimationFrame(run)
-    return () => window.cancelAnimationFrame(animationFrame)
-  }, [fireTriggerPulse, isActive, stopAllInputs])
+    const interval = getPulseTriggerIntervalMs(
+      snapshotRef.current?.pulseTriggerLevel ?? 0,
+    )
+    const timer = window.setInterval(() => {
+      if (!firePulse()) stopAll()
+    }, interval)
+    return () => window.clearInterval(timer)
+  }, [firePulse, isActive, snapshot?.pulseTriggerLevel, stopAll])
 
   useEffect(() => {
-    const stop = () => stopAllInputs()
-    const handleVisibility = () => {
-      if (document.visibilityState !== 'visible') stopAllInputs()
+    const stop = () => stopAll()
+    const visibility = () => {
+      if (document.visibilityState !== 'visible') stopAll()
     }
-
     window.addEventListener('blur', stop)
-    document.addEventListener('visibilitychange', handleVisibility)
+    document.addEventListener('visibilitychange', visibility)
     return () => {
       window.removeEventListener('blur', stop)
-      document.removeEventListener('visibilitychange', handleVisibility)
+      document.removeEventListener('visibilitychange', visibility)
     }
-  }, [stopAllInputs])
+  }, [stopAll])
 
   useEffect(() => {
     const timer = window.setInterval(() => {
       const current = readGameSnapshot()
-      const previous = previousGameSnapshot.current
-
-      const prestigeChanged =
-        previous !== null &&
-        current !== null &&
-        previous.prestigeCount !== current.prestigeCount
-      const saveWasCleared = previous !== null && current === null
-      const fullReset =
-        previous !== null &&
-        current !== null &&
-        hasRunProgress(previous) &&
-        !hasRunProgress(current)
-
-      if (prestigeChanged || saveWasCleared || fullReset) {
-        resetTriggerState()
+      const previous = previousSnapshot.current
+      if (!sameSnapshot(current, snapshotRef.current)) {
+        snapshotRef.current = current
+        setSnapshot(current)
       }
 
-      previousGameSnapshot.current = current
-    }, 500)
-
+      const prestigeChanged =
+        previous && current && previous.prestigeCount !== current.prestigeCount
+      const saveCleared = previous && !current
+      const fullReset = previous?.hasProgress && current && !current.hasProgress
+      if (prestigeChanged || saveCleared || fullReset) resetTrigger()
+      previousSnapshot.current = current
+    }, 160)
     return () => window.clearInterval(timer)
-  }, [resetTriggerState])
+  }, [resetTrigger])
+
+  const level = snapshot?.pulseTriggerLevel ?? 0
+  const rate = getPulseTriggerRate(level)
+  const interval = getPulseTriggerIntervalMs(level)
 
   useEffect(() => {
-    if (
-      triggerState.reserveMs + 0.001 < PULSE_TRIGGER_INTERVAL_MS &&
-      isActive
-    ) {
-      stopAllInputs()
-    }
-  }, [isActive, stopAllInputs, triggerState.reserveMs])
+    if (isActive && triggerState.reserveMs + 0.001 < interval) stopAll()
+  }, [interval, isActive, stopAll, triggerState.reserveMs])
 
   useEffect(
     () => () => {
-      stopAllInputs()
+      stopAll()
       setPulseTriggerInput('pointer', false)
       setPulseTriggerInput('keyboard', false)
       setPulseTriggerInput('gamepad', false)
     },
-    [stopAllInputs],
+    [stopAll],
   )
 
   if (!host) return null
 
-  const reservePercent =
-    (triggerState.reserveMs / PULSE_TRIGGER_MAX_RESERVE_MS) * 100
-  const chargePercent =
-    (triggerState.chargeClicks / PULSE_TRIGGER_CHARGE_CLICKS) * 100
-  const available =
-    triggerState.reserveMs + 0.001 >= PULSE_TRIGGER_INTERVAL_MS
+  const maxed = level >= PULSE_TRIGGER_MAX_LEVEL
+  const cost = getPulseTriggerUpgradeCost(level)
+  const available = triggerState.reserveMs + 0.001 >= interval
   const style: TriggerStyle = {
-    '--trigger-reserve': `${reservePercent}%`,
-    '--trigger-charge': `${chargePercent}%`,
+    '--trigger-reserve': `${(triggerState.reserveMs / PULSE_TRIGGER_MAX_RESERVE_MS) * 100}%`,
+    '--trigger-charge': `${(triggerState.chargeClicks / PULSE_TRIGGER_CHARGE_CLICKS) * 100}%`,
   }
-
-  const releasePointer = (pointerId: number, target: HTMLButtonElement) => {
-    if (target.hasPointerCapture(pointerId)) {
-      target.releasePointerCapture(pointerId)
-    }
+  const releasePointer = (id: number, target: HTMLButtonElement) => {
+    if (target.hasPointerCapture(id)) target.releasePointerCapture(id)
     setPulseTriggerInput('pointer', false)
   }
 
   return createPortal(
     <section
-      className={`pulse-trigger-card${isActive ? ' is-active' : ''}${
-        available ? ' is-ready' : ''
-      }`}
+      className={`pulse-trigger-card${isActive ? ' is-active' : ''}${available ? ' is-ready' : ''}`}
       style={style}
       aria-label="Gatillo de pulso"
     >
@@ -400,6 +300,7 @@ export function PulseTriggerSystem() {
         <div>
           <span>Herramienta activa</span>
           <strong>Gatillo de pulso</strong>
+          <small>Nivel {level} · {rate.toFixed(1)} pulsos/s</small>
         </div>
         <b>{(triggerState.reserveMs / 1000).toFixed(1)} s</b>
       </div>
@@ -409,26 +310,16 @@ export function PulseTriggerSystem() {
         className="pulse-trigger-button"
         disabled={!available}
         aria-pressed={isActive}
-        aria-label={`Mantener para generar ${PULSE_TRIGGER_RATE} pulsaciones por segundo. ${(
-          triggerState.reserveMs / 1000
-        ).toFixed(1)} segundos disponibles.`}
         onPointerDown={(event) => {
           event.preventDefault()
           event.currentTarget.setPointerCapture(event.pointerId)
           setPulseTriggerInput('pointer', true)
         }}
-        onPointerUp={(event) =>
-          releasePointer(event.pointerId, event.currentTarget)
-        }
-        onPointerCancel={(event) =>
-          releasePointer(event.pointerId, event.currentTarget)
-        }
+        onPointerUp={(event) => releasePointer(event.pointerId, event.currentTarget)}
+        onPointerCancel={(event) => releasePointer(event.pointerId, event.currentTarget)}
         onLostPointerCapture={() => setPulseTriggerInput('pointer', false)}
         onKeyDown={(event) => {
-          if (
-            !event.repeat &&
-            (event.key === ' ' || event.key === 'Enter')
-          ) {
+          if (!event.repeat && (event.key === ' ' || event.key === 'Enter')) {
             event.preventDefault()
             setPulseTriggerInput('keyboard', true)
           }
@@ -441,32 +332,32 @@ export function PulseTriggerSystem() {
         }}
         onBlur={() => setPulseTriggerInput('keyboard', false)}
       >
-        <span className="pulse-trigger-button-icon" aria-hidden="true">
-          R2
-        </span>
+        <span className="pulse-trigger-button-icon" aria-hidden="true">R2</span>
         <span>
           <strong>{isActive ? 'DESCARGANDO' : 'MANTENER PULSADO'}</strong>
-          <small>
-            {available
-              ? `${PULSE_TRIGGER_RATE} pulsos/s · mouse o control`
-              : 'Carga la reserva con clics directos'}
-          </small>
+          <small>{available ? `${rate.toFixed(1)} pulsos/s · mouse o control` : 'Carga la reserva con clics directos'}</small>
         </span>
       </button>
 
-      <div className="pulse-trigger-meter" aria-hidden="true">
-        <span />
-      </div>
-
+      <div className="pulse-trigger-meter" aria-hidden="true"><span /></div>
       <div className="pulse-trigger-footer">
-        <span>
-          Siguiente segundo: {triggerState.chargeClicks}/
-          {PULSE_TRIGGER_CHARGE_CLICKS}
-        </span>
+        <span>Siguiente segundo: {triggerState.chargeClicks}/{PULSE_TRIGGER_CHARGE_CLICKS}</span>
         <span>Máximo 10 s</span>
       </div>
-      <div className="pulse-trigger-charge" aria-hidden="true">
-        <span />
+      <div className="pulse-trigger-charge" aria-hidden="true"><span /></div>
+
+      <div className="pulse-trigger-upgrade">
+        <div>
+          <span>Acelerador de pulso</span>
+          <strong>{maxed ? 'Cadencia máxima alcanzada' : `${rate.toFixed(1)} → ${getPulseTriggerRate(level + 1).toFixed(1)} pulsos/s`}</strong>
+        </div>
+        <button
+          type="button"
+          disabled={maxed || (snapshot?.energy ?? 0) < cost}
+          onClick={requestPulseTriggerUpgrade}
+        >
+          {maxed ? 'Nivel máximo' : `Mejorar · ${format.format(cost)}`}
+        </button>
       </div>
     </section>,
     host,
