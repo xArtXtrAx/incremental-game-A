@@ -174,33 +174,6 @@ export function SapphireGem({
           onUnavailable={handleOrbitUnavailable}
         />
       )}
-      <motion.span
-        className="sapphire-gem-glint"
-        initial={{
-          x: '-340%',
-          rotate: 18,
-          filter: 'blur(2px) opacity(0)',
-        }}
-        animate={{
-          x: ['-340%', '-340%', '-250%', '250%', '340%', '340%'],
-          rotate: 18,
-          filter: [
-            'blur(2px) opacity(0)',
-            'blur(2px) opacity(0)',
-            'blur(2px) opacity(1)',
-            'blur(2px) opacity(1)',
-            'blur(2px) opacity(0)',
-            'blur(2px) opacity(0)',
-          ],
-        }}
-        transition={{
-          duration: 4.2,
-          times: [0, 0.12, 0.24, 0.62, 0.74, 1],
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
-        style={{ animation: 'none' }}
-      />
     </motion.span>
   )
 }
