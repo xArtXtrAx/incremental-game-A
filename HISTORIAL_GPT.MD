@@ -7,15 +7,19 @@
 
 - Repositorio: `xArtXtrAx/incremental-game-A`.
 - Rama estable: `main`.
-- Rama aprobada para integración: `Dev-Camara-Cromatica`.
-- Ramas históricas: `Dev-Prestigio-Test`, `Dev-Orbita-Zafiro-Test`, `Dev-Matriz-Refraccion-Test`, `Dev-Gamepad-Test` y `Dev-Pulse-Trigger-Level`.
+- No hay una rama funcional pendiente de integración.
+- Últimas ramas aprobadas e integradas:
+  - `Dev-Camara-Cromatica`;
+  - `Dev-Smooth-Progress-Bars`;
+  - `Dev-DualSense-L2-Hotkeys`.
+- Ramas históricas adicionales: `Dev-Prestigio-Test`, `Dev-Orbita-Zafiro-Test`, `Dev-Matriz-Refraccion-Test`, `Dev-Gamepad-Test` y `Dev-Pulse-Trigger-Level`.
 - Entorno: React + TypeScript + Vite + Motion.
 - Guardado principal: `incremental-game-a:save:v1`.
 - Ajustes de mando: `incremental-game-a:gamepad:v1`.
 - Reserva del Gatillo: `incremental-game-a:pulse-trigger:v1`.
 - Última actualización: **2 de agosto de 2026**.
 
-Arturo aprobó visualmente y funcionalmente la Cámara Cromática, el Nexo Prismático, el acceso normal y DEV, el control de cristalizaciones y el Zafiro WebGL orbitando con iluminación dinámica. `Dev-Camara-Cromatica` puede integrarse a `main` mediante fast-forward limpio.
+Arturo aprobó visualmente y funcionalmente la Cámara Cromática, el Nexo Prismático, el acceso normal y DEV, el control de cristalizaciones, el Zafiro WebGL orbital, las barras de progreso fluidas y el esquema final de controles DualSense. Todo está integrado en `main`.
 
 ## 2. Forma de trabajo
 
@@ -23,6 +27,9 @@ Arturo aprobó visualmente y funcionalmente la Cámara Cromática, el Nexo Prism
 - Usar GitHub Desktop para el flujo local normal.
 - Crear ramas para cambios visuales, estructurales o mecánicos importantes.
 - Integrar a `main` solamente después de la validación de Arturo.
+- Antes de integrar, comparar la rama con `main`, reportar alcance y esperar autorización explícita.
+- Conservar las ramas remotas como respaldo salvo autorización expresa para eliminarlas.
+- Evitar reescrituras destructivas del historial remoto salvo necesidad técnica clara y autorización.
 - Evitar ZIP, manifiestos y hashes salvo necesidad técnica o petición expresa.
 - Agrupar pruebas y registrar aquí las decisiones relevantes.
 - No afirmar que se ejecutó `npm run build`, `lint` o pruebas físicas cuando el entorno remoto no dispone del checkout y dependencias reales.
@@ -165,7 +172,10 @@ costo = ceil(6000 × 2.25^nivel)
 - Se activa manteniendo:
   - el botón visual con mouse;
   - R2/RT;
-  - Espacio o Enter cuando el botón tiene foco.
+  - Espacio o Enter cuando el botón tiene foco;
+  - botón derecho del mouse dentro del área jugable.
+- El clic izquierdo puede seguir utilizándose mientras el botón derecho mantiene activo el Gatillo.
+- El menú contextual se bloquea solamente dentro del área del juego.
 - Los pulsos del Gatillo no recargan su propia reserva.
 - El Autoclicker tampoco recarga la reserva.
 - X/A sobre el núcleo sí cuenta como clic directo.
@@ -222,32 +232,71 @@ duración = 3 + 17 × (1 − clics / 5000)^1.6
 - Cambia de profundidad para pasar íntegramente por detrás y por delante del Nexo.
 - Su posición alimenta un reflejo azul móvil sobre las facetas grises; el reflejo es más intenso al pasar por delante y nunca sustituye el estado real de las facetas.
 
-## 8. Soporte Gamepad / DualSense
+## 8. Barras de progreso
 
-La capa de mando acciona los controles reales del DOM y no duplica las fórmulas del reducer.
+- Existe un componente universal de barras para niveles, requisitos y sistemas internos.
+- Las tarjetas de mejoras muestran progreso hacia el siguiente nivel o requisito cuando corresponde.
+- Hay barras internas para Presión, Cavitación, Autoclicker, Sobrecarga y Refracción.
+- Conservan segmentación, tonos de estado, etiquetas accesibles y conteos activos.
+- La animación usa la Web Animations API nativa del navegador.
+- Cada actualización comienza desde la posición visual real de la barra, aunque la animación anterior siga en curso.
+- Se evita la doble interpolación: el reloj visual nativo controla el movimiento y CSS no vuelve a suavizarlo.
+- Las barras cíclicas siempre avanzan hacia la derecha:
 
-Controles estándar:
+```text
+70% → 100% → reinicio inmediato en 0% → 10%
+```
 
-- X/A: activar control enfocado o pulsar el núcleo.
+- Los ciclos nunca retroceden de 70% a 10% hacia la izquierda.
+- Una reducción hacia la izquierda solo se permite cuando el recurso realmente disminuye.
+- Arturo validó visualmente que las barras se ven continuas, fluidas y sin congelamientos.
+
+## 9. Soporte Gamepad / DualSense
+
+La capa de mando acciona controles reales del DOM y no duplica fórmulas del reducer.
+
+### Controles en el reactor
+
+- X/A: pulsa siempre la esfera, sin depender del elemento enfocado.
+- X/A queda reservado y no pulsa la esfera mientras L2/LT está presionado.
+- Cuadrado/X de Xbox: selector general; activa el control enfocado.
+  - compra una mejora individual;
+  - selecciona pestañas y menús;
+  - activa botones, radios y casillas;
+  - si no hay un foco compatible, no ejecuta una acción alternativa.
 - R2/RT: Gatillo de pulso con reserva.
-- Cuadrado/X: cambiar estrategia de Comprar todo.
-- Triángulo/Y: Comprar todo posible.
-- L1/LB: Núcleo.
-- R1/RB: Evoluciones.
-- L1 + R1 / LB + RB: abrir Cámara Cromática cuando esté desbloqueada.
-- Círculo/B: volver al Núcleo o cerrar la Cámara.
-- Options/Menu: abrir o cerrar panel de mando.
-- Cruceta/stick: navegación espacial y ajuste de deslizadores.
+- L2 + Triángulo / LT + Y: cambia entre `Equilibrado`, `Juego activo` y `Automático`.
+- L2 + Cuadrado / LT + X: ejecuta `Comprar todo lo posible`.
+- Triángulo/Y sin L2 conserva el atajo anterior de compra global.
+- L1/LB: cambia inmediatamente a Núcleo.
+- R1/RB: cambia inmediatamente a Evoluciones.
+- L1 + R1 / LB + RB: abre la Cámara Cromática cuando está desbloqueada.
+- La cruceta ya no cambia directamente de ventana.
+- Cruceta y stick navegan espacialmente por los controles enfocables.
+- Las cuatro direcciones de la cruceta están disponibles para navegar.
+- Izquierda/derecha ajustan controles deslizantes cuando uno tiene el foco.
+- Círculo/B: vuelve al Núcleo o cierra la Cámara según el contexto.
+- Options/Menu: abre o cierra el panel del mando.
 
-Dentro de la Cámara:
+### Prioridad de hotkeys
+
+- L2/LT funciona como modificador.
+- La combinación tiene prioridad sobre la acción normal del botón acompañante.
+- Las combinaciones se ejecutan una sola vez por pulsación; no repiten mientras el botón permanece sostenido.
+- L2 por sí solo no ejecuta ninguna acción.
+- Las combinaciones del reactor quedan suspendidas mientras la Cámara Cromática está abierta.
+
+### Dentro de la Cámara Cromática
+
+La Cámara conserva su puente específico de navegación:
 
 - L1/R1 o cruceta izquierda/derecha recorren gemas.
 - Cruceta arriba enfoca regresar.
 - Cruceta abajo vuelve a la gema seleccionada.
-- X/A activa el control enfocado.
+- X/A activa el control enfocado de la Cámara y no pulsa el núcleo por detrás del overlay.
 - Círculo/B regresa al reactor.
 
-Protecciones y rendimiento:
+### Protecciones y rendimiento
 
 - Gamepad API estándar.
 - Detección por flancos para acciones discretas.
@@ -271,7 +320,7 @@ Vibraciones contextuales opcionales:
 
 La ausencia o fallo del actuador háptico nunca bloquea acciones.
 
-## 9. Comprar todo estratégico
+## 10. Comprar todo estratégico
 
 Perfiles:
 
@@ -292,7 +341,7 @@ Funcionamiento:
 
 Máximo técnico: 320 compras por pulsación.
 
-## 10. Cámara Cromática y Nexo Prismático
+## 11. Cámara Cromática y Nexo Prismático
 
 - Vista completa de metaprogresión montada sobre el reactor sin desmontarlo.
 - El reactor sigue produciendo, guardando y ejecutando temporizadores mientras la Cámara está abierta.
@@ -320,13 +369,22 @@ Máximo técnico: 320 compras por pulsación.
 - El inspector lateral muestra nombre, nivel, progreso, estado y descripción de la gema seleccionada.
 - La vista respeta `prefers-reduced-motion` y es responsiva.
 
-### Acceso DEV
+### Acceso y previsualización DEV
 
 - El panel de desarrollador contiene `Cámara Cromática — ABRIR`.
 - Puede abrir una inspección incluso en P0–P4.
 - Se identifica como `Vista DEV · Estado real`.
 - Nunca concede P5 ni modifica desbloqueos.
 - Permanece abierta si el progreso se reinicia para mostrar inmediatamente el estado posterior.
+- La previsualización cromática permite mostrar temporalmente:
+  - Zafiro;
+  - Esmeralda;
+  - Amarilla;
+  - Naranja;
+  - Roja.
+- La previsualización es únicamente visual y dura durante la sesión.
+- No modifica guardado, prestigio, desbloqueos ni economía.
+- Recargar devuelve la vista al Zafiro real.
 
 ### Control de cristalizaciones
 
@@ -349,19 +407,21 @@ Consistencia de refracción al reducir prestigio:
 - P0 elimina nivel, progreso, facetas, PRISMA y recompensas de refracción.
 - Bajar entre P4, P3, P2 y P1 limita las facetas cargadas al nuevo máximo.
 
-## 11. Arquitectura relevante
+## 12. Arquitectura relevante
 
 - `src/game.ts`: estado, migración, compras, reducer y multiplicadores.
 - `src/refraction.ts`: Matriz de refracción.
 - `src/bulkPurchase.ts`: perfiles y planificación de Comprar todo.
 - `src/App.tsx`: ciclo principal, acciones y aplicación atómica de valores DEV.
 - `src/GameCore.tsx`: núcleo, estados y eventos visuales.
+- `src/UpgradeProgressBar.tsx`: barras universales, animación nativa y reinicio de ciclos.
+- `src/UpgradeProgressBar.css`: apariencia, segmentación y tonos de barras.
 - `src/SapphireGem.tsx`: componente compartido del Zafiro.
 - `src/SapphireGem3D.tsx`: geometría y shader de la gema.
 - `src/SapphireOrbit3D.tsx`: órbita interna, chispa y estela WebGL.
 - `src/SapphireOrbitState.ts`: fase y posiciones orbitales compartidas.
-- `src/gamepad.ts`: ajustes y detección de mandos.
-- `src/GamepadController.tsx`: navegación y acciones discretas.
+- `src/gamepad.ts`: ajustes, etiquetas y detección de mandos.
+- `src/GamepadController.tsx`: navegación, selección, hotkeys y acciones discretas.
 - `src/GamepadEventHaptics.tsx`: vibraciones contextuales.
 - `src/pulseTrigger.ts`: reserva, fórmulas, nivel y protocolo del Gatillo.
 - `src/PulseTriggerSystem.tsx`: interfaz, mouse, teclado, R2 y descargas.
@@ -373,11 +433,13 @@ Consistencia de refracción al reducir prestigio:
 - `src/ChromaticGamepadBridge.tsx`: navegación del mando dentro de la Cámara.
 - `src/ChromaticSapphireOrbit.tsx`: órbita exterior del Zafiro y posición de iluminación.
 - `src/ChromaticSapphireOrbit.css`: profundidad, escala y reflejo sobre el Nexo.
-- `src/DeveloperPanel.tsx`: acceso cromático y campos DEV.
+- `src/DeveloperPanel.tsx`: acceso cromático, previsualización y campos DEV.
+- `SMOOTH_PROGRESS_FIX.md`: decisiones técnicas de las barras fluidas.
+- `DUALSENSE_L2_HOTKEYS.md`: mapa y decisiones de controles DualSense.
 
-## 12. Validaciones y límites conocidos
+## 13. Validaciones y límites conocidos
 
-- No se añadieron dependencias.
+- No se añadieron dependencias para las barras ni los hotkeys.
 - Guardados anteriores reciben campos nuevos en cero.
 - Estados temporales vencidos no se restauran.
 - Autoclics múltiples se procesan secuencialmente.
@@ -386,9 +448,11 @@ Consistencia de refracción al reducir prestigio:
 - La Cámara no añade claves ni campos nuevos al guardado.
 - P0–P4 no montan Zafiro ni reflejo cromático.
 - El Zafiro cromático pasó comprobación TypeScript estricta aislada.
-- Se corrigió un error de nulabilidad detectado dentro del ciclo `requestAnimationFrame` antes de integrar.
-- Arturo validó físicamente DualSense, vibraciones, Gatillo y guía visual.
-- Arturo validó visualmente el Gatillo escalable, la Cámara Cromática y el Zafiro orbital con reflejo dinámico.
+- El componente de barras pasó comprobaciones TypeScript aisladas durante el desarrollo.
+- Las barras fueron validadas visualmente después de corregir una versión que quedaba invisible y otra que se congelaba.
+- La solución final usa animaciones nativas enlazadas desde la posición visual actual.
+- Arturo validó físicamente DualSense, vibraciones, Gatillo, hotkeys, selector con Cuadrado y navegación libre con cruceta.
+- Arturo validó visualmente el Gatillo escalable, la Cámara Cromática, el Zafiro orbital, el reflejo dinámico y las barras fluidas.
 - GitHub no tiene CI configurado para estos commits.
 - No se ejecutó el `build` completo en el entorno remoto por falta de checkout/dependencias accesibles.
 
@@ -400,22 +464,23 @@ npm run build
 npm run dev
 ```
 
-## 13. Próxima expansión
+## 14. Próxima expansión
 
-La Cámara Cromática ya está estable como estructura visual y de navegación. El siguiente desarrollo debe definirse en una rama nueva creada desde `main`.
+El reactor, la Cámara Cromática, las barras y el mando están estables según las pruebas actuales. El siguiente desarrollo debe comenzar en una rama nueva creada desde `main`.
 
 Opciones naturales:
 
 - diseñar la economía y los cinco niveles de la Esmeralda;
 - definir qué sistemas existentes transforma la frecuencia verde;
 - diseñar la transición Zafiro P5 → desbloqueo de Esmeralda;
-- añadir sonido ambiental y señales acústicas de la Cámara;
-- continuar el pulido del Nexo sin activar prematuramente las otras facetas.
+- añadir sonido ambiental y señales acústicas;
+- continuar el pulido del Nexo sin activar prematuramente otras facetas;
+- seguir refinando navegación y accesibilidad del mando conforme crezca la interfaz.
 
 Regla de diseño vigente:
 
 > Cada gema nueva debe transformar mecánicas existentes y no limitarse a añadir otra moneda o porcentaje aislado.
 
-## 14. Inicio recomendado para otro chat
+## 15. Inicio recomendado para otro chat
 
-> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD` y comprueba la rama activa. `main` incorpora Gamepad/DualSense, Gatillo de pulso escalable, Matriz de refracción, Cámara Cromática, acceso DEV, edición de cristalizaciones y el Zafiro WebGL orbitando el Nexo con reflejo dinámico. Crea una rama nueva antes de desarrollar la Esmeralda u otra expansión importante. No integres cambios nuevos a `main` sin aprobación explícita de Arturo.
+> Continúa el proyecto `xArtXtrAx/incremental-game-A`. Lee primero `HISTORIAL_GPT.MD`, revisa `WORKFLOW_RULES.md` si existe y comprueba la rama activa antes de escribir. La rama estable `main` incorpora Gamepad/DualSense, Gatillo de pulso escalable, Matriz de refracción, Cámara Cromática y Nexo Prismático, acceso y previsualización DEV, edición de cristalizaciones, Zafiro WebGL orbital, barras de progreso fluidas mediante Web Animations API y el esquema final de controles: X pulsa la esfera, Cuadrado selecciona el foco, L2+Triángulo cambia estrategia, L2+Cuadrado compra todo, L1/R1 cambia de ventana y la cruceta navega libremente. Crea una rama nueva antes de cualquier expansión importante. No integres cambios nuevos a `main` sin aprobación explícita de Arturo.
