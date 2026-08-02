@@ -34,7 +34,7 @@ const STRATEGIES: Array<{
   {
     id: 'active',
     label: 'Juego activo',
-    description: 'Favorece clic, cavitación y sobrecarga.',
+    description: 'Favorece clic, gatillo, cavitación y sobrecarga.',
   },
   {
     id: 'automatic',
@@ -55,6 +55,7 @@ function getBreakdown(plan: BulkPurchasePlan) {
 
   const labels: Record<string, string> = {
     click: 'Pulso',
+    pulseTrigger: 'Gatillo',
     generator: 'Generador',
     resonance: 'Resonancia',
     pressure: 'Presión',
