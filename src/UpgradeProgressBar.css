@@ -53,15 +53,31 @@
 
 .upgrade-progress-fill {
   position: absolute;
-  inset: 0 auto 0 0;
-  width: var(--upgrade-progress);
+  inset: 0;
+  width: 100%;
   min-width: 0;
   border-radius: inherit;
   background: linear-gradient(90deg, #147fb8, #42c8f4 72%, #b6f6ff);
   box-shadow:
     0 0 8px rgba(45, 205, 255, 0.32),
     inset 0 1px 0 rgba(231, 253, 255, 0.22);
-  transition: width 150ms linear;
+  transform: scaleX(0);
+  transform-origin: left center;
+  will-change: transform;
+}
+
+.upgrade-progress-fill::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(239, 255, 255, 0.74), transparent 68%);
+  filter: blur(2px);
+  opacity: 0.72;
+  transform: translate(45%, -50%);
 }
 
 .upgrade-progress-segments {
@@ -90,6 +106,10 @@
 .upgrade-progress.is-locked .upgrade-progress-fill {
   background: linear-gradient(90deg, #3b586c, #7292a4);
   box-shadow: none;
+}
+
+.upgrade-progress.is-locked .upgrade-progress-fill::after {
+  opacity: 0.28;
 }
 
 .upgrade-progress.is-ready .upgrade-progress-heading strong {
@@ -165,7 +185,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .upgrade-progress-fill {
-    transition: none;
+    will-change: auto;
   }
 
   .upgrade-progress.is-ready .upgrade-progress-fill,
