@@ -1,0 +1,119 @@
+.core-column > * {
+  order: 4;
+}
+
+.core-column > :first-child {
+  order: 0;
+}
+
+.core-column > .energy-display {
+  order: 1;
+}
+
+.core-column > .button-stage {
+  order: 2;
+}
+
+.core-column > .pulse-trigger-card {
+  order: 3;
+}
+
+.pulse-trigger-card {
+  width: 100%;
+  margin: -4px 0 12px;
+  padding: 11px;
+}
+
+.pulse-trigger-heading small {
+  display: block;
+  margin-top: 3px;
+  color: rgba(155, 218, 242, 0.68);
+  font-size: 0.56rem;
+  font-weight: 750;
+}
+
+.pulse-trigger-button {
+  min-height: 54px;
+  margin-top: 9px;
+  padding: 8px 10px;
+  gap: 10px;
+}
+
+.pulse-trigger-button-icon {
+  width: 36px;
+  height: 36px;
+  font-size: 0.66rem;
+}
+
+.pulse-trigger-upgrade {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 9px;
+  align-items: center;
+  margin-top: 9px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(79, 177, 225, 0.12);
+}
+
+.pulse-trigger-upgrade span,
+.pulse-trigger-upgrade strong {
+  display: block;
+}
+
+.pulse-trigger-upgrade span {
+  color: rgba(152, 201, 226, 0.64);
+  font-size: 0.53rem;
+  font-weight: 850;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.pulse-trigger-upgrade strong {
+  margin-top: 3px;
+  color: rgba(222, 245, 255, 0.84);
+  font-size: 0.6rem;
+}
+
+.pulse-trigger-upgrade button {
+  min-width: 112px;
+  padding: 8px 9px;
+  border: 1px solid rgba(92, 204, 246, 0.3);
+  border-radius: 9px;
+  color: #dff9ff;
+  background: rgba(0, 105, 162, 0.2);
+  font-size: 0.57rem;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.pulse-trigger-upgrade button:not(:disabled):hover {
+  border-color: rgba(121, 229, 255, 0.62);
+  background: rgba(0, 139, 195, 0.3);
+}
+
+.pulse-trigger-upgrade button:disabled {
+  cursor: not-allowed;
+  opacity: 0.48;
+}
+
+.pulse-trigger-upgrade button:focus-visible {
+  outline: 2px solid rgba(123, 227, 255, 0.92);
+  outline-offset: 3px;
+}
+
+@media (max-width: 760px) {
+  .pulse-trigger-card {
+    width: 100%;
+    margin-top: -2px;
+  }
+}
+
+@media (max-width: 420px) {
+  .pulse-trigger-upgrade {
+    grid-template-columns: 1fr;
+  }
+
+  .pulse-trigger-upgrade button {
+    width: 100%;
+  }
+}
