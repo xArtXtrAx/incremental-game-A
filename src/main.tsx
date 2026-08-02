@@ -1,6 +1,7 @@
 import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
+import './ChromaticChamberGuard.css'
 import App from './App.tsx'
 import { ChromaticChamberSystem } from './ChromaticChamberSystem'
 import { ChromaticGamepadBridge } from './ChromaticGamepadBridge'
