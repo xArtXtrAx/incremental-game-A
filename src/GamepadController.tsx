@@ -154,24 +154,6 @@ function pulseCore() {
   return true
 }
 
-function activateFocusedOrPulse() {
-  const focused = getFocusedControl()
-
-  if (focused instanceof HTMLButtonElement && !focused.disabled) {
-    focused.click()
-    return true
-  }
-
-  if (focused instanceof HTMLInputElement && !focused.disabled) {
-    if (focused.type === 'checkbox' || focused.type === 'radio') {
-      focused.click()
-      return true
-    }
-  }
-
-  return pulseCore()
-}
-
 function setNativeInputValue(input: HTMLInputElement, value: string) {
   const setter = Object.getOwnPropertyDescriptor(
     HTMLInputElement.prototype,
@@ -391,8 +373,12 @@ export function GamepadController() {
         )
         const chamberOpen = isChromaticChamberOpen()
 
-        if (justPressed(STANDARD_BUTTON.primary)) {
-          if (activateFocusedOrPulse()) rumble(gamepad, 45, 0.18, 0.08)
+        if (
+          !leftTriggerHeld &&
+          !chamberOpen &&
+          justPressed(STANDARD_BUTTON.primary)
+        ) {
+          if (pulseCore()) rumble(gamepad, 45, 0.18, 0.08)
         }
         if (justPressed(STANDARD_BUTTON.back)) {
           switchSection('core')
@@ -586,7 +572,7 @@ export function GamepadController() {
 
           <div className="gamepad-map" aria-label="Mapa de botones">
             <span>
-              <kbd>{labels.primary}</kbd> activar foco / pulsar núcleo
+              <kbd>{labels.primary}</kbd> pulsar siempre el núcleo
             </span>
             <span>
               <kbd>{labels.rightTrigger}</kbd> Gatillo de pulso
