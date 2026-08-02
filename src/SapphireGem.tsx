@@ -1,5 +1,6 @@
 import { useCallback, useState } from 'react'
 import { motion } from 'motion/react'
+import './SapphireOrbit.css'
 import { SapphireGem3D } from './SapphireGem3D'
 
 export type SapphireGemSize = 'core' | 'dock'
@@ -16,6 +17,12 @@ type SapphireDockProps = {
   multiplier: number
   energized?: boolean
 }
+
+type SapphireOrbitLayerProps = {
+  depth: 'back' | 'front'
+}
+
+const SAPPHIRE_ORBIT_TRAIL_STEPS = [1, 2, 3, 4, 5, 6] as const
 
 export function getSapphireName(prestigeCount: number) {
   if (prestigeCount <= 1) return 'Zafiro incipiente'
@@ -55,6 +62,21 @@ function SapphireFallback() {
   )
 }
 
+function SapphireOrbitLayer({ depth }: SapphireOrbitLayerProps) {
+  return (
+    <span className={`sapphire-orbit-layer sapphire-orbit-${depth}`}>
+      <span className="sapphire-orbit-ring" />
+      {SAPPHIRE_ORBIT_TRAIL_STEPS.map((step) => (
+        <span
+          key={`${depth}-${step}`}
+          className={`sapphire-orbit-trail sapphire-orbit-trail-${step}`}
+        />
+      ))}
+      <span className="sapphire-orbit-spark" />
+    </span>
+  )
+}
+
 export function SapphireGem({
   size = 'dock',
   energized = false,
@@ -66,7 +88,7 @@ export function SapphireGem({
 
   return (
     <motion.span
-      className={`sapphire-gem sapphire-gem-${size}${energized ? ' is-energized' : ''} ${className}`.trim()}
+      className={`sapphire-gem sapphire-gem-${size}${energized ? ' is-energized' : ''}${webglUnavailable ? ' is-webgl-fallback' : ''} ${className}`.trim()}
       animate={{ y: energized ? [0, -5, 1, -3, 0] : [0, -4, 0] }}
       transition={{
         duration: energized ? 1.1 : 3.4,
@@ -76,6 +98,7 @@ export function SapphireGem({
       aria-hidden="true"
     >
       <span className="sapphire-gem-halo" />
+      <SapphireOrbitLayer depth="back" />
       {!webglUnavailable ? (
         <SapphireGem3D
           energized={energized}
@@ -91,6 +114,7 @@ export function SapphireGem({
           <SapphireFallback />
         </motion.span>
       )}
+      <SapphireOrbitLayer depth="front" />
       <motion.span
         className="sapphire-gem-glint"
         initial={{
