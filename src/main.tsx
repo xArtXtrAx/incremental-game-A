@@ -11,6 +11,7 @@ import { GamepadController } from './GamepadController'
 import { GamepadEventHaptics } from './GamepadEventHaptics'
 import { PulseTriggerSystem } from './PulseTriggerSystem'
 import { RegionFocusGuide } from './RegionFocusGuide'
+import { UpgradeProgressSystem } from './UpgradeProgressSystem'
 import './PulseTriggerLevel.css'
 
 const editableSelector =
@@ -31,6 +32,7 @@ createRoot(document.getElementById('root')!).render(
     <App />
     <RegionFocusGuide />
     <PulseTriggerSystem />
+    <UpgradeProgressSystem />
     <ChromaticChamberSystem />
     <GamepadController />
     <ChromaticGamepadBridge />
