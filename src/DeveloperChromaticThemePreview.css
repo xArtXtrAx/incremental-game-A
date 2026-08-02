@@ -1,0 +1,236 @@
+html {
+  --developer-theme-filter: none;
+  --developer-theme-bg-top: 0 102 255;
+  --developer-theme-bg-bottom: 0 195 255;
+  --developer-theme-bg-top-opacity: 0.25;
+  --developer-theme-bg-bottom-opacity: 0.12;
+}
+
+html[data-developer-chromatic-theme='sapphire'] {
+  --developer-theme-filter: hue-rotate(0deg) saturate(1) brightness(1);
+  --developer-theme-bg-top: 0 102 255;
+  --developer-theme-bg-bottom: 0 195 255;
+}
+
+html[data-developer-chromatic-theme='emerald'] {
+  --developer-theme-filter: hue-rotate(-58deg) saturate(1.08) brightness(0.99);
+  --developer-theme-bg-top: 0 155 92;
+  --developer-theme-bg-bottom: 37 224 139;
+}
+
+html[data-developer-chromatic-theme='yellow'] {
+  --developer-theme-filter: hue-rotate(-140deg) saturate(1.18) brightness(1.04);
+  --developer-theme-bg-top: 184 137 0;
+  --developer-theme-bg-bottom: 255 210 54;
+  --developer-theme-bg-top-opacity: 0.22;
+  --developer-theme-bg-bottom-opacity: 0.1;
+}
+
+html[data-developer-chromatic-theme='orange'] {
+  --developer-theme-filter: hue-rotate(-166deg) saturate(1.16) brightness(1.01);
+  --developer-theme-bg-top: 194 78 0;
+  --developer-theme-bg-bottom: 255 142 36;
+  --developer-theme-bg-top-opacity: 0.23;
+  --developer-theme-bg-bottom-opacity: 0.11;
+}
+
+html[data-developer-chromatic-theme='red'] {
+  --developer-theme-filter: hue-rotate(160deg) saturate(1.12) brightness(0.98);
+  --developer-theme-bg-top: 184 18 52;
+  --developer-theme-bg-bottom: 255 58 83;
+  --developer-theme-bg-top-opacity: 0.23;
+  --developer-theme-bg-bottom-opacity: 0.1;
+}
+
+html[data-developer-chromatic-theme] body {
+  background:
+    radial-gradient(
+      circle at 50% 0%,
+      rgb(var(--developer-theme-bg-top) / var(--developer-theme-bg-top-opacity)),
+      transparent 40%
+    ),
+    radial-gradient(
+      circle at 50% 100%,
+      rgb(
+        var(--developer-theme-bg-bottom) /
+          var(--developer-theme-bg-bottom-opacity)
+      ),
+      transparent 35%
+    ),
+    #030713;
+}
+
+.game-workspace > .game-panel,
+.gamepad-panel {
+  transition: filter 180ms ease;
+}
+
+html[data-developer-chromatic-theme] .game-workspace > .game-panel,
+html[data-developer-chromatic-theme] .gamepad-panel {
+  filter: var(--developer-theme-filter);
+}
+
+.developer-theme-preview {
+  margin: 0 0 14px;
+  padding: 11px;
+  border: 1px solid rgba(106, 200, 244, 0.14);
+  border-radius: 13px;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(57, 180, 234, 0.09), transparent 52%),
+    rgba(2, 13, 31, 0.62);
+}
+
+.developer-theme-preview-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 9px;
+}
+
+.developer-theme-preview-heading span,
+.developer-theme-preview-heading strong,
+.developer-theme-preview-heading small {
+  display: block;
+}
+
+.developer-theme-preview-heading span {
+  color: rgba(146, 207, 234, 0.58);
+  font-size: 0.54rem;
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.developer-theme-preview-heading strong {
+  margin-top: 2px;
+  color: #eafaff;
+  font-size: 0.73rem;
+}
+
+.developer-theme-preview-heading small {
+  margin-top: 3px;
+  color: rgba(164, 204, 224, 0.54);
+  font-size: 0.52rem;
+  line-height: 1.35;
+}
+
+.developer-theme-preview-heading > b {
+  flex: 0 0 auto;
+  padding: 4px 6px;
+  border: 1px solid rgba(117, 214, 247, 0.18);
+  border-radius: 7px;
+  color: rgba(181, 229, 247, 0.68);
+  background: rgba(8, 47, 70, 0.4);
+  font-size: 0.5rem;
+  letter-spacing: 0.08em;
+}
+
+.developer-theme-options {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.developer-panel .developer-theme-option {
+  position: relative;
+  min-width: 0;
+  min-height: 48px;
+  padding: 6px 3px 5px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 4px;
+  border-color: rgba(119, 194, 225, 0.16);
+  color: rgba(207, 234, 246, 0.72);
+  background: rgba(5, 23, 42, 0.72);
+  font-size: 0.48rem;
+  letter-spacing: 0;
+}
+
+.developer-panel .developer-theme-option:hover {
+  transform: translateY(-1px);
+}
+
+.developer-panel .developer-theme-option.is-active {
+  border-color: rgba(211, 250, 255, 0.82);
+  color: white;
+  background: rgba(17, 58, 82, 0.86);
+  box-shadow:
+    0 0 0 1px rgba(145, 229, 255, 0.08),
+    0 0 14px rgba(52, 195, 255, 0.12);
+}
+
+.developer-theme-swatch {
+  width: 19px;
+  height: 19px;
+  border: 1px solid rgba(255, 255, 255, 0.46);
+  border-radius: 50%;
+  box-shadow:
+    inset 0 0 6px rgba(255, 255, 255, 0.22),
+    0 0 9px currentColor;
+}
+
+.developer-theme-option.is-sapphire {
+  color: #62d4ff;
+}
+
+.developer-theme-option.is-sapphire .developer-theme-swatch {
+  background: radial-gradient(circle at 35% 28%, #effeff, #28b7ff 48%, #064bc7);
+}
+
+.developer-theme-option.is-emerald {
+  color: #4be7a0;
+}
+
+.developer-theme-option.is-emerald .developer-theme-swatch {
+  background: radial-gradient(circle at 35% 28%, #effff6, #20d77e 48%, #047247);
+}
+
+.developer-theme-option.is-yellow {
+  color: #ffe25c;
+}
+
+.developer-theme-option.is-yellow .developer-theme-swatch {
+  background: radial-gradient(circle at 35% 28%, #fffde8, #ffd52f 48%, #a76800);
+}
+
+.developer-theme-option.is-orange {
+  color: #ff9c48;
+}
+
+.developer-theme-option.is-orange .developer-theme-swatch {
+  background: radial-gradient(circle at 35% 28%, #fff5e9, #ff8127 48%, #a93100);
+}
+
+.developer-theme-option.is-red {
+  color: #ff6278;
+}
+
+.developer-theme-option.is-red .developer-theme-swatch {
+  background: radial-gradient(circle at 35% 28%, #fff1f3, #f93658 48%, #910426);
+}
+
+.developer-theme-current {
+  margin: 8px 0 0;
+  color: rgba(166, 210, 230, 0.58);
+  font-size: 0.52rem;
+  line-height: 1.35;
+}
+
+.developer-theme-current strong {
+  color: rgba(226, 248, 255, 0.86);
+}
+
+@media (max-width: 560px) {
+  .developer-theme-options {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .game-workspace > .game-panel,
+  .gamepad-panel {
+    transition: none;
+  }
+}
