@@ -87,6 +87,7 @@ function App() {
   const previousRefractionDischargeCount = useRef(
     game.refractionDischargeCount,
   )
+  const refractionBurstTimer = useRef<number | null>(null)
   const crystallizeTimers = useRef<number[]>([])
 
   const overloadActive = isOverloadActive(game.overloadUntil, clockNow)
@@ -169,13 +170,16 @@ function App() {
         amount: game.refractionLastReward,
         multiplier: getRefractionBonusMultiplier(game.refractionLevel),
       })
-      const timer = window.setTimeout(() => {
+      if (refractionBurstTimer.current !== null) {
+        window.clearTimeout(refractionBurstTimer.current)
+      }
+      refractionBurstTimer.current = window.setTimeout(() => {
         setRefractionBurst((item) => (item?.id === id ? null : item))
+        refractionBurstTimer.current = null
       }, 1900)
 
       previousRefractionDischargeCount.current =
         game.refractionDischargeCount
-      return () => window.clearTimeout(timer)
     }
 
     previousRefractionDischargeCount.current = game.refractionDischargeCount
@@ -197,6 +201,9 @@ function App() {
   useEffect(
     () => () => {
       crystallizeTimers.current.forEach((timer) => window.clearTimeout(timer))
+      if (refractionBurstTimer.current !== null) {
+        window.clearTimeout(refractionBurstTimer.current)
+      }
     },
     [],
   )
@@ -276,6 +283,10 @@ function App() {
     crystallizeTimers.current.forEach((timer) => window.clearTimeout(timer))
     crystallizeTimers.current = []
     clearSavedGame()
+    if (refractionBurstTimer.current !== null) {
+      window.clearTimeout(refractionBurstTimer.current)
+      refractionBurstTimer.current = null
+    }
     dispatch({ type: 'reset' })
     setBursts([])
     setCavitationBurst(null)
