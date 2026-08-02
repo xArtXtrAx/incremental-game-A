@@ -7,15 +7,14 @@
 
 - Repositorio: `xArtXtrAx/incremental-game-A`.
 - Rama estable: `main`.
-- Rama experimental activa: `Dev-Orbita-Zafiro-Test`.
-- Ramas históricas: `Dev-Prestigio-Test`.
+- Ramas históricas: `Dev-Prestigio-Test` y `Dev-Orbita-Zafiro-Test`.
 - Entorno: React + TypeScript + Vite + Motion.
 - Guardado estable: `incremental-game-a:save:v1`.
 - La antigua clave `incremental-game-a:save:prestige-test:v1` se migra una sola vez a la estable y después se elimina.
 - Última actualización: **2 de agosto de 2026**.
 - `manualClicks` incluye clics manuales y pulsos autónomos.
 
-`main` contiene el prestigio de zafiro, su render WebGL, el pulso progresivo y el panel de desarrollador ya aprobados. `Dev-Orbita-Zafiro-Test` añade la órbita WebGL y la iluminación dinámica producida por su chispa. No debe integrarse a `main` sin validación visual de Arturo.
+`main` contiene el prestigio del zafiro, su render WebGL, el pulso progresivo, la órbita WebGL, la iluminación dinámica producida por la chispa orbital y el panel de desarrollador. Arturo validó visualmente la órbita y su iluminación antes de integrarlas.
 
 ## 2. Forma de trabajo
 
@@ -168,11 +167,9 @@ Referencias:
 
 La fase es continua y compartida entre las instancias del soporte y el núcleo. Cavitación, sobrecarga y anuncios elevan el brillo al máximo y después regresan a la fase natural.
 
-El antiguo destello diagonal 2D fue retirado en la rama experimental. La iluminación móvil ahora proviene de la chispa orbital y se calcula dentro del shader de la gema.
+El antiguo destello diagonal 2D fue retirado. La iluminación móvil ahora proviene de la chispa orbital y se calcula dentro del shader de la gema.
 
-## 8. Propuesta experimental — Órbita e iluminación dinámica
-
-Implementada solamente en `Dev-Orbita-Zafiro-Test`.
+## 8. Órbita e iluminación dinámica
 
 ### Órbita WebGL
 
@@ -247,8 +244,9 @@ Protecciones:
 
 ## 12. Validaciones
 
-Validaciones aisladas realizadas:
+Validaciones realizadas:
 
+- Arturo aprobó visualmente la órbita WebGL y la iluminación dinámica de sus facetas.
 - TypeScript estricto de `SapphireGem.tsx`, `SapphireGem3D.tsx`, `SapphireOrbit3D.tsx` y `SapphireOrbitState.ts`.
 - Conexión de uniformes `uOrbitLightPosition` y `uOrbitFrontness`.
 - Fase compartida y duración 20→3 segundos.
@@ -257,25 +255,15 @@ Validaciones aisladas realizadas:
 - Sin dependencias nuevas.
 - Sin cambios en fórmulas ni guardado.
 
-No se ejecutaron `npm run lint` ni `npm run build` con las dependencias reales del equipo local.
+No se ejecutaron `npm run lint` ni `npm run build` con las dependencias reales del equipo local durante la integración remota.
 
-Validación local recomendada:
+Validación local recomendada después de actualizar `main`:
 
 ```powershell
 npm run lint
 npm run build
 npm run dev
 ```
-
-Prueba visual pendiente:
-
-1. Seleccionar `Dev-Orbita-Zafiro-Test`.
-2. Confirmar que ya no existe el barrido diagonal independiente.
-3. Observar cómo el reflejo pasa de una faceta a otra siguiendo la chispa.
-4. Confirmar que el reflejo frontal disminuye cuando la chispa pasa detrás.
-5. Probar vueltas lentas de 20 segundos y rápidas de 3 segundos.
-6. Probar cavitación, sobrecarga, extracción y soporte permanente.
-7. Volver a `main` y confirmar que la versión estable permanece intacta.
 
 ## 13. Próximas mejoras sugeridas
 
@@ -289,4 +277,4 @@ Prueba visual pendiente:
 
 ## 14. Inicio recomendado para otro chat
 
-> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD`, revisa `main` y `Dev-Orbita-Zafiro-Test`, conserva las fórmulas registradas y no integres la órbita ni su iluminación a `main` sin la aprobación de Arturo.
+> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD`, trabaja en `main` para ajustes pequeños y crea una rama nueva para cambios visuales, estructurales o mecánicos importantes. `Dev-Prestigio-Test` y `Dev-Orbita-Zafiro-Test` son referencias históricas.
