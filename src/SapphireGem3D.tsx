@@ -1,4 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
+import {
+  getSapphireOrbitPhase,
+  getSapphireOrbitPoint,
+  pauseSapphireOrbit,
+} from './SapphireOrbitState'
 
 type Props = {
   energized: boolean
@@ -252,6 +257,8 @@ function createProgram(gl: WebGLRenderingContext) {
     precision highp float;
     uniform float uEnergy;
     uniform float uPulse;
+    uniform vec3 uOrbitLightPosition;
+    uniform float uOrbitFrontness;
     varying vec3 vNormal;
     varying vec3 vColor;
     varying vec3 vPosition;
@@ -268,6 +275,26 @@ function createProgram(gl: WebGLRenderingContext) {
       float bodyLight = 0.08 + visibility * 0.92;
       float edgeLight = 0.14 + visibility * 0.86;
 
+      vec3 orbitVector = uOrbitLightPosition - vPosition;
+      float orbitDistance = max(length(orbitVector), 0.001);
+      vec3 orbitDirection = orbitVector / orbitDistance;
+      vec3 orbitHalfDirection = normalize(orbitDirection + viewDirection);
+      float orbitDiffuse = max(dot(normal, orbitDirection), 0.0);
+      float orbitSpecular = pow(
+        max(dot(normal, orbitHalfDirection), 0.0),
+        22.0
+      );
+      float orbitFalloff = 1.0 / (1.0 + orbitDistance * orbitDistance * 0.72);
+      float directOrbitLight =
+        (orbitDiffuse * 0.28 + orbitSpecular * 2.15) *
+        orbitFalloff *
+        mix(0.22, 1.0, uOrbitFrontness);
+      float rearOrbitRim =
+        fresnel *
+        orbitFalloff *
+        (1.0 - uOrbitFrontness) *
+        0.38;
+
       vec3 color =
         vColor *
         (0.42 + diffuse * 1.05 + secondary * 0.32) *
@@ -280,6 +307,10 @@ function createProgram(gl: WebGLRenderingContext) {
         pow(diffuse, 5.0) *
         0.5 *
         bodyLight;
+      color +=
+        vec3(0.72, 0.96, 1.0) *
+        (directOrbitLight + rearOrbitRim) *
+        (0.72 + visibility * 0.28);
 
       float alpha = clamp(
         0.04 + visibility * 0.82 + fresnel * 0.12 + uEnergy * 0.08,
@@ -393,6 +424,12 @@ export function SapphireGem3D({
       const energy = uniform(gl, program, 'uEnergy')
       const pulse = uniform(gl, program, 'uPulse')
       const time = uniform(gl, program, 'uTime')
+      const orbitLightPosition = uniform(
+        gl,
+        program,
+        'uOrbitLightPosition',
+      )
+      const orbitFrontness = uniform(gl, program, 'uOrbitFrontness')
       const stride = STRIDE_FLOATS * Float32Array.BYTES_PER_ELEMENT
 
       gl.useProgram(program)
@@ -424,6 +461,7 @@ export function SapphireGem3D({
         if (disposed) return
         if (document.hidden) {
           pauseSharedPulse(now)
+          pauseSapphireOrbit(now)
           frameId = requestAnimationFrame(render)
           return
         }
@@ -454,6 +492,11 @@ export function SapphireGem3D({
         const pulseTarget = active > 0 ? 1 : naturalPulse
         const smoothing = Math.min(1, deltaSeconds * 4)
         displayedPulse += (pulseTarget - displayedPulse) * smoothing
+        const orbitPhase = reducedMotion
+          ? 0
+          : getSapphireOrbitPhase(now, pulseDuration)
+        const orbitPoint = getSapphireOrbitPoint(orbitPhase)
+        const floatingOffset = Math.sin(elapsed * 1.7) * 0.035
 
         host?.style.setProperty(
           '--sapphire-pulse',
@@ -485,6 +528,16 @@ export function SapphireGem3D({
         gl.uniform1f(energy, active)
         gl.uniform1f(pulse, reducedMotion ? 1 : displayedPulse)
         gl.uniform1f(time, elapsed)
+        gl.uniform3f(
+          orbitLightPosition,
+          orbitPoint.lightX,
+          orbitPoint.lightY + floatingOffset,
+          orbitPoint.lightZ,
+        )
+        gl.uniform1f(
+          orbitFrontness,
+          Math.min(1, Math.max(0, orbitPoint.depth * 0.5 + 0.5)),
+        )
         gl.drawArrays(gl.TRIANGLES, 0, geometry.vertexCount)
         if (!reducedMotion) frameId = requestAnimationFrame(render)
       }
