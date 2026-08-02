@@ -6,6 +6,10 @@ import {
   isRefractionActive,
   REFRACTION_REQUIRED_PRESTIGE,
 } from './refraction'
+import {
+  getPulseTriggerUpgradeCost,
+  PULSE_TRIGGER_MAX_LEVEL,
+} from './pulseTrigger'
 
 export const CLICK_UPGRADE_BASE_COST = 10
 export const GENERATOR_BASE_COST = 25
@@ -40,6 +44,7 @@ export type GameState = {
   energy: number
   manualClicks: number
   clickLevel: number
+  pulseTriggerLevel: number
   generatorLevel: number
   resonanceLevel: number
   pressureLevel: number
@@ -63,6 +68,7 @@ export type GameAction =
   | { type: 'click'; now?: number }
   | { type: 'tick'; now?: number }
   | { type: 'buy-click-upgrade' }
+  | { type: 'buy-pulse-trigger' }
   | { type: 'buy-generator' }
   | { type: 'buy-resonance' }
   | { type: 'buy-pressure' }
@@ -88,6 +94,7 @@ export const initialGameState: GameState = {
   energy: 0,
   manualClicks: 0,
   clickLevel: 0,
+  pulseTriggerLevel: 0,
   generatorLevel: 0,
   resonanceLevel: 0,
   pressureLevel: 0,
@@ -178,6 +185,13 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
     energy: getSafeNumber(candidate.energy, fallback.energy),
     manualClicks: getSafeInteger(candidate.manualClicks, fallback.manualClicks),
     clickLevel: getSafeInteger(candidate.clickLevel, fallback.clickLevel),
+    pulseTriggerLevel: Math.min(
+      PULSE_TRIGGER_MAX_LEVEL,
+      getSafeInteger(
+        candidate.pulseTriggerLevel,
+        fallback.pulseTriggerLevel,
+      ),
+    ),
     generatorLevel: getSafeInteger(
       candidate.generatorLevel,
       fallback.generatorLevel,
@@ -709,6 +723,23 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
         ...state,
         energy: roundEnergy(state.energy - cost),
         clickLevel: state.clickLevel + 1,
+      }
+    }
+
+    case 'buy-pulse-trigger': {
+      if (state.pulseTriggerLevel >= PULSE_TRIGGER_MAX_LEVEL) {
+        return state
+      }
+
+      const cost = getPulseTriggerUpgradeCost(state.pulseTriggerLevel)
+      if (state.energy < cost) {
+        return state
+      }
+
+      return {
+        ...state,
+        energy: roundEnergy(state.energy - cost),
+        pulseTriggerLevel: state.pulseTriggerLevel + 1,
       }
     }
 
