@@ -385,6 +385,7 @@ export function GamepadController() {
         const previous = previousButtons.current
         const justPressed = (index: number) =>
           pressed[index] && !previous[index]
+
         const leftTriggerHeld = Boolean(
           pressed[STANDARD_BUTTON.leftTrigger],
         )
@@ -398,20 +399,22 @@ export function GamepadController() {
           rumble(gamepad, 35, 0.12, 0.04)
         }
 
-        if (!chamberOpen && leftTriggerHeld) {
-          if (justPressed(STANDARD_BUTTON.action)) {
-            if (cyclePurchaseStrategy()) rumble(gamepad, 55, 0.2, 0.08)
-          }
-          if (justPressed(STANDARD_BUTTON.secondary)) {
-            if (buyEverything()) rumble(gamepad, 110, 0.35, 0.22)
-          }
-        } else {
-          // Se conservan los atajos anteriores para no romper el control existente.
-          if (justPressed(STANDARD_BUTTON.secondary)) {
-            if (cyclePurchaseStrategy()) rumble(gamepad, 55, 0.2, 0.08)
-          }
-          if (justPressed(STANDARD_BUTTON.action)) {
-            if (buyEverything()) rumble(gamepad, 110, 0.35, 0.22)
+        if (!chamberOpen) {
+          if (leftTriggerHeld) {
+            if (justPressed(STANDARD_BUTTON.action)) {
+              if (cyclePurchaseStrategy()) rumble(gamepad, 55, 0.2, 0.08)
+            }
+            if (justPressed(STANDARD_BUTTON.secondary)) {
+              if (buyEverything()) rumble(gamepad, 110, 0.35, 0.22)
+            }
+          } else {
+            // Se conservan los atajos anteriores para no romper el control existente.
+            if (justPressed(STANDARD_BUTTON.secondary)) {
+              if (cyclePurchaseStrategy()) rumble(gamepad, 55, 0.2, 0.08)
+            }
+            if (justPressed(STANDARD_BUTTON.action)) {
+              if (buyEverything()) rumble(gamepad, 110, 0.35, 0.22)
+            }
           }
         }
 
