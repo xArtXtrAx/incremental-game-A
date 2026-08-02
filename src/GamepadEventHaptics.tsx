@@ -1,5 +1,10 @@
 import { useEffect } from 'react'
 import { getFirstConnectedGamepad, loadGamepadSettings } from './gamepad'
+import {
+  PULSE_TRIGGER_CHARGED_EVENT,
+  PULSE_TRIGGER_DEPLETED_EVENT,
+  PULSE_TRIGGER_PULSE_EVENT,
+} from './pulseTrigger'
 
 type HapticActuatorLike = {
   playEffect?: (
@@ -66,7 +71,11 @@ export function GamepadEventHaptics() {
     const timers: number[] = []
     const lastPlayed = new Map<string, number>()
 
-    function playPattern(key: string, steps: HapticStep[]) {
+    function playPattern(
+      key: string,
+      steps: HapticStep[],
+      cooldown = EVENT_COOLDOWN,
+    ) {
       const settings = loadGamepadSettings()
       if (!settings.enabled || !settings.hapticsEnabled) return
 
@@ -76,7 +85,7 @@ export function GamepadEventHaptics() {
       if (!actuator) return
 
       const now = performance.now()
-      if (now - (lastPlayed.get(key) ?? 0) < EVENT_COOLDOWN) return
+      if (now - (lastPlayed.get(key) ?? 0) < cooldown) return
       lastPlayed.set(key, now)
 
       for (const step of steps) {
@@ -121,10 +130,41 @@ export function GamepadEventHaptics() {
       }
     })
 
+    const handleTriggerPulse = () => {
+      playPattern(
+        'pulse-trigger-shot',
+        [{ delay: 0, duration: 30, weak: 0.11, strong: 0.04 }],
+        80,
+      )
+    }
+    const handleTriggerCharged = () => {
+      playPattern('pulse-trigger-charged', [
+        { delay: 0, duration: 55, weak: 0.18, strong: 0.12 },
+        { delay: 85, duration: 85, weak: 0.32, strong: 0.24 },
+      ])
+    }
+    const handleTriggerDepleted = () => {
+      playPattern('pulse-trigger-depleted', [
+        { delay: 0, duration: 95, weak: 0.2, strong: 0.34 },
+      ])
+    }
+
     observer.observe(root, { childList: true, subtree: true })
+    document.addEventListener(PULSE_TRIGGER_PULSE_EVENT, handleTriggerPulse)
+    document.addEventListener(PULSE_TRIGGER_CHARGED_EVENT, handleTriggerCharged)
+    document.addEventListener(PULSE_TRIGGER_DEPLETED_EVENT, handleTriggerDepleted)
 
     return () => {
       observer.disconnect()
+      document.removeEventListener(PULSE_TRIGGER_PULSE_EVENT, handleTriggerPulse)
+      document.removeEventListener(
+        PULSE_TRIGGER_CHARGED_EVENT,
+        handleTriggerCharged,
+      )
+      document.removeEventListener(
+        PULSE_TRIGGER_DEPLETED_EVENT,
+        handleTriggerDepleted,
+      )
       timers.forEach((timer) => window.clearTimeout(timer))
     }
   }, [])
