@@ -7,14 +7,15 @@
 
 - Repositorio: `xArtXtrAx/incremental-game-A`.
 - Rama estable: `main`.
+- Rama experimental activa: `Dev-Matriz-Refraccion-Test`.
 - Ramas históricas: `Dev-Prestigio-Test` y `Dev-Orbita-Zafiro-Test`.
 - Entorno: React + TypeScript + Vite + Motion.
 - Guardado estable: `incremental-game-a:save:v1`.
-- La antigua clave `incremental-game-a:save:prestige-test:v1` se migra una sola vez a la estable y después se elimina.
 - Última actualización: **2 de agosto de 2026**.
-- `manualClicks` incluye clics manuales y pulsos autónomos.
 
-`main` contiene el prestigio del zafiro, su render WebGL, el pulso progresivo, la órbita WebGL, la iluminación dinámica producida por la chispa orbital y el panel de desarrollador. Arturo validó visualmente la órbita y su iluminación antes de integrarlas.
+`main` contiene el prestigio del zafiro, el render WebGL, el pulso progresivo, la órbita WebGL y la iluminación dinámica producida por la chispa orbital. Arturo validó visualmente esos sistemas antes de integrarlos.
+
+`Dev-Matriz-Refraccion-Test` parte del `main` aprobado y añade la Evolución 08 — Matriz de refracción. No debe integrarse a `main` sin la validación visual y funcional de Arturo.
 
 ## 2. Forma de trabajo
 
@@ -29,20 +30,13 @@
 
 - Resumen superior compacto.
 - Núcleo fijo a la izquierda en escritorio.
-- Evoluciones en panel desplazable con pestañas Producción, Núcleo y Avanzado.
+- Evoluciones en panel desplazable con pestañas Producción, Núcleo y Avanzadas.
 - Tarjetas expandibles.
 - Navegación móvil entre Núcleo y Evoluciones.
 - Panel de desarrollador a la derecha en pantallas amplias y debajo en pantallas estrechas.
 - Selección de texto deshabilitada salvo dentro de los campos numéricos.
 
-## 4. Sistemas del juego
-
-### Núcleo base
-
-- Esfera líquida con capacidad visual de 5,000 clics.
-- Energía manual y producción automática.
-- Guardado automático y reinicio protegido.
-- Ondas líquidas sin franjas gruesas giratorias.
+## 4. Evoluciones estables
 
 ### Evolución 01 — Amplificador de pulso
 
@@ -73,18 +67,16 @@
 
 - Nivel 1: descarga cada 25 clics y recompensa equivalente a 5 segundos de producción.
 - Los niveles reducen el ciclo y aumentan los segundos recompensados.
-- Requisito inicial: 500 clics y un microgenerador.
+- Requiere 500 clics y un microgenerador antes del primer prestigio.
 - Costo inicial: 2,000.
 - Crecimiento: ×2.6.
-- Usa un anillo interior de segmentos luminosos.
-- Al descargar se ilumina el círculo completo; al iniciar el siguiente ciclo queda la marca de las 12.
 
 ### Evolución 06 — Válvula de sobrecarga
 
 - Los clics posteriores al llenado cargan una fase temporal.
 - Nivel 1: 100 clics, multiplicador ×2 y duración 15 segundos.
 - Afecta clics, producción y cavitación.
-- Requisito inicial: esfera llena y cavitación nivel 1.
+- Requiere esfera llena y cavitación nivel 1 antes del primer prestigio.
 - Costo inicial: 10,000.
 - Crecimiento: ×3.
 
@@ -94,115 +86,132 @@
 - Llena la esfera y carga presión, cavitación y sobrecarga.
 - Progresión: `0.20 × 1.6^(nivel - 1)` clic/s.
 - Límite técnico: 20 clic/s.
-- Requisito inicial: 500 clics y un microgenerador.
+- Requiere 500 clics y un microgenerador antes del primer prestigio.
 - Costo inicial: 5,000.
 - Crecimiento: ×2.8.
-- No genera partículas por cada autoclic.
 
 ## 5. Prestigio del zafiro
 
-### Activación y secuencia
-
-- Al llegar a 5,000 clics se forma un zafiro en el centro.
-- La esfera sigue aceptando clics para permitir usar sobrecarga.
+- El núcleo se llena a 5,000 clics.
 - El prestigio se confirma con `CRISTALIZAR`; nunca ocurre automáticamente.
-- La gema se ensambla, flota, sale hacia la izquierda y se instala en el soporte permanente.
+- La gema se ensambla, sale del núcleo y se instala en el soporte permanente.
 
-### Multiplicadores
+Multiplicadores:
 
-- Prestigio 0: ×1.00.
-- Prestigio 1: ×1.50.
-- Prestigio 2: ×1.85.
-- Prestigio 3: ×2.20.
-- Prestigio 4: ×2.60.
-- Prestigio 5: ×3.05.
+- P0: ×1.00.
+- P1: ×1.50.
+- P2: ×1.85.
+- P3: ×2.20.
+- P4: ×2.60.
+- P5: ×3.05.
 - Posteriores: +0.50 por cristalización.
 
-Afecta clics, producción, presión, resonancia, cavitación, sobrecarga y energía de autoclics. No altera velocidades ni umbrales.
+El prestigio multiplica clics, producción, presión, resonancia, cavitación, sobrecarga y autoclics. Al cristalizar se reinician energía, clics, evoluciones temporales y sus cargas; se conservan prestigio, zafiro, multiplicador y planos descubiertos.
 
-### Reinicio y planos
+## 6. Zafiro, órbita e iluminación estables
 
-Se reinician energía, clics, evoluciones 01–07, cargas, sobrecarga activa y progreso fraccionario del autoclicker.
-
-Se conservan prestigio, zafiro, multiplicador y planos descubiertos.
-
-Después del primer prestigio se eliminan requisitos de descubrimiento por clics, pero se mantienen dependencias:
-
-- Cavitación y autoclicker requieren microgenerador.
-- Sobrecarga requiere cavitación nivel 1.
-- Sobrecarga solo se carga con la esfera llena.
-
-## 6. Zafiro WebGL
-
-- Malla tridimensional real con vértices `x`, `y`, `z`.
-- Caras triangulares y normales independientes.
-- Perspectiva, rotación X/Y, flotación y ensamblaje progresivo.
-- Fragment shader con luz principal, luz lateral, Fresnel y emisión cian.
-- Prestigio 1: 6 sectores; prestigio 2: 8; prestigio 3: 10; prestigio 4+: 12.
-- Cavitación y sobrecarga intensifican brillo, rotación y deformación sutil.
-- Render normal cercano a 40 FPS y energizado hasta 60 FPS.
-- Pixel ratio interno limitado a 2×.
-- Respaldo SVG si WebGL o los shaders fallan.
-- `prefers-reduced-motion` mantiene la gema estática e iluminada.
-
-## 7. Pulso progresivo
-
-- Brillo: 100% → 50% → 100%.
-- Fórmula: `0.75 + 0.25 × cos(2π × fase)`.
-- Shader, transparencia y halo comparten intensidad.
-- Duración con `p = clics / 5,000`:
+- Zafiro WebGL con geometría real, caras triangulares, normales y shaders.
+- P1: 6 sectores; P2: 8; P3: 10; P4+: 12.
+- Órbita elíptica WebGL con capa trasera y delantera transparentes.
+- Chispa cian con núcleo blanco y estela de doce partículas.
+- La chispa funciona como fuente de luz dinámica sobre las facetas.
+- El antiguo destello diagonal 2D fue retirado.
+- Duración de órbita y pulso:
 
 ```text
-duración = 3 + 17 × (1 − p)^1.6
+duración = 3 + 17 × (1 − clics / 5000)^1.6
 ```
 
-Referencias:
+- Núcleo vacío: 20 segundos por vuelta.
+- Núcleo lleno: 3 segundos por vuelta.
+- La fase se conserva de forma continua al cambiar la velocidad.
+- SVG y órbita CSS permanecen como respaldo cuando WebGL falla.
 
-- 0%: 20.00 s.
-- 25%: 13.73 s.
-- 50%: 8.61 s.
-- 75%: 4.85 s.
-- 90%: 3.43 s.
-- 100%: 3.00 s.
+## 7. Propuesta experimental — Evolución 08: Matriz de refracción
 
-La fase es continua y compartida entre las instancias del soporte y el núcleo. Cavitación, sobrecarga y anuncios elevan el brillo al máximo y después regresan a la fase natural.
+Implementada solamente en `Dev-Matriz-Refraccion-Test`.
 
-El antiguo destello diagonal 2D fue retirado. La iluminación móvil ahora proviene de la chispa orbital y se calcula dentro del shader de la gema.
+### Requisitos y costo
 
-## 8. Órbita e iluminación dinámica
+- Requiere al menos prestigio 1.
+- Requiere un microgenerador.
+- Costo inicial: 25,000 de energía.
+- Crecimiento de costo: ×3.15 por nivel.
+- No altera la clave ni la versión actual del guardado.
+- Partidas anteriores reciben los nuevos campos con valores seguros en cero.
 
-### Órbita WebGL
+### Carga de facetas
 
-- Órbita elíptica horizontal centrada a media altura del zafiro.
-- El anillo permanece visible durante todo el ciclo.
-- Una chispa cian con núcleo blanco recorre la elipse.
-- Doce partículas forman una estela de aproximadamente 18% del giro.
-- La intensidad disminuye progresivamente desde la chispa hasta el final de la estela.
-- Cavitación y sobrecarga aumentan sutilmente el brillo orbital.
-- Dos canvases transparentes WebGL separan profundidad: uno detrás y otro delante de la gema.
-- No existen máscaras `clip-path`, filtros rectangulares ni fondos visibles en el modo WebGL.
-- La técnica CSS anterior queda únicamente como respaldo si falla WebGL orbital.
+La matriz utiliza la misma curva de duración 20→3 segundos de la órbita visual. El ciclo se procesa dentro del `tick` del juego y acumula progreso fraccionario de vuelta.
 
-### Fase y profundidad
+Número de facetas requeridas:
 
-- La órbita usa una fase global compartida por el canvas trasero, la gema y el canvas delantero.
-- 20 segundos por vuelta al 0% del núcleo.
-- Aceleración continua según la fórmula del pulso.
-- 3 segundos por vuelta al llegar a 5,000 clics.
-- La fase no reinicia cuando cambia la duración.
-- Con `prefers-reduced-motion`, la chispa permanece fija.
+- Prestigio 1: 6.
+- Prestigio 2: 8.
+- Prestigio 3: 10.
+- Prestigio 4 o superior: 12.
 
-### Luz de la chispa sobre las facetas
+Velocidad de carga:
 
-- `SapphireOrbitState.ts` entrega la misma posición tridimensional a la órbita y al shader de la gema.
-- El fragment shader calcula dirección hacia la partícula, distancia, normal de la faceta y dirección de cámara.
-- La cara orientada hacia la chispa recibe un reflejo especular blanco-cian concentrado.
-- Las caras cercanas reciben una iluminación difusa más suave.
-- La intensidad cae con la distancia.
-- Cuando la chispa pasa detrás, disminuye la luz directa y queda principalmente un reflejo Fresnel de borde.
-- La iluminación viaja exactamente con la partícula y mantiene la aceleración 20→3 segundos.
+```text
+facetas por vuelta = 1 + 0.15 × (nivel − 1)
+```
 
-## 9. Panel de desarrollador
+Nivel 1 carga una faceta por vuelta completa. Los niveles posteriores pueden acumular más de una faceta por vuelta mediante progreso fraccionario.
+
+### Descarga prismática
+
+Al completar todas las facetas:
+
+1. La carga de facetas vuelve a cero.
+2. Se entrega una recompensa inmediata basada en producción.
+3. Se activa el estado temporal `PRISMA`.
+4. Las descargas posteriores extienden la duración activa en vez de reemplazarla.
+
+Recompensa:
+
+```text
+segundos recompensados = 8 + 3 × nivel
+recompensa = producción base por segundo × segundos recompensados
+```
+
+La producción base de la descarga incluye presión, resonancia, zafiro y sobrecarga activa, pero excluye el multiplicador de refracción para evitar retroalimentación recursiva.
+
+Bonificación temporal:
+
+```text
+multiplicador PRISMA = 1.20 + 0.05 × nivel
+duración = 4 + nivel segundos
+```
+
+Nivel 1:
+
+- 1 faceta por vuelta.
+- Recompensa equivalente a 11 segundos de producción.
+- Multiplicador ×1.25.
+- Duración 5 segundos.
+
+El multiplicador PRISMA se combina multiplicativamente con sobrecarga y afecta clics, producción automática y recompensas de cavitación.
+
+### Reinicio y persistencia
+
+- Nivel, progreso orbital, facetas cargadas y estado PRISMA se guardan automáticamente.
+- Un estado PRISMA vencido no se restaura al cargar la partida.
+- Al cristalizar se reinician nivel, progreso, facetas y bonificación, igual que las demás evoluciones temporales.
+- El contador interno de descargas permite detectar cada evento visual sin confundirlo con una actualización normal.
+
+### Representación visual
+
+- El soporte permanente muestra 6, 8, 10 o 12 indicadores alrededor del zafiro.
+- Cada indicador encendido representa una faceta cargada.
+- Durante PRISMA, los indicadores pulsan y el núcleo recibe un halo prismático giratorio.
+- La descarga genera un anillo expansivo, haces radiales y el mensaje `DESCARGA PRISMÁTICA`.
+- El estado del núcleo muestra facetas cargadas, porcentaje de la vuelta actual y recompensa prevista.
+- La tarjeta de Evolución 08 muestra costo, requisitos, carga, recompensa, multiplicador, duración y tiempo actual por vuelta.
+
+Los indicadores rodean visualmente el zafiro; no modifican todavía la geometría ni colorean individualmente las caras del shader WebGL.
+
+## 8. Panel de desarrollador
 
 Permite modificar únicamente energía acumulada y clics del núcleo.
 
@@ -213,51 +222,38 @@ Protecciones:
 - Clics enteros.
 - Energía máxima: 90,000,000,000,000.
 - Clics máximos: 1,000,000,000.
-- El formulario y el reducer aplican saneamiento independiente.
-- Si los clics bajan de 5,000 se cancelan carga y tiempo activo de sobrecarga.
 - No modifica niveles, prestigios ni multiplicadores.
 
-## 10. Arquitectura relevante
+## 9. Arquitectura relevante
 
-- `src/game.ts`: estado, fórmulas, guardado, migración, prestigio y reducer.
-- `src/App.tsx`: ciclo principal, eventos y panel de desarrollador.
-- `src/GameCore.tsx`: esfera, anillos, gema, cristalización y soporte.
-- `src/SapphireGem.tsx`: contenedor, respaldo SVG y selección entre órbita WebGL/CSS.
-- `src/SapphireGem3D.tsx`: geometría, shaders, pulso e iluminación de la chispa.
-- `src/SapphireOrbit3D.tsx`: anillo, chispa y estela WebGL con capas frontal/trasera.
+- `src/game.ts`: estado, migración, compras, reducer y combinación de multiplicadores.
+- `src/refraction.ts`: costos, duración orbital, facetas, recompensa y avance de la matriz.
+- `src/App.tsx`: ciclo principal y detección de descargas prismáticas.
+- `src/GameCore.tsx`: estado visual del núcleo, halo PRISMA y descarga radial.
+- `src/SapphireGem.tsx`: indicadores de facetas alrededor del zafiro permanente.
+- `src/UpgradesPanelCompact.tsx`: tarjeta de Evolución 08 y cálculos de vista previa.
+- `src/SapphireGem3D.tsx`: geometría, shaders, pulso e iluminación orbital estable.
+- `src/SapphireOrbit3D.tsx`: anillo, chispa y estela WebGL.
 - `src/SapphireOrbitState.ts`: fase y posición 3D compartidas.
-- `src/SapphireOrbit.css`: respaldo orbital CSS.
-- `src/PrestigeSapphire.css`: estilos del zafiro y cristalización.
-- `src/DeveloperPanel.tsx`: validación y controles de prueba.
-- `src/DeveloperPanel.css`: bloqueo de selección y diseño del panel.
-- `src/UpgradesPanelCompact.tsx`: tarjetas y cálculos.
-- `src/ProposalA.css`: interfaz compacta.
 
-## 11. Compatibilidad
+## 10. Validaciones de la rama experimental
 
-- La antigua partida experimental se migra a la clave estable al primer inicio después de la integración.
-- Guardados anteriores sin `prestigeCount` migran a prestigio 0.
-- La sobrecarga activa solo se restaura si todavía no expiró.
-- No existe progreso fuera de línea.
-- Autoclics múltiples se procesan secuencialmente.
-- Órbita e iluminación no modifican estado, guardado, multiplicadores ni mecánicas.
+Validaciones aisladas realizadas:
 
-## 12. Validaciones
-
-Validaciones realizadas:
-
-- Arturo aprobó visualmente la órbita WebGL y la iluminación dinámica de sus facetas.
-- TypeScript estricto de `SapphireGem.tsx`, `SapphireGem3D.tsx`, `SapphireOrbit3D.tsx` y `SapphireOrbitState.ts`.
-- Conexión de uniformes `uOrbitLightPosition` y `uOrbitFrontness`.
-- Fase compartida y duración 20→3 segundos.
-- Pausa segura al ocultar el documento.
-- Eliminación del elemento `sapphire-gem-glint`.
+- TypeScript estricto de `game.ts`, `refraction.ts`, `App.tsx`, `GameCore.tsx`, `SapphireGem.tsx` y `UpgradesPanelCompact.tsx` mediante stubs de React, Motion y CSS.
+- Compra de nivel 1 y descuento de costo.
+- Una faceta después de una vuelta de 20 segundos con núcleo vacío.
+- Una faceta exactamente después de tres pulsos con núcleo lleno.
+- Descarga al completar la sexta faceta en prestigio 1.
+- Recompensa inmediata y activación de ×1.25 durante 5 segundos.
+- Multiplicador aplicado a los clics.
+- Migración de partidas anteriores sin campos de refracción.
+- Reinicio completo de la matriz al cristalizar.
+- Corrección de precisión numérica para vueltas de 3 segundos.
+- Temporizador visual persistente aunque se compre otro nivel durante la animación.
 - Sin dependencias nuevas.
-- Sin cambios en fórmulas ni guardado.
 
-No se ejecutaron `npm run lint` ni `npm run build` con las dependencias reales del equipo local durante la integración remota.
-
-Validación local recomendada después de actualizar `main`:
+No se ejecutaron con las dependencias reales del equipo local:
 
 ```powershell
 npm run lint
@@ -265,16 +261,27 @@ npm run build
 npm run dev
 ```
 
-## 13. Próximas mejoras sugeridas
+Prueba visual pendiente por Arturo:
 
-1. Progreso fuera de línea controlado.
-2. Árbol de mejoras permanentes del zafiro.
-3. Núcleo luminoso interno desde prestigio 3.
-4. Anillos orbitales adicionales desde prestigio 4.
-5. Telemetría local de tiempos y producción.
-6. Integración con DualSense mediante Gamepad API.
-7. Pruebas automatizadas dentro del repositorio.
+1. Cambiar a `Dev-Matriz-Refraccion-Test`.
+2. Tener al menos prestigio 1 y un microgenerador.
+3. Comprar Evolución 08 desde la pestaña Avanzadas.
+4. Observar una faceta cargada por vuelta.
+5. Usar 5,000 clics para probar vueltas de 3 segundos.
+6. Confirmar descarga al completar todas las facetas.
+7. Comprobar recompensa, ×1.25 y cuenta regresiva de 5 segundos en nivel 1.
+8. Probar simultáneamente PRISMA, cavitación y sobrecarga.
+9. Confirmar que cristalizar reinicia la evolución.
+10. Volver a `main` y confirmar que la versión estable permanece intacta.
 
-## 14. Inicio recomendado para otro chat
+## 11. Compatibilidad
 
-> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD`, trabaja en `main` para ajustes pequeños y crea una rama nueva para cambios visuales, estructurales o mecánicos importantes. `Dev-Prestigio-Test` y `Dev-Orbita-Zafiro-Test` son referencias históricas.
+- Guardado estable: `incremental-game-a:save:v1`.
+- La antigua clave experimental de prestigio se migra una sola vez y se elimina.
+- No existe progreso fuera de línea.
+- Los autoclics múltiples se procesan secuencialmente.
+- `main` no contiene todavía la Matriz de refracción.
+
+## 12. Inicio recomendado para otro chat
+
+> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD`. La rama estable es `main`; la rama experimental activa es `Dev-Matriz-Refraccion-Test`. Prueba y ajusta la Evolución 08 sin integrarla a `main` hasta que Arturo la apruebe visualmente.
