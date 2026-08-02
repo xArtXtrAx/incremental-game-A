@@ -6,6 +6,8 @@ export const PULSE_TRIGGER_CHARGED_EVENT =
   'incremental-game-a:pulse-trigger-charged'
 export const PULSE_TRIGGER_DEPLETED_EVENT =
   'incremental-game-a:pulse-trigger-depleted'
+export const PULSE_TRIGGER_BUY_EVENT =
+  'incremental-game-a:pulse-trigger-buy'
 
 export const PULSE_TRIGGER_STORAGE_KEY =
   'incremental-game-a:pulse-trigger:v1'
@@ -13,7 +15,15 @@ export const PULSE_TRIGGER_STORAGE_KEY =
 export const PULSE_TRIGGER_CHARGE_CLICKS = 10
 export const PULSE_TRIGGER_RESERVE_GAIN_MS = 1000
 export const PULSE_TRIGGER_MAX_RESERVE_MS = 10_000
-export const PULSE_TRIGGER_RATE = 6
+export const PULSE_TRIGGER_BASE_RATE = 6
+export const PULSE_TRIGGER_RATE_PER_LEVEL = 0.5
+export const PULSE_TRIGGER_MAX_RATE = 9
+export const PULSE_TRIGGER_MAX_LEVEL = 6
+export const PULSE_TRIGGER_UPGRADE_BASE_COST = 6000
+export const PULSE_TRIGGER_UPGRADE_GROWTH = 2.25
+
+// Alias del nivel inicial para compatibilidad con módulos anteriores.
+export const PULSE_TRIGGER_RATE = PULSE_TRIGGER_BASE_RATE
 export const PULSE_TRIGGER_INTERVAL_MS = 1000 / PULSE_TRIGGER_RATE
 
 export type PulseTriggerInputSource = 'pointer' | 'keyboard' | 'gamepad'
@@ -56,6 +66,29 @@ function roundTriggerTime(value: number) {
   return rounded < 0.01 ? 0 : rounded
 }
 
+export function getPulseTriggerRate(level: number) {
+  const safeLevel = Math.min(
+    PULSE_TRIGGER_MAX_LEVEL,
+    Math.max(0, Math.floor(level)),
+  )
+  return Math.min(
+    PULSE_TRIGGER_MAX_RATE,
+    PULSE_TRIGGER_BASE_RATE + safeLevel * PULSE_TRIGGER_RATE_PER_LEVEL,
+  )
+}
+
+export function getPulseTriggerIntervalMs(level: number) {
+  return 1000 / getPulseTriggerRate(level)
+}
+
+export function getPulseTriggerUpgradeCost(level: number) {
+  const safeLevel = Math.max(0, Math.floor(level))
+  return Math.ceil(
+    PULSE_TRIGGER_UPGRADE_BASE_COST *
+      PULSE_TRIGGER_UPGRADE_GROWTH ** safeLevel,
+  )
+}
+
 export function chargePulseTriggerFromDirectClick(
   state: PulseTriggerStoredState,
 ): PulseTriggerChargeResult {
@@ -85,14 +118,17 @@ export function chargePulseTriggerFromDirectClick(
 
 export function spendPulseTriggerPulse(
   state: PulseTriggerStoredState,
+  level = 0,
 ): PulseTriggerStoredState | null {
-  if (state.reserveMs + 0.001 < PULSE_TRIGGER_INTERVAL_MS) {
+  const intervalMs = getPulseTriggerIntervalMs(level)
+
+  if (state.reserveMs + 0.001 < intervalMs) {
     return null
   }
 
   return {
     reserveMs: roundTriggerTime(
-      Math.max(0, state.reserveMs - PULSE_TRIGGER_INTERVAL_MS),
+      Math.max(0, state.reserveMs - intervalMs),
     ),
     chargeClicks: state.chargeClicks,
   }
@@ -149,6 +185,10 @@ export function setPulseTriggerInput(
       detail: { source, active },
     }),
   )
+}
+
+export function requestPulseTriggerUpgrade() {
+  document.dispatchEvent(new Event(PULSE_TRIGGER_BUY_EVENT))
 }
 
 export function markNextCoreClickAsTrigger() {
