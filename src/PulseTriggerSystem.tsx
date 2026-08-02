@@ -47,6 +47,14 @@ type GameSnapshot = {
 }
 
 const format = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 })
+const MOUSE_TRIGGER_EXCLUDED_SELECTOR =
+  'input, textarea, select, option, [contenteditable="true"], [data-allow-selection="true"]'
+
+function isMouseTriggerTarget(target: EventTarget | null) {
+  if (!(target instanceof Element)) return false
+  if (!target.closest('.game-panel')) return false
+  return !target.closest(MOUSE_TRIGGER_EXCLUDED_SELECTOR)
+}
 
 function readGameSnapshot(): GameSnapshot | null {
   try {
@@ -91,6 +99,7 @@ export function PulseTriggerSystem() {
   const previousSnapshot = useRef(initialSnapshot)
   const activeSources = useRef(new Set<PulseTriggerInputSource>())
   const previousR2 = useRef(false)
+  const rightMouseHeld = useRef(false)
 
   const commitState = useCallback((next: PulseTriggerStoredState) => {
     stateRef.current = next
@@ -98,6 +107,7 @@ export function PulseTriggerSystem() {
   }, [])
 
   const stopAll = useCallback(() => {
+    rightMouseHeld.current = false
     activeSources.current.clear()
     clearTriggerClickMarkers()
     setIsActive(false)
@@ -166,6 +176,38 @@ export function PulseTriggerSystem() {
     document.addEventListener(PULSE_TRIGGER_INPUT_EVENT, handleInput)
     return () => document.removeEventListener(PULSE_TRIGGER_INPUT_EVENT, handleInput)
   }, [updateSource])
+
+  useEffect(() => {
+    const handleMouseDown = (event: MouseEvent) => {
+      if (event.button !== 2 || !isMouseTriggerTarget(event.target)) return
+      event.preventDefault()
+      rightMouseHeld.current = true
+      setPulseTriggerInput('pointer', true)
+    }
+
+    const handleMouseUp = (event: MouseEvent) => {
+      if (event.button !== 2 || !rightMouseHeld.current) return
+      rightMouseHeld.current = false
+      setPulseTriggerInput('pointer', false)
+    }
+
+    const handleContextMenu = (event: MouseEvent) => {
+      if (rightMouseHeld.current || isMouseTriggerTarget(event.target)) {
+        event.preventDefault()
+      }
+    }
+
+    document.addEventListener('mousedown', handleMouseDown, true)
+    window.addEventListener('mouseup', handleMouseUp, true)
+    document.addEventListener('contextmenu', handleContextMenu, true)
+    return () => {
+      document.removeEventListener('mousedown', handleMouseDown, true)
+      window.removeEventListener('mouseup', handleMouseUp, true)
+      document.removeEventListener('contextmenu', handleContextMenu, true)
+      rightMouseHeld.current = false
+      setPulseTriggerInput('pointer', false)
+    }
+  }, [])
 
   useEffect(() => {
     const handleCoreClick = (event: MouseEvent) => {
@@ -310,13 +352,23 @@ export function PulseTriggerSystem() {
         className="pulse-trigger-button"
         disabled={!available}
         aria-pressed={isActive}
+        title="Mantén el clic derecho en el área de juego o usa R2/RT"
         onPointerDown={(event) => {
+          if (event.pointerType === 'mouse') return
           event.preventDefault()
           event.currentTarget.setPointerCapture(event.pointerId)
           setPulseTriggerInput('pointer', true)
         }}
-        onPointerUp={(event) => releasePointer(event.pointerId, event.currentTarget)}
-        onPointerCancel={(event) => releasePointer(event.pointerId, event.currentTarget)}
+        onPointerUp={(event) => {
+          if (event.pointerType !== 'mouse') {
+            releasePointer(event.pointerId, event.currentTarget)
+          }
+        }}
+        onPointerCancel={(event) => {
+          if (event.pointerType !== 'mouse') {
+            releasePointer(event.pointerId, event.currentTarget)
+          }
+        }}
         onLostPointerCapture={() => setPulseTriggerInput('pointer', false)}
         onKeyDown={(event) => {
           if (!event.repeat && (event.key === ' ' || event.key === 'Enter')) {
@@ -332,10 +384,10 @@ export function PulseTriggerSystem() {
         }}
         onBlur={() => setPulseTriggerInput('keyboard', false)}
       >
-        <span className="pulse-trigger-button-icon" aria-hidden="true">R2</span>
+        <span className="pulse-trigger-button-icon" aria-hidden="true">RMB</span>
         <span>
-          <strong>{isActive ? 'DESCARGANDO' : 'MANTENER PULSADO'}</strong>
-          <small>{available ? `${rate.toFixed(1)} pulsos/s · mouse o control` : 'Carga la reserva con clics directos'}</small>
+          <strong>{isActive ? 'DESCARGANDO' : 'MANTENER CLIC DERECHO'}</strong>
+          <small>{available ? 'Clic derecho o R2 · izquierdo libre para el núcleo' : 'Carga la reserva con clics directos'}</small>
         </span>
       </button>
 
