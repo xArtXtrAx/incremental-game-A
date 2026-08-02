@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import './ChromaticChamberSystem.css'
+import { ChromaticSapphireOrbit } from './ChromaticSapphireOrbit'
 import { GAME_STORAGE_KEY } from './game'
 import {
   CHROMATIC_CLOSE_EVENT,
@@ -282,11 +283,7 @@ export function ChromaticChamberSystem() {
                 <div className="chromatic-orbit orbit-inner" aria-hidden="true" />
 
                 {unlocked && (
-                  <div className="chromatic-sapphire-orbit" aria-hidden="true">
-                    <span className="chromatic-sapphire-gem">
-                      <i />
-                    </span>
-                  </div>
+                  <ChromaticSapphireOrbit prestigeCount={prestigeCount} />
                 )}
 
                 <div
@@ -301,6 +298,12 @@ export function ChromaticChamberSystem() {
                   <span className="nexus-facet facet-orange" aria-hidden="true" />
                   <span className="nexus-facet facet-red" aria-hidden="true" />
                   <span className="nexus-core" aria-hidden="true" />
+                  {unlocked && (
+                    <span
+                      className="nexus-sapphire-reflection"
+                      aria-hidden="true"
+                    />
+                  )}
                   <div className="nexus-label">
                     <span>Nexo Prismático</span>
                     <strong>
