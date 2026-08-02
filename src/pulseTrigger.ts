@@ -1,0 +1,114 @@
+export const PULSE_TRIGGER_INPUT_EVENT =
+  'incremental-game-a:pulse-trigger-input'
+export const PULSE_TRIGGER_PULSE_EVENT =
+  'incremental-game-a:pulse-trigger-pulse'
+export const PULSE_TRIGGER_CHARGED_EVENT =
+  'incremental-game-a:pulse-trigger-charged'
+export const PULSE_TRIGGER_DEPLETED_EVENT =
+  'incremental-game-a:pulse-trigger-depleted'
+
+export const PULSE_TRIGGER_STORAGE_KEY =
+  'incremental-game-a:pulse-trigger:v1'
+
+export const PULSE_TRIGGER_CHARGE_CLICKS = 10
+export const PULSE_TRIGGER_RESERVE_GAIN_MS = 1000
+export const PULSE_TRIGGER_MAX_RESERVE_MS = 10_000
+export const PULSE_TRIGGER_RATE = 6
+export const PULSE_TRIGGER_INTERVAL_MS = 1000 / PULSE_TRIGGER_RATE
+
+export type PulseTriggerInputSource = 'pointer' | 'keyboard' | 'gamepad'
+
+export type PulseTriggerInputDetail = {
+  source: PulseTriggerInputSource
+  active: boolean
+}
+
+export type PulseTriggerStoredState = {
+  reserveMs: number
+  chargeClicks: number
+}
+
+export const EMPTY_PULSE_TRIGGER_STATE: PulseTriggerStoredState = {
+  reserveMs: 0,
+  chargeClicks: 0,
+}
+
+let syntheticTriggerClicks = 0
+
+function clampNumber(
+  value: unknown,
+  minimum: number,
+  maximum: number,
+  fallback: number,
+) {
+  return typeof value === 'number' && Number.isFinite(value)
+    ? Math.min(maximum, Math.max(minimum, value))
+    : fallback
+}
+
+export function loadPulseTriggerState(): PulseTriggerStoredState {
+  try {
+    const raw = window.localStorage.getItem(PULSE_TRIGGER_STORAGE_KEY)
+    if (!raw) return EMPTY_PULSE_TRIGGER_STATE
+
+    const value = JSON.parse(raw) as Partial<PulseTriggerStoredState>
+    const reserveMs = clampNumber(
+      value.reserveMs,
+      0,
+      PULSE_TRIGGER_MAX_RESERVE_MS,
+      0,
+    )
+    const chargeClicks = Math.floor(
+      clampNumber(
+        value.chargeClicks,
+        0,
+        PULSE_TRIGGER_CHARGE_CLICKS - 1,
+        0,
+      ),
+    )
+
+    return {
+      reserveMs,
+      chargeClicks:
+        reserveMs >= PULSE_TRIGGER_MAX_RESERVE_MS ? 0 : chargeClicks,
+    }
+  } catch {
+    return EMPTY_PULSE_TRIGGER_STATE
+  }
+}
+
+export function savePulseTriggerState(state: PulseTriggerStoredState) {
+  try {
+    window.localStorage.setItem(
+      PULSE_TRIGGER_STORAGE_KEY,
+      JSON.stringify(state),
+    )
+  } catch {
+    // El Gatillo sigue funcionando aunque el navegador bloquee localStorage.
+  }
+}
+
+export function setPulseTriggerInput(
+  source: PulseTriggerInputSource,
+  active: boolean,
+) {
+  document.dispatchEvent(
+    new CustomEvent<PulseTriggerInputDetail>(PULSE_TRIGGER_INPUT_EVENT, {
+      detail: { source, active },
+    }),
+  )
+}
+
+export function markNextCoreClickAsTrigger() {
+  syntheticTriggerClicks += 1
+}
+
+export function consumeTriggerClickMarker() {
+  if (syntheticTriggerClicks <= 0) return false
+  syntheticTriggerClicks -= 1
+  return true
+}
+
+export function clearTriggerClickMarkers() {
+  syntheticTriggerClicks = 0
+}
