@@ -1,5 +1,6 @@
 import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
 import './DeveloperPanel.css'
+import { requestChromaticDeveloperPreview } from './chromatic'
 
 export const DEVELOPER_MAX_ENERGY = 90_000_000_000_000
 export const DEVELOPER_MAX_CLICKS = 1_000_000_000
@@ -106,6 +107,13 @@ export function DeveloperPanel({
     setMessage('Se restauraron los valores actuales del juego.')
   }
 
+  function openChromaticPreview() {
+    requestChromaticDeveloperPreview()
+    setMessage(
+      'Cámara Cromática abierta en modo de inspección. No se modificaron desbloqueos.',
+    )
+  }
+
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
 
@@ -171,6 +179,27 @@ export function DeveloperPanel({
       <p className="developer-panel-intro">
         Modifica recursos sin alterar niveles, prestigios ni multiplicadores.
       </p>
+
+      <section
+        className="developer-chromatic-access"
+        aria-labelledby="developer-chromatic-title"
+      >
+        <span className="developer-tool-label">Inspección de metaprogresión</span>
+        <button
+          type="button"
+          className="developer-chromatic-button"
+          onClick={openChromaticPreview}
+        >
+          <span className="developer-chromatic-glyph" aria-hidden="true">
+            ◇
+          </span>
+          <span>
+            <strong id="developer-chromatic-title">Cámara Cromática</strong>
+            <small>Ver estado real sin alterar el desbloqueo</small>
+          </span>
+          <b aria-hidden="true">ABRIR</b>
+        </button>
+      </section>
 
       <form onSubmit={handleSubmit} noValidate>
         <label htmlFor="developer-energy">
