@@ -1,6 +1,24 @@
-import { useEffect, useState, type FormEvent, type KeyboardEvent } from 'react'
+import {
+  useEffect,
+  useRef,
+  useState,
+  type FocusEvent,
+  type FormEvent,
+  type KeyboardEvent,
+  type PointerEvent,
+} from 'react'
 import './DeveloperPanel.css'
-import { requestChromaticDeveloperPreview } from './chromatic'
+import './DeveloperChromaticThemePreview.css'
+import {
+  requestChromaticDeveloperPreview,
+  type ChromaticGemId,
+} from './chromatic'
+import {
+  applyDeveloperChromaticTheme,
+  CHROMATIC_THEME_PREVIEWS,
+  clearDeveloperChromaticTheme,
+  DEFAULT_CHROMATIC_THEME_PREVIEW,
+} from './chromaticThemePreview'
 
 export const DEVELOPER_MAX_ENERGY = 90_000_000_000_000
 export const DEVELOPER_MAX_CLICKS = 1_000_000_000
@@ -64,6 +82,8 @@ export function DeveloperPanel({
   disabled = false,
   onApply,
 }: DeveloperPanelProps) {
+  const panelRef = useRef<HTMLElement | null>(null)
+  const mouseFocusAllowedUntil = useRef(0)
   const [energyInput, setEnergyInput] = useState(() =>
     formatInputValue(energy),
   )
@@ -72,6 +92,9 @@ export function DeveloperPanel({
   )
   const [crystallizationInput, setCrystallizationInput] = useState(() =>
     formatInputValue(prestigeCount),
+  )
+  const [themePreview, setThemePreview] = useState<ChromaticGemId>(
+    DEFAULT_CHROMATIC_THEME_PREVIEW,
   )
   const [dirty, setDirty] = useState(false)
   const [message, setMessage] = useState(
@@ -87,6 +110,67 @@ export function DeveloperPanel({
     setClickInput(formatInputValue(manualClicks))
     setCrystallizationInput(formatInputValue(prestigeCount))
   }, [dirty, energy, manualClicks, prestigeCount])
+
+  useEffect(() => {
+    applyDeveloperChromaticTheme(themePreview)
+  }, [themePreview])
+
+  useEffect(
+    () => () => {
+      clearDeveloperChromaticTheme()
+    },
+    [],
+  )
+
+  useEffect(() => {
+    const panel = panelRef.current
+    if (!panel) return
+
+    const blockSyntheticGamepadClick = (event: MouseEvent) => {
+      if (event.detail !== 0) return
+      event.preventDefault()
+      event.stopImmediatePropagation()
+    }
+
+    panel.addEventListener('click', blockSyntheticGamepadClick, true)
+    return () => {
+      panel.removeEventListener('click', blockSyntheticGamepadClick, true)
+    }
+  }, [])
+
+  function handlePanelPointerDown(event: PointerEvent<HTMLElement>) {
+    if (event.pointerType === 'mouse' && event.button === 0) {
+      mouseFocusAllowedUntil.current = performance.now() + 800
+    }
+  }
+
+  function handlePanelFocus(event: FocusEvent<HTMLElement>) {
+    if (performance.now() <= mouseFocusAllowedUntil.current) return
+
+    const target = event.target
+    if (target instanceof HTMLElement) {
+      target.blur()
+    }
+  }
+
+  function previewChromaticTheme(theme: ChromaticGemId) {
+    const definition =
+      CHROMATIC_THEME_PREVIEWS.find((item) => item.id === theme) ??
+      CHROMATIC_THEME_PREVIEWS[0]
+
+    setThemePreview(theme)
+    setMessage(
+      `Vista ${definition.label} aplicada solo a esta sesión. No modifica la gema activa ni el guardado.`,
+    )
+  }
+
+  function handleThemePointer(
+    event: PointerEvent<HTMLButtonElement>,
+    theme: ChromaticGemId,
+  ) {
+    if (event.pointerType !== 'mouse' || event.button !== 0) return
+    previewChromaticTheme(theme)
+  }
 
   function updateEnergy(value: string) {
     if (!/^(?:\d+(?:\.\d{0,2})?)?$/.test(value)) {
@@ -206,8 +290,19 @@ export function DeveloperPanel({
     setMessage('Valores aplicados y guardados en la partida actual.')
   }
 
+  const selectedTheme =
+    CHROMATIC_THEME_PREVIEWS.find((item) => item.id === themePreview) ??
+    CHROMATIC_THEME_PREVIEWS[0]
+
   return (
-    <aside className="developer-panel" aria-label="Panel de desarrollador">
+    <aside
+      ref={panelRef}
+      className="developer-panel"
+      data-gamepad-ignore="true"
+      aria-label="Panel de desarrollador"
+      onPointerDownCapture={handlePanelPointerDown}
+      onFocusCapture={handlePanelFocus}
+    >
       <header className="developer-panel-header">
         <div>
           <span>Herramientas de prueba</span>
@@ -217,8 +312,52 @@ export function DeveloperPanel({
       </header>
 
       <p className="developer-panel-intro">
-        Modifica recursos y cristalizaciones sin ejecutar el ciclo de prestigio.
+        Modifica recursos, cristalizaciones y la apariencia temporal de la
+        ventana sin ejecutar el ciclo de prestigio.
       </p>
+
+      <section
+        className="developer-theme-preview"
+        aria-labelledby="developer-theme-preview-title"
+      >
+        <div className="developer-theme-preview-heading">
+          <div>
+            <span>Laboratorio visual</span>
+            <strong id="developer-theme-preview-title">
+              Selector cromático
+            </strong>
+            <small>Solo mouse · no se guarda · no desbloquea gemas</small>
+          </div>
+          <b aria-hidden="true">SESIÓN</b>
+        </div>
+
+        <div
+          className="developer-theme-options"
+          role="group"
+          aria-label="Vista cromática de la ventana"
+        >
+          {CHROMATIC_THEME_PREVIEWS.map((theme) => (
+            <button
+              type="button"
+              key={theme.id}
+              className={`developer-theme-option ${theme.className}${
+                themePreview === theme.id ? ' is-active' : ''
+              }`}
+              aria-pressed={themePreview === theme.id}
+              title={`${theme.label}: ${theme.description}`}
+              onPointerUp={(event) => handleThemePointer(event, theme.id)}
+            >
+              <span className="developer-theme-swatch" aria-hidden="true" />
+              <span>{theme.label}</span>
+            </button>
+          ))}
+        </div>
+
+        <p className="developer-theme-current">
+          Vista actual: <strong>{selectedTheme.label}</strong> ·{' '}
+          {selectedTheme.description}
+        </p>
+      </section>
 
       <section
         className="developer-chromatic-access"
@@ -317,7 +456,8 @@ export function DeveloperPanel({
       <footer>
         Reducir los clics por debajo de 5,000 cancela la sobrecarga activa.
         Establecer 0 cristalizaciones también limpia la Matriz de refracción
-        para conservar un estado válido.
+        para conservar un estado válido. La vista cromática siempre vuelve a
+        Zafiro al recargar.
       </footer>
     </aside>
   )
