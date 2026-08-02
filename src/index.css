@@ -42,6 +42,29 @@ body {
     #030713;
 }
 
+/* Interacción global del juego: evita selecciones accidentales al pulsar o arrastrar. */
+.game-screen,
+.game-screen * {
+  -webkit-user-select: none;
+  user-select: none;
+  -webkit-touch-callout: none;
+}
+
+.game-screen input,
+.game-screen textarea,
+.game-screen [contenteditable='true'] {
+  -webkit-user-select: text;
+  user-select: text;
+  -webkit-touch-callout: default;
+}
+
+.game-screen img,
+.game-screen svg,
+.game-screen canvas {
+  -webkit-user-drag: none;
+  user-drag: none;
+}
+
 button {
   font: inherit;
 }
