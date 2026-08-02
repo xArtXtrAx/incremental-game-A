@@ -103,8 +103,10 @@ export function advanceRefractionMatrix(
   const orbitDuration = getRefractionOrbitDuration(input.manualClicks)
   const accumulatedProgress =
     input.orbitProgress + getRefractionChargeRate(input.level) / orbitDuration
-  const completedCharges = Math.floor(accumulatedProgress + 0.000001)
-  const orbitProgress = roundProgress(accumulatedProgress - completedCharges)
+  const completedCharges = Math.floor(accumulatedProgress + 0.0001)
+  const orbitProgress = roundProgress(
+    Math.max(0, accumulatedProgress - completedCharges),
+  )
   const facetCount = getRefractionFacetCount(input.prestigeCount)
   const accumulatedFacets = input.facetsCharged + completedCharges
   const dischargesTriggered = Math.floor(accumulatedFacets / facetCount)
