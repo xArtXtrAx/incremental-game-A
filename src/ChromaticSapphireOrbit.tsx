@@ -22,9 +22,13 @@ export function ChromaticSapphireOrbit({
 
   useEffect(() => {
     const carrier = carrierRef.current
-    const stage = carrier?.closest<HTMLElement>('.chromatic-stage')
-    if (!carrier || !stage) return
+    if (!carrier) return
 
+    const stage = carrier.closest<HTMLElement>('.chromatic-stage')
+    if (!stage) return
+
+    const targetCarrier = carrier
+    const targetStage = stage
     const reducedMotion = window.matchMedia(
       '(prefers-reduced-motion: reduce)',
     ).matches
@@ -46,30 +50,30 @@ export function ChromaticSapphireOrbit({
       const lightStrength = 0.28 + frontness * 0.56
       const lightAngle = 90 + (Math.atan2(depth, cosine) * 180) / Math.PI
 
-      carrier.style.left = `${x.toFixed(3)}%`
-      carrier.style.top = `${y.toFixed(3)}%`
-      carrier.style.zIndex = depth >= 0 ? '9' : '3'
-      carrier.style.opacity = (0.74 + frontness * 0.26).toFixed(3)
-      carrier.style.transform =
+      targetCarrier.style.left = `${x.toFixed(3)}%`
+      targetCarrier.style.top = `${y.toFixed(3)}%`
+      targetCarrier.style.zIndex = depth >= 0 ? '9' : '3'
+      targetCarrier.style.opacity = (0.74 + frontness * 0.26).toFixed(3)
+      targetCarrier.style.transform =
         `translate(-50%, -50%) scale(${scale.toFixed(4)})`
 
-      stage.style.setProperty(
+      targetStage.style.setProperty(
         '--chromatic-sapphire-light-x',
         `${lightX.toFixed(3)}%`,
       )
-      stage.style.setProperty(
+      targetStage.style.setProperty(
         '--chromatic-sapphire-light-y',
         `${lightY.toFixed(3)}%`,
       )
-      stage.style.setProperty(
+      targetStage.style.setProperty(
         '--chromatic-sapphire-light-strength',
         lightStrength.toFixed(4),
       )
-      stage.style.setProperty(
+      targetStage.style.setProperty(
         '--chromatic-sapphire-frontness',
         frontness.toFixed(4),
       )
-      stage.style.setProperty(
+      targetStage.style.setProperty(
         '--chromatic-sapphire-light-angle',
         `${lightAngle.toFixed(3)}deg`,
       )
@@ -107,11 +111,11 @@ export function ChromaticSapphireOrbit({
     return () => {
       disposed = true
       window.cancelAnimationFrame(frameId)
-      stage.style.removeProperty('--chromatic-sapphire-light-x')
-      stage.style.removeProperty('--chromatic-sapphire-light-y')
-      stage.style.removeProperty('--chromatic-sapphire-light-strength')
-      stage.style.removeProperty('--chromatic-sapphire-frontness')
-      stage.style.removeProperty('--chromatic-sapphire-light-angle')
+      targetStage.style.removeProperty('--chromatic-sapphire-light-x')
+      targetStage.style.removeProperty('--chromatic-sapphire-light-y')
+      targetStage.style.removeProperty('--chromatic-sapphire-light-strength')
+      targetStage.style.removeProperty('--chromatic-sapphire-frontness')
+      targetStage.style.removeProperty('--chromatic-sapphire-light-angle')
     }
   }, [])
 
