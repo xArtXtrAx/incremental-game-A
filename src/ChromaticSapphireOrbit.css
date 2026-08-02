@@ -1,0 +1,129 @@
+.chromatic-sapphire-carrier {
+  position: absolute;
+  left: 50%;
+  top: 23%;
+  width: 82px;
+  height: 104px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+  transform: translate(-50%, -50%);
+  transform-origin: center;
+  will-change: left, top, transform, opacity;
+}
+
+.chromatic-sapphire-outer-glow {
+  position: absolute;
+  inset: -22%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle,
+    rgba(205, 251, 255, 0.28),
+    rgba(42, 190, 255, 0.15) 34%,
+    rgba(21, 93, 255, 0.055) 58%,
+    transparent 76%
+  );
+  filter: blur(11px);
+  opacity: calc(0.58 + var(--chromatic-sapphire-frontness, 0.5) * 0.3);
+}
+
+.chromatic-sapphire-shared-gem.sapphire-gem-dock {
+  width: 68px;
+  height: 86px;
+  filter:
+    drop-shadow(0 0 10px rgba(91, 226, 255, 0.92))
+    drop-shadow(0 0 24px rgba(29, 126, 255, 0.35));
+}
+
+.chromatic-sapphire-shared-gem .sapphire-orbit-webgl,
+.chromatic-sapphire-shared-gem .sapphire-orbit-layer {
+  filter: brightness(1.08);
+}
+
+.nexus-sapphire-reflection {
+  position: absolute;
+  inset: -2%;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    radial-gradient(
+      circle at
+        var(--chromatic-sapphire-light-x, 50%)
+        var(--chromatic-sapphire-light-y, 20%),
+      rgba(239, 254, 255, 0.9) 0 2%,
+      rgba(117, 226, 255, 0.62) 5%,
+      rgba(27, 155, 255, 0.34) 12%,
+      rgba(20, 83, 231, 0.14) 24%,
+      transparent 43%
+    ),
+    linear-gradient(
+      var(--chromatic-sapphire-light-angle, 90deg),
+      transparent 22%,
+      rgba(137, 235, 255, 0.04) 39%,
+      rgba(58, 178, 255, 0.18) 50%,
+      rgba(18, 83, 223, 0.06) 61%,
+      transparent 78%
+    );
+  mix-blend-mode: screen;
+  opacity: var(--chromatic-sapphire-light-strength, 0.45);
+  filter: saturate(1.15) contrast(1.04);
+  transition: opacity 80ms linear;
+}
+
+.nexus-sapphire-reflection::before,
+.nexus-sapphire-reflection::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.nexus-sapphire-reflection::before {
+  background:
+    linear-gradient(135deg, transparent 42%, rgba(211, 250, 255, 0.19) 49%, transparent 56%),
+    linear-gradient(35deg, transparent 47%, rgba(40, 158, 255, 0.14) 52%, transparent 58%);
+  opacity: calc(0.2 + var(--chromatic-sapphire-frontness, 0.5) * 0.42);
+}
+
+.nexus-sapphire-reflection::after {
+  inset: 18% 16%;
+  border-radius: 50%;
+  background: radial-gradient(
+    circle at
+      var(--chromatic-sapphire-light-x, 50%)
+      var(--chromatic-sapphire-light-y, 20%),
+    rgba(204, 250, 255, 0.34),
+    rgba(34, 147, 255, 0.09) 34%,
+    transparent 68%
+  );
+  filter: blur(7px);
+  opacity: calc(0.34 + var(--chromatic-sapphire-frontness, 0.5) * 0.34);
+}
+
+.prismatic-nexus.is-partially-awake .facet-blue {
+  filter:
+    drop-shadow(0 0 14px rgba(49, 174, 255, 0.8))
+    brightness(calc(0.92 + var(--chromatic-sapphire-frontness, 0.5) * 0.2));
+}
+
+@media (max-width: 760px) {
+  .chromatic-sapphire-carrier {
+    width: 68px;
+    height: 88px;
+  }
+
+  .chromatic-sapphire-shared-gem.sapphire-gem-dock {
+    width: 58px;
+    height: 73px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .chromatic-sapphire-carrier {
+    will-change: auto;
+  }
+
+  .nexus-sapphire-reflection {
+    transition: none;
+  }
+}
