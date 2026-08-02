@@ -12,10 +12,10 @@
 - Entorno: React + TypeScript + Vite + Motion.
 - Guardado estable: `incremental-game-a:save:v1`.
 - La antigua clave `incremental-game-a:save:prestige-test:v1` se migra una sola vez a la estable y después se elimina.
-- Última actualización: **1 de agosto de 2026**.
+- Última actualización: **2 de agosto de 2026**.
 - `manualClicks` incluye clics manuales y pulsos autónomos.
 
-`main` contiene el prestigio de zafiro, el render WebGL, el pulso progresivo y el panel de desarrollador ya aprobados. `Dev-Orbita-Zafiro-Test` añade una órbita luminosa experimental y no debe integrarse a `main` sin la validación visual de Arturo.
+`main` contiene el prestigio de zafiro, su render WebGL, el pulso progresivo y el panel de desarrollador ya aprobados. `Dev-Orbita-Zafiro-Test` añade la órbita WebGL y la iluminación dinámica producida por su chispa. No debe integrarse a `main` sin validación visual de Arturo.
 
 ## 2. Forma de trabajo
 
@@ -150,7 +150,7 @@ Después del primer prestigio se eliminan requisitos de descubrimiento por clics
 
 - Brillo: 100% → 50% → 100%.
 - Fórmula: `0.75 + 0.25 × cos(2π × fase)`.
-- Shader, transparencia, halo y destello comparten intensidad.
+- Shader, transparencia y halo comparten intensidad.
 - Duración con `p = clics / 5,000`:
 
 ```text
@@ -168,39 +168,42 @@ Referencias:
 
 La fase es continua y compartida entre las instancias del soporte y el núcleo. Cavitación, sobrecarga y anuncios elevan el brillo al máximo y después regresan a la fase natural.
 
-El reflejo diagonal aparece gradualmente, cruza la gema y se desvanece antes del borde derecho.
+El antiguo destello diagonal 2D fue retirado en la rama experimental. La iluminación móvil ahora proviene de la chispa orbital y se calcula dentro del shader de la gema.
 
-## 8. Propuesta experimental — Órbita luminosa
+## 8. Propuesta experimental — Órbita e iluminación dinámica
 
 Implementada solamente en `Dev-Orbita-Zafiro-Test`.
 
-### Diseño
+### Órbita WebGL
 
-- Órbita elíptica horizontal centrada exactamente a media altura del zafiro.
-- El anillo orbital permanece visible durante todo el ciclo, independientemente del brillo del cristal.
+- Órbita elíptica horizontal centrada a media altura del zafiro.
+- El anillo permanece visible durante todo el ciclo.
 - Una chispa cian con núcleo blanco recorre la elipse.
-- Seis partículas difuminadas forman una estela de aproximadamente 16.8% del giro.
+- Doce partículas forman una estela de aproximadamente 18% del giro.
 - La intensidad disminuye progresivamente desde la chispa hasta el final de la estela.
-- Cavitación y sobrecarga aumentan sutilmente el brillo de la órbita y la chispa.
+- Cavitación y sobrecarga aumentan sutilmente el brillo orbital.
+- Dos canvases transparentes WebGL separan profundidad: uno detrás y otro delante de la gema.
+- No existen máscaras `clip-path`, filtros rectangulares ni fondos visibles en el modo WebGL.
+- La técnica CSS anterior queda únicamente como respaldo si falla WebGL orbital.
 
-### Profundidad
+### Fase y profundidad
 
-- La mitad superior de la órbita se renderiza detrás del canvas del zafiro.
-- La mitad inferior se renderiza delante.
-- Chispa, anillo y estela están duplicados y recortados por mitades para simular que orbitan alrededor del volumen, no sobre una superficie plana.
-- La sección trasera usa menor opacidad; la delantera conserva mayor luminosidad.
-
-### Sincronización
-
-La órbita utiliza la misma fase acumulada del pulso WebGL:
-
+- La órbita usa una fase global compartida por el canvas trasero, la gema y el canvas delantero.
 - 20 segundos por vuelta al 0% del núcleo.
 - Aceleración continua según la fórmula del pulso.
 - 3 segundos por vuelta al llegar a 5,000 clics.
-- No usa una animación CSS independiente en modo WebGL, por lo que no reinicia ni salta cuando cambia la duración.
-- Todas las instancias visibles comparten fase.
-- Con `prefers-reduced-motion`, la chispa permanece fija a la derecha y el anillo sigue visible.
-- El respaldo SVG conserva un recorrido CSS básico para la chispa.
+- La fase no reinicia cuando cambia la duración.
+- Con `prefers-reduced-motion`, la chispa permanece fija.
+
+### Luz de la chispa sobre las facetas
+
+- `SapphireOrbitState.ts` entrega la misma posición tridimensional a la órbita y al shader de la gema.
+- El fragment shader calcula dirección hacia la partícula, distancia, normal de la faceta y dirección de cámara.
+- La cara orientada hacia la chispa recibe un reflejo especular blanco-cian concentrado.
+- Las caras cercanas reciben una iluminación difusa más suave.
+- La intensidad cae con la distancia.
+- Cuando la chispa pasa detrás, disminuye la luz directa y queda principalmente un reflejo Fresnel de borde.
+- La iluminación viaja exactamente con la partícula y mantiene la aceleración 20→3 segundos.
 
 ## 9. Panel de desarrollador
 
@@ -222,9 +225,11 @@ Protecciones:
 - `src/game.ts`: estado, fórmulas, guardado, migración, prestigio y reducer.
 - `src/App.tsx`: ciclo principal, eventos y panel de desarrollador.
 - `src/GameCore.tsx`: esfera, anillos, gema, cristalización y soporte.
-- `src/SapphireGem.tsx`: contenedor, respaldo SVG, destello y capas orbitales.
-- `src/SapphireGem3D.tsx`: geometría, shaders, pulso y coordenadas de órbita.
-- `src/SapphireOrbit.css`: anillo, chispa, estela, profundidad y respaldo.
+- `src/SapphireGem.tsx`: contenedor, respaldo SVG y selección entre órbita WebGL/CSS.
+- `src/SapphireGem3D.tsx`: geometría, shaders, pulso e iluminación de la chispa.
+- `src/SapphireOrbit3D.tsx`: anillo, chispa y estela WebGL con capas frontal/trasera.
+- `src/SapphireOrbitState.ts`: fase y posición 3D compartidas.
+- `src/SapphireOrbit.css`: respaldo orbital CSS.
 - `src/PrestigeSapphire.css`: estilos del zafiro y cristalización.
 - `src/DeveloperPanel.tsx`: validación y controles de prueba.
 - `src/DeveloperPanel.css`: bloqueo de selección y diseño del panel.
@@ -238,18 +243,21 @@ Protecciones:
 - La sobrecarga activa solo se restaura si todavía no expiró.
 - No existe progreso fuera de línea.
 - Autoclics múltiples se procesan secuencialmente.
-- La órbita no modifica estado, guardado, multiplicadores ni mecánicas.
+- Órbita e iluminación no modifican estado, guardado, multiplicadores ni mecánicas.
 
 ## 12. Validaciones
 
 Validaciones aisladas realizadas:
 
-- TypeScript estricto de `SapphireGem.tsx` y `SapphireGem3D.tsx`.
-- Coordenadas elípticas de chispa y seis puntos de estela.
+- TypeScript estricto de `SapphireGem.tsx`, `SapphireGem3D.tsx`, `SapphireOrbit3D.tsx` y `SapphireOrbitState.ts`.
+- Conexión de uniformes `uOrbitLightPosition` y `uOrbitFrontness`.
 - Fase compartida y duración 20→3 segundos.
-- Limpieza de variables CSS al desmontar.
+- Pausa segura al ocultar el documento.
+- Eliminación del elemento `sapphire-gem-glint`.
 - Sin dependencias nuevas.
 - Sin cambios en fórmulas ni guardado.
+
+No se ejecutaron `npm run lint` ni `npm run build` con las dependencias reales del equipo local.
 
 Validación local recomendada:
 
@@ -262,24 +270,23 @@ npm run dev
 Prueba visual pendiente:
 
 1. Seleccionar `Dev-Orbita-Zafiro-Test`.
-2. Confirmar que la órbita esté centrada horizontalmente.
-3. Verificar el paso detrás por la mitad superior y delante por la inferior.
-4. Comprobar que la estela no parezca una cadena de puntos rígida.
-5. Observar una vuelta de 20 segundos con el núcleo vacío.
-6. Confirmar la aceleración hacia 3 segundos al llenar el núcleo.
-7. Probar cavitación, sobrecarga, extracción y soporte.
-8. Volver a `main` y confirmar que la versión estable permanece intacta.
+2. Confirmar que ya no existe el barrido diagonal independiente.
+3. Observar cómo el reflejo pasa de una faceta a otra siguiendo la chispa.
+4. Confirmar que el reflejo frontal disminuye cuando la chispa pasa detrás.
+5. Probar vueltas lentas de 20 segundos y rápidas de 3 segundos.
+6. Probar cavitación, sobrecarga, extracción y soporte permanente.
+7. Volver a `main` y confirmar que la versión estable permanece intacta.
 
 ## 13. Próximas mejoras sugeridas
 
 1. Progreso fuera de línea controlado.
 2. Árbol de mejoras permanentes del zafiro.
 3. Núcleo luminoso interno desde prestigio 3.
-4. Anillos orbitales 3D desde prestigio 4.
+4. Anillos orbitales adicionales desde prestigio 4.
 5. Telemetría local de tiempos y producción.
 6. Integración con DualSense mediante Gamepad API.
 7. Pruebas automatizadas dentro del repositorio.
 
 ## 14. Inicio recomendado para otro chat
 
-> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD`, revisa `main` y `Dev-Orbita-Zafiro-Test`, conserva las fórmulas registradas y no integres la órbita a `main` sin la aprobación de Arturo.
+> Continúa `xArtXtrAx/incremental-game-A`. Lee `HISTORIAL_GPT.MD`, revisa `main` y `Dev-Orbita-Zafiro-Test`, conserva las fórmulas registradas y no integres la órbita ni su iluminación a `main` sin la aprobación de Arturo.
