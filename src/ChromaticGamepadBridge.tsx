@@ -29,8 +29,9 @@ function cycleGem(direction: -1 | 1) {
   const currentIndex = buttons.findIndex(
     (button) => button.getAttribute('aria-pressed') === 'true',
   )
+  const safeIndex = currentIndex >= 0 ? currentIndex : 0
   const nextIndex =
-    (Math.max(0, currentIndex) + direction + buttons.length) % buttons.length
+    (safeIndex + direction + buttons.length) % buttons.length
   const next = buttons[nextIndex]
   next.click()
   focusElement(next)
@@ -42,13 +43,20 @@ export function ChromaticGamepadBridge() {
   const animationFrame = useRef(0)
 
   useEffect(() => {
-    const poll = () => {
+    let controlsEnabled = loadGamepadSettings().enabled
+    let lastSettingsRead = 0
+
+    const poll = (now: number) => {
+      if (now - lastSettingsRead >= 400) {
+        controlsEnabled = loadGamepadSettings().enabled
+        lastSettingsRead = now
+      }
+
       const gamepad = getFirstConnectedGamepad()
-      const enabled = loadGamepadSettings().enabled
 
       if (
         gamepad &&
-        enabled &&
+        controlsEnabled &&
         document.visibilityState === 'visible'
       ) {
         const pressed = gamepad.buttons.map(isButtonPressed)
