@@ -65,7 +65,7 @@ export function DeveloperPanel({
   )
   const [dirty, setDirty] = useState(false)
   const [message, setMessage] = useState(
-    'Los cambios se guardan únicamente en la partida experimental.',
+    'Los cambios se guardan en la partida actual.',
   )
 
   useEffect(() => {
@@ -155,7 +155,7 @@ export function DeveloperPanel({
     setEnergyInput(formatInputValue(safeValues.energy))
     setClickInput(formatInputValue(safeValues.manualClicks))
     setDirty(false)
-    setMessage('Valores aplicados y guardados en la partida experimental.')
+    setMessage('Valores aplicados y guardados en la partida actual.')
   }
 
   return (
