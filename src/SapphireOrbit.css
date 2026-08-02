@@ -1,0 +1,248 @@
+/* Órbita experimental del zafiro: anillo, chispa y estela sincronizados. */
+.sapphire-gem {
+  --sapphire-orbit-x: 96%;
+  --sapphire-orbit-y: 50%;
+  --sapphire-orbit-trail-1-x: 95.3%;
+  --sapphire-orbit-trail-1-y: 42.6%;
+  --sapphire-orbit-trail-2-x: 93.1%;
+  --sapphire-orbit-trail-2-y: 35.6%;
+  --sapphire-orbit-trail-3-x: 89.6%;
+  --sapphire-orbit-trail-3-y: 29.2%;
+  --sapphire-orbit-trail-4-x: 84.8%;
+  --sapphire-orbit-trail-4-y: 23.7%;
+  --sapphire-orbit-trail-5-x: 78.8%;
+  --sapphire-orbit-trail-5-y: 19.4%;
+  --sapphire-orbit-trail-6-x: 71.8%;
+  --sapphire-orbit-trail-6-y: 16.7%;
+}
+
+.sapphire-orbit-layer {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 148%;
+  height: 38%;
+  transform: translate(-50%, -50%);
+  pointer-events: none;
+}
+
+.sapphire-orbit-back {
+  z-index: 1;
+  clip-path: inset(0 0 50% 0);
+}
+
+.sapphire-orbit-front {
+  z-index: 3;
+  clip-path: inset(50% 0 0 0);
+}
+
+.sapphire-orbit-ring {
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(83, 218, 255, 0.44);
+  border-radius: 50%;
+  background:
+    radial-gradient(
+      ellipse at center,
+      transparent 58%,
+      rgba(20, 152, 255, 0.035) 70%,
+      transparent 78%
+    );
+  box-shadow:
+    0 0 7px rgba(47, 200, 255, 0.18),
+    inset 0 0 8px rgba(74, 222, 255, 0.08);
+}
+
+.sapphire-orbit-back .sapphire-orbit-ring {
+  border-color: rgba(67, 167, 236, 0.25);
+  filter: brightness(0.72);
+}
+
+.sapphire-orbit-front .sapphire-orbit-ring {
+  border-color: rgba(113, 235, 255, 0.62);
+  box-shadow:
+    0 0 8px rgba(64, 220, 255, 0.3),
+    inset 0 0 9px rgba(104, 232, 255, 0.12);
+}
+
+.sapphire-orbit-spark,
+.sapphire-orbit-trail {
+  position: absolute;
+  border-radius: 999px;
+  transform: translate(-50%, -50%);
+  will-change: left, top;
+}
+
+.sapphire-orbit-spark {
+  left: var(--sapphire-orbit-x);
+  top: var(--sapphire-orbit-y);
+  width: 5px;
+  height: 5px;
+  background: #f3feff;
+  box-shadow:
+    0 0 3px #fff,
+    0 0 7px rgba(133, 239, 255, 1),
+    0 0 14px rgba(36, 196, 255, 0.9),
+    0 0 25px rgba(19, 114, 255, 0.55);
+}
+
+.sapphire-orbit-spark::before {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle,
+    rgba(226, 253, 255, 0.95) 0 10%,
+    rgba(73, 224, 255, 0.58) 28%,
+    rgba(22, 146, 255, 0.16) 56%,
+    transparent 74%
+  );
+  filter: blur(1.4px);
+}
+
+.sapphire-orbit-spark::after {
+  content: '';
+  position: absolute;
+  inset: -10px;
+  border-radius: inherit;
+  background: radial-gradient(
+    circle,
+    rgba(80, 231, 255, 0.28),
+    rgba(28, 123, 255, 0.09) 46%,
+    transparent 72%
+  );
+  filter: blur(3px);
+}
+
+.sapphire-orbit-trail {
+  background: radial-gradient(
+    circle,
+    rgba(224, 253, 255, 0.84) 0 8%,
+    rgba(72, 222, 255, 0.55) 26%,
+    rgba(20, 128, 255, 0.16) 55%,
+    transparent 76%
+  );
+}
+
+.sapphire-orbit-trail-1 {
+  left: var(--sapphire-orbit-trail-1-x);
+  top: var(--sapphire-orbit-trail-1-y);
+  width: 8px;
+  height: 8px;
+  opacity: 0.72;
+  filter: blur(1.1px);
+}
+
+.sapphire-orbit-trail-2 {
+  left: var(--sapphire-orbit-trail-2-x);
+  top: var(--sapphire-orbit-trail-2-y);
+  width: 9px;
+  height: 9px;
+  opacity: 0.55;
+  filter: blur(1.6px);
+}
+
+.sapphire-orbit-trail-3 {
+  left: var(--sapphire-orbit-trail-3-x);
+  top: var(--sapphire-orbit-trail-3-y);
+  width: 10px;
+  height: 10px;
+  opacity: 0.4;
+  filter: blur(2px);
+}
+
+.sapphire-orbit-trail-4 {
+  left: var(--sapphire-orbit-trail-4-x);
+  top: var(--sapphire-orbit-trail-4-y);
+  width: 11px;
+  height: 11px;
+  opacity: 0.27;
+  filter: blur(2.5px);
+}
+
+.sapphire-orbit-trail-5 {
+  left: var(--sapphire-orbit-trail-5-x);
+  top: var(--sapphire-orbit-trail-5-y);
+  width: 12px;
+  height: 12px;
+  opacity: 0.16;
+  filter: blur(3px);
+}
+
+.sapphire-orbit-trail-6 {
+  left: var(--sapphire-orbit-trail-6-x);
+  top: var(--sapphire-orbit-trail-6-y);
+  width: 13px;
+  height: 13px;
+  opacity: 0.08;
+  filter: blur(3.6px);
+}
+
+.sapphire-orbit-back .sapphire-orbit-spark,
+.sapphire-orbit-back .sapphire-orbit-trail {
+  filter: brightness(0.62) saturate(0.85);
+  opacity: 0.54;
+}
+
+.sapphire-orbit-front .sapphire-orbit-spark {
+  filter: brightness(1.16);
+}
+
+.sapphire-gem.is-energized .sapphire-orbit-ring {
+  border-color: rgba(194, 251, 255, 0.78);
+  box-shadow:
+    0 0 11px rgba(90, 232, 255, 0.42),
+    inset 0 0 10px rgba(131, 242, 255, 0.16);
+}
+
+.sapphire-gem.is-energized .sapphire-orbit-spark {
+  width: 6px;
+  height: 6px;
+  box-shadow:
+    0 0 4px #fff,
+    0 0 10px rgba(188, 250, 255, 1),
+    0 0 20px rgba(45, 211, 255, 0.96),
+    0 0 32px rgba(43, 100, 255, 0.7);
+}
+
+.sapphire-gem-core .sapphire-orbit-layer {
+  width: 154%;
+  height: 40%;
+}
+
+.sapphire-gem-dock .sapphire-orbit-layer {
+  width: 150%;
+  height: 37%;
+}
+
+@keyframes sapphire-orbit-fallback {
+  from {
+    offset-distance: 0%;
+  }
+
+  to {
+    offset-distance: 100%;
+  }
+}
+
+.sapphire-gem.is-webgl-fallback .sapphire-orbit-spark {
+  top: 0;
+  left: 0;
+  offset-path: ellipse(46% 42% at 50% 50%);
+  offset-rotate: 0deg;
+  animation: sapphire-orbit-fallback var(--sapphire-pulse-duration, 20s)
+    linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sapphire-orbit-spark,
+  .sapphire-orbit-trail {
+    will-change: auto;
+  }
+
+  .sapphire-gem.is-webgl-fallback .sapphire-orbit-spark {
+    animation: none;
+    offset-distance: 0%;
+  }
+}
