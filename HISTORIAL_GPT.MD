@@ -1,16 +1,22 @@
 # HISTORIAL_GPT — Incremental Game A
 
 > Bitácora compartida entre Arturo y GPT.  
-> **Regla para nuevos chats:** leer este archivo, leer `PERFORMANCE_AUDIT.md` y comprobar la rama activa antes de modificar el proyecto.
+> **Regla para nuevos chats:** leer este archivo, leer `PERFORMANCE_AUDIT.md`, leer `GAMEPAD_DEVICE_SELECTION.md` y comprobar la rama activa antes de modificar el proyecto.
 
 ## 1. Estado actual del repositorio
 
 - Repositorio: `xArtXtrAx/incremental-game-A`.
+- **Repositorio transversal de bugs críticos corregidos:** [`xArtXtrAx/bugs-universales-corregidos`](https://github.com/xArtXtrAx/bugs-universales-corregidos).
+- **IMPORTANCIA MAYÚSCULA:** cada bug crítico, difícil de detectar o reutilizable que encontremos, resolvamos y validemos debe documentarse también en ese repositorio como conocimiento aplicable a todos los videojuegos futuros.
+- El repositorio universal debe registrar, como mínimo: síntoma, condiciones que revelaron el fallo, causa raíz, solución genérica, riesgos, matriz de pruebas y lección arquitectónica reutilizable.
+- Esta práctica forma parte obligatoria del flujo de desarrollo: su objetivo es acumular defensas comprobadas, evitar repetir fallos y conseguir progresos mucho más estables en todos los juegos futuros.
+- La documentación universal complementa la bitácora específica de cada proyecto; no la sustituye.
+- El fallo de selección del primer gamepad enumerado es el primer candidato para ese repositorio, una vez terminada su validación física.
 - Rama estable: `main`.
 - Commit estable desde el que comenzó la auditoría: `756a6aefb28091e564057dcaa3b4b5bf1a90e13e`.
 - Rama de trabajo activa: `Dev-Performance-Audit`.
 - La rama de auditoría no está integrada a `main`.
-- La rama contiene únicamente diagnóstico, documentación y herramientas de medición; no cambia gameplay, economía ni presentación visual.
+- La rama contiene diagnóstico, documentación, herramientas de medición y un parche aislado de robustez para seleccionar el mando por actividad real; no cambia gameplay, economía, balance ni presentación visual.
 - Últimas ramas funcionales aprobadas e integradas:
   - `Dev-Camara-Cromatica`;
   - `Dev-Smooth-Progress-Bars`;
@@ -19,9 +25,11 @@
 - Guardado principal: `incremental-game-a:save:v1`.
 - Ajustes de mando: `incremental-game-a:gamepad:v1`.
 - Reserva del Gatillo: `incremental-game-a:pulse-trigger:v1`.
-- Última actualización: **2 de agosto de 2026, 15:52 CDMX**.
+- Última actualización: **2 de agosto de 2026, 20:31 CDMX**.
 
 `main` contiene la versión jugable aprobada por Arturo. La auditoría actual busca preparar la arquitectura para varias capas cromáticas sin optimizar prematuramente ni alterar la sensación del juego.
+
+El repositorio `bugs-universales-corregidos` debe tratarse como una biblioteca de estabilidad entre proyectos. Cuando una corrección crítica quede validada, se preparará allí una versión autocontenida y generalizada, sin depender innecesariamente de la arquitectura particular del juego donde apareció.
 
 ## 2. Forma de trabajo obligatoria
 
@@ -36,6 +44,7 @@
 - Agrupar validaciones; no repetir `git status` ni comprobaciones equivalentes sin motivo.
 - No afirmar que se ejecutaron `npm run build`, `npm run lint`, pruebas físicas o benchmarks cuando no se ejecutaron realmente.
 - Mantener gameplay, fórmulas y visuales idénticos durante la auditoría salvo aprobación específica.
+- Cuando un bug crítico corregido tenga aplicación transversal, documentarlo también en `xArtXtrAx/bugs-universales-corregidos` después de validarlo.
 - No se encontró un archivo `WORKFLOW_RULES.md`; estas reglas son la referencia vigente.
 
 ## 3. Estado jugable estable en `main`
@@ -162,7 +171,7 @@ El planificador simula compras mediante el reducer, calcula utilidad y aplica un
 - X/A activa el control de la Cámara y no pulsa el núcleo por detrás.
 - Círculo/B regresa al reactor.
 
-Arturo validó físicamente DualSense, vibraciones, Gatillo, hotkeys, selector general y navegación libre.
+Arturo validó físicamente DualSense, vibraciones, Gatillo, hotkeys, selector general y navegación libre antes del parche de selección por actividad. La corrección nueva requiere repetir la validación física.
 
 ## 5. Arquitectura relevante
 
@@ -173,7 +182,7 @@ Arturo validó físicamente DualSense, vibraciones, Gatillo, hotkeys, selector g
 - `src/UpgradesPanelCompact.tsx`: panel y tarjetas.
 - `src/UpgradeProgressBar.tsx`: animación nativa de barras.
 - `src/UpgradeProgressSystem.tsx`: portales y snapshots de barras.
-- `src/gamepad.ts`: etiquetas, ajustes y detección de mando.
+- `src/gamepad.ts`: etiquetas, ajustes, detección y selección del mando por actividad real.
 - `src/GamepadController.tsx`: navegación y hotkeys del reactor.
 - `src/ChromaticGamepadBridge.tsx`: navegación específica de la Cámara.
 - `src/GamepadEventHaptics.tsx`: vibraciones contextuales.
@@ -184,6 +193,7 @@ Arturo validó físicamente DualSense, vibraciones, Gatillo, hotkeys, selector g
 - `src/DeveloperPanel.tsx`: herramientas DEV.
 - `SMOOTH_PROGRESS_FIX.md`: decisiones de barras.
 - `DUALSENSE_L2_HOTKEYS.md`: decisiones del mando.
+- `GAMEPAD_DEVICE_SELECTION.md`: bug crítico, causa raíz, parche y regla universal de selección por actividad.
 - `PERFORMANCE_AUDIT.md`: auditoría actual detallada.
 
 ## 6. Auditoría de rendimiento activa
@@ -193,11 +203,13 @@ Arturo validó físicamente DualSense, vibraciones, Gatillo, hotkeys, selector g
 - Rama: `Dev-Performance-Audit`.
 - Base: `main` en `756a6aef...`.
 - La rama comenzó como auditoría sin cambios de gameplay.
-- Antes de esta actualización estaba 3 commits adelante y 0 atrás de `main`.
-- Archivos de la auditoría:
+- Incluye una corrección aislada de infraestructura de entrada para seleccionar el gamepad activo por actividad real.
+- Archivos principales de la auditoría y corrección:
   - `PERFORMANCE_AUDIT.md`;
+  - `GAMEPAD_DEVICE_SELECTION.md`;
   - `scripts/performance-audit.mjs`;
   - `package.json` con comandos de auditoría;
+  - `src/gamepad.ts` con selección robusta del dispositivo;
   - esta actualización de `HISTORIAL_GPT.MD`.
 
 ### Comandos añadidos
@@ -220,9 +232,20 @@ El auditor estático recorre `src/**/*.ts` y `src/**/*.tsx` y reporta:
 - cantidad aproximada de hooks React;
 - patrones que requieren revisión humana.
 
-No se añadieron dependencias. El auditor todavía debe ejecutarse en la PC local junto con lint y build.
+No se añadieron dependencias. La línea base local de auditoría, lint y build se ejecutó correctamente antes del parche de selección del mando; las comprobaciones deben repetirse después de actualizar la rama local.
 
 ## 7. Hallazgos confirmados de la auditoría
+
+### P0 — Nunca seleccionar el mando solamente por orden de enumeración
+
+Un cierre inesperado de Chrome reveló que podían coexistir:
+
+- `DualSense Wireless Controller`, enumerado primero pero neutral;
+- `Controller (XBOX 360 For Windows)`, que recibía las entradas reales.
+
+El juego mostraba un control conectado, pero no respondía porque elegía el primer objeto devuelto por `navigator.getGamepads()`. La presencia y el índice no demuestran intención ni actividad.
+
+La corrección en `src/gamepad.ts` conserva la interfaz existente, pero selecciona por actividad real y mantiene estable el índice activo. La lección completa está en `GAMEPAD_DEVICE_SELECTION.md` y debe convertirse en el primer caso del repositorio universal una vez aprobada físicamente.
 
 ### P1 — `localStorage` se usa como bus interno
 
@@ -383,10 +406,10 @@ Deben medirse en la PC principal y posteriormente en un equipo de gama media.
 
 ### Fase A — Línea base
 
-Estado: iniciada.
+Estado: iniciada y con línea base estructural local capturada antes del parche de gamepad.
 
 1. Cambiar en GitHub Desktop a `Dev-Performance-Audit`.
-2. Ejecutar:
+2. Ejecutar después de actualizar la rama:
 
 ```powershell
 npm run lint
@@ -395,11 +418,12 @@ npm run audit:performance
 npm run dev
 ```
 
-3. Guardar salida del auditor.
-4. Medir Chrome Performance en escenarios A–D.
-5. Medir renders con React Profiler.
-6. Registrar resultados en `PERFORMANCE_AUDIT.md`.
-7. Decidir el primer cambio estructural con datos reales.
+3. Validar físicamente la selección del gamepad activo.
+4. Guardar la nueva salida del auditor.
+5. Medir Chrome Performance en escenarios A–D.
+6. Medir renders con React Profiler.
+7. Registrar resultados en `PERFORMANCE_AUDIT.md`.
+8. Decidir el primer cambio estructural con datos reales.
 
 ### Fase B — Comunicación interna
 
@@ -413,6 +437,7 @@ Sujeta a medición:
 ### Fase C — Entrada del mando
 
 - unificar los bucles de mando;
+- separar dispositivo de entrada, dispositivo háptico e identidad visual;
 - migrar reactor, Gatillo y Cámara por etapas;
 - prueba física completa.
 
@@ -446,18 +471,28 @@ No implementar todavía:
 
 ## 12. Validaciones pendientes
 
-En el entorno remoto no se ejecutaron:
+Se ejecutaron correctamente en la PC local antes del parche de selección por actividad:
 
-- `npm run lint`;
-- `npm run build`;
-- `npm run audit:performance`;
+- `npm run lint`: 0 errores y 3 advertencias no bloqueantes;
+- `npm run build`: compilación de producción correcta;
+- `npm run audit:performance`: línea base de 28 archivos y 8,852 líneas;
+- `npm run audit:performance:json`: captura guardada en `%TEMP%`.
+
+Pendiente después de actualizar la rama local:
+
+- repetir lint, build y auditor;
+- prueba física del mando virtual activo con DualSense neutral enumerado primero;
+- X, Cuadrado, L1/R1, cruceta, R2 y combinaciones con L2;
+- Cámara Cromática;
+- cambio entre dispositivos y reconexión;
+- vibración después del cambio de dispositivo activo;
 - benchmarks de duración;
 - Chrome Performance;
 - React Profiler;
-- prueba física de esta rama.
+- sesión prolongada.
 
-La rama no debe integrarse a `main` hasta completar mediciones, implementar cambios aprobados, probar equivalencia y recibir autorización expresa de Arturo.
+La rama no debe integrarse a `main` hasta completar mediciones, probar equivalencia, validar físicamente el parche y recibir autorización expresa de Arturo.
 
 ## 13. Prompt recomendado para el siguiente chat
 
-> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. La rama estable es `main`, pero el trabajo activo está en `Dev-Performance-Audit`, creada desde el commit estable `756a6aefb28091e564057dcaa3b4b5bf1a90e13e`. Lee primero `HISTORIAL_GPT.MD` y después `PERFORMANCE_AUDIT.md`. No crees otra rama y no integres nada a `main` sin mi autorización explícita. La rama de auditoría contiene un informe, `scripts/performance-audit.mjs` y los comandos `npm run audit:performance` y `npm run audit:performance:json`; no modifica gameplay. Continúa la auditoría pensando en mediano y largo plazo. Primero confirma el diff contra `main`, revisa el auditor y ayúdame a ejecutar localmente `npm run lint`, `npm run build`, `npm run audit:performance` y `npm run dev`. Después analiza los resultados y perfiles antes de refactorizar. Los principales hallazgos actuales son: `localStorage` se usa como canal interno por barras, Gatillo y Cámara; hay varios relojes y bucles de mando independientes; el guardado completo ocurre tras cada estado; `clockNow` puede provocar renders globales cada 100 ms; Comprar todo escala hasta 320 rondas por nueve candidatos; los autoclics se procesan individualmente; y las definiciones de mejoras están distribuidas. La primera refactorización recomendada, sujeta a medición, es una fuente ligera de snapshots en memoria para retirar el sondeo de `localStorage`, empezando por barras, luego Cámara y Gatillo. Mantén reducer, fórmulas, balance, visuales, barras fluidas y controles DualSense exactamente iguales. Trabaja de forma directa, evita comprobaciones redundantes y usa GitHub Desktop para el flujo local normal.
+> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. La rama estable es `main`, pero el trabajo activo está en `Dev-Performance-Audit`, creada desde el commit estable `756a6aefb28091e564057dcaa3b4b5bf1a90e13e`. Lee primero `HISTORIAL_GPT.MD`, `PERFORMANCE_AUDIT.md` y `GAMEPAD_DEVICE_SELECTION.md`. No crees otra rama y no integres nada a `main` sin mi autorización explícita. Existe un repositorio transversal de máxima importancia, `xArtXtrAx/bugs-universales-corregidos`, donde cada bug crítico resuelto y validado debe documentarse como ejemplo reutilizable para todos los juegos futuros. La rama de auditoría contiene el informe, `scripts/performance-audit.mjs`, los comandos `npm run audit:performance` y `npm run audit:performance:json`, y un parche aislado en `src/gamepad.ts` que selecciona el mando por actividad real en vez de confiar en el primer índice enumerado. Primero actualiza la rama local, ejecuta lint, build y auditor, y valida físicamente el caso DualSense neutral + mando virtual activo. Después continúa las mediciones antes de refactorizar. Los principales hallazgos actuales son: selección de gamepad por actividad real; `localStorage` usado como canal interno por barras, Gatillo y Cámara; varios relojes y bucles de mando independientes; guardado completo tras cada estado; `clockNow` con posibles renders globales cada 100 ms; Comprar todo con hasta 320 rondas por nueve candidatos; autoclics individuales; y definiciones de mejoras distribuidas. La primera refactorización recomendada, sujeta a medición, es una fuente ligera de snapshots en memoria para retirar el sondeo de `localStorage`, empezando por barras, luego Cámara y Gatillo. Mantén reducer, fórmulas, balance, visuales, barras fluidas y controles exactamente iguales. Trabaja de forma directa, evita comprobaciones redundantes y usa GitHub Desktop para el flujo local normal.
