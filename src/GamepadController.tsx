@@ -120,8 +120,22 @@ function focusUpgrades() {
   )
 }
 
+function focusActiveSection() {
+  const upgradesActive = document.querySelector<HTMLButtonElement>(
+    '.mobile-section-tabs button:nth-child(2)[aria-pressed="true"]',
+  )
+  if (upgradesActive) focusUpgrades()
+  else focusCore()
+}
+
 function focusGamepadPanel() {
   focusElement(document.querySelector<HTMLElement>('.gamepad-panel-toggle'))
+}
+
+function isUpgradeZoneFocused() {
+  return Boolean(
+    getFocusedControl()?.closest<HTMLElement>('.upgrades-layout-section'),
+  )
 }
 
 function isChromaticChamberOpen() {
@@ -138,6 +152,7 @@ function switchSection(section: 'core' | 'upgrades') {
 }
 
 function cyclePurchaseStrategy() {
+  const keepUpgradeFocus = isUpgradeZoneFocused()
   const buttons = Array.from(
     document.querySelectorAll<HTMLButtonElement>(
       '.bulk-strategy-options button',
@@ -150,17 +165,18 @@ function cyclePurchaseStrategy() {
   )
   const next = buttons[(selectedIndex + 1 + buttons.length) % buttons.length]
   next.click()
-  focusElement(next)
+  if (keepUpgradeFocus) focusElement(next)
   return true
 }
 
 function buyEverything() {
+  const keepUpgradeFocus = isUpgradeZoneFocused()
   const button = document.querySelector<HTMLButtonElement>(
     '.bulk-purchase-button:not(:disabled)',
   )
   if (!button || !isVisible(button)) return false
   button.click()
-  focusElement(button)
+  if (keepUpgradeFocus) focusElement(button)
   return true
 }
 
@@ -345,7 +361,7 @@ export function GamepadController() {
   function togglePanelFromController() {
     setExpanded((current) => {
       const next = !current
-      window.setTimeout(next ? focusGamepadPanel : focusCore, 0)
+      window.setTimeout(next ? focusGamepadPanel : focusActiveSection, 0)
       return next
     })
   }
