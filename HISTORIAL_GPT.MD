@@ -7,7 +7,7 @@
 
 - Repositorio: `xArtXtrAx/incremental-game-A`.
 - Rama activa y estable: `main`.
-- Commit de integración vigente antes de esta actualización: `90975a3e49e5100f851865c17d7ac89cd393b136`.
+- Commit de integración del código antes de esta actualización documental: `852de786ded06e7e2ac1fbf16378dd7498489e39`.
 - No hay pull requests abiertos.
 - Las ramas DEV integradas se conservan como respaldos históricos y no deben eliminarse sin autorización explícita.
 - Entorno: React 19 + TypeScript 6 + Vite 8 + Motion.
@@ -15,7 +15,7 @@
 - Ajustes de mando: `incremental-game-a:gamepad:v1`.
 - Reserva del Gatillo: `incremental-game-a:pulse-trigger:v1`.
 - Perfil experimental de balance: `incremental-game-a:balance-dev:v1`.
-- Última actualización: **3 de agosto de 2026, 09:04 CDMX**.
+- Última actualización: **3 de agosto de 2026, 16:14 CDMX**.
 
 ### Integraciones realizadas
 
@@ -25,6 +25,8 @@
 | #2 | `Dev-Gamepad-Zone-Navigation` | `e42908277ee45a9c59dfd885943e89e115d75c85` | Navegación confinada, foco visible, modalidad de entrada, hápticos y barras cíclicas |
 | #3 | `Dev-Sapphire-Orbit-Particles` | `438d93e1011d1ebeb1ddef66162c35867b00ba4c` | Una partícula orbital por nivel del Zafiro, con distribución equidistante |
 | #4 | `Dev-Balance-Laboratory` | `90975a3e49e5100f851865c17d7ac89cd393b136` | Configuración matemática central y primera ventana del Laboratorio de Balance |
+| #5 | `Dev-Balance-Laboratory-Phase-2` | `734aadd83357e47a33b93f35efd271281d2cd63a` | Editor seguro de borradores, comparación Oficial/Borrador y diagnósticos en tiempo real |
+| #6 | `Dev-Balance-Laboratory-Phase-3` | `852de786ded06e7e2ac1fbf16378dd7498489e39` | Aplicación reversible a sesión, normalización conservadora y restauración oficial |
 
 Después del PR #2 también se añadieron:
 
@@ -76,17 +78,17 @@ Nexo Prismático completo
 
 ### `BALANCE_LABORATORY.md`
 
-- Describe la arquitectura del Laboratorio de Balance.
-- Define invariantes de seguridad, guardados separados, paridad y fases de implementación.
-- La ventana integrada actualmente es de **solo lectura**.
-- La edición y aplicación de perfiles permanecen bloqueadas hasta completar la auditoría de consumidores, normalización y pruebas.
+- Describe la arquitectura, invariantes y política de seguridad del Laboratorio de Balance.
+- El Laboratorio ya permite editar borradores, comparar curvas, aplicar parámetros migrados a la sesión y restaurar el balance oficial.
+- La configuración experimental no se carga automáticamente ni se mezcla con el guardado normal.
+- Capacidad de esfera, bono de Presión y requisitos de desbloqueo continúan como **solo simulación** hasta migrar todos sus consumidores visuales y de control.
 
 ### División de responsabilidades
 
 ```text
 PLAN_MAESTRO.md       → hacia dónde va el juego
 MODELO_MATEMATICO.md  → cómo se comporta matemáticamente
-BALANCE_LABORATORY.md → cómo se inspecciona y modificará el balance de forma segura
+BALANCE_LABORATORY.md → cómo se inspecciona y modifica el balance de forma segura
 HISTORIAL_GPT.MD      → qué se hizo, integró y validó
 PERFORMANCE_AUDIT.md  → riesgos y presupuestos de rendimiento
 ```
@@ -144,7 +146,7 @@ PERFORMANCE_AUDIT.md  → riesgos y presupuestos de rendimiento
 
 ### Prestigio y Zafiro
 
-- La esfera se llena a 5,000 clics.
+- La esfera se llena oficialmente a 5,000 clics.
 - La cristalización requiere confirmación.
 - Multiplicadores: P0 ×1.00, P1 ×1.50, P2 ×1.85, P3 ×2.20, P4 ×2.60 y P5 ×3.05.
 - Después de P5 se usa provisionalmente +0.50 por prestigio.
@@ -169,13 +171,18 @@ PERFORMANCE_AUDIT.md  → riesgos y presupuestos de rendimiento
 
 ### Arquitectura
 
-- `src/balanceConfig.ts`: contrato `BalanceConfig` y valores oficiales congelados.
+- `src/balanceConfig.ts`: contrato `BalanceConfig`, valores oficiales congelados y límites absolutos.
 - `src/balanceValidation.ts`: estructura exacta, números finitos, rangos y relaciones.
-- `src/balanceRuntime.ts`: fuente oficial, sesión o perfil almacenado, con aplicación atómica y reversible.
+- `src/balanceRuntime.ts`: fuente oficial, sesión o perfil almacenado.
+- `src/balanceDraft.ts`: rutas editables, clonación y restauración de borradores.
 - `src/balanceSimulation.ts`: simulaciones puras y diagnósticos.
 - `src/balanceParity.ts`: matriz de resultados conocidos anteriores a la centralización.
-- `src/BalanceLaboratorySystem.tsx`: ventana del laboratorio dentro del Panel DEV.
-- `BALANCE_LABORATORY.md`: arquitectura, invariantes y fases siguientes.
+- `src/balanceStateNormalization.ts`: normalización conservadora de la partida al cambiar de perfil.
+- `src/balanceNormalizationParity.ts`: comprobaciones puras de la normalización.
+- `src/balanceSessionPolicy.ts`: lista autoritativa de parámetros aplicables y bloqueados.
+- `src/balanceSessionBridge.ts`: puente controlado entre el Laboratorio y `App`.
+- `src/BalanceLaboratorySystem.tsx`: editor, comparación, diagnóstico y controles de sesión.
+- `BALANCE_LABORATORY.md`: arquitectura, invariantes, estado y fases siguientes.
 
 ### Sistemas migrados a la configuración central
 
@@ -183,31 +190,66 @@ PERFORMANCE_AUDIT.md  → riesgos y presupuestos de rendimiento
 - Refracción;
 - Gatillo de pulso;
 - Comprar todo;
-- límite de Comprar todo conservado en 320 iteraciones.
+- límite de Comprar todo conservado en 320 iteraciones;
+- costos y crecimiento de las nueve evoluciones;
+- tasas del Autoclicker;
+- multiplicadores de Zafiro.
 
-### Estado de la interfaz
+### Editor y previsualización
 
-La ventana permite actualmente:
+La ventana permite:
 
-- seleccionar las nueve curvas de costo;
-- consultar base, crecimiento y muestras de niveles 0, 1, 2, 5 y 10;
-- revisar tasas del Autoclicker;
-- consultar Zafiro P0–P5 y su crecimiento provisional posterior;
-- revisar diagnósticos y paridad oficial;
-- comprobar si existe un perfil DEV almacenado.
+- editar costos base y crecimiento de las nueve mejoras;
+- editar capacidad de esfera, Presión y desbloqueos como simulación;
+- editar tasa base, crecimiento y límite del Autoclicker;
+- editar Zafiro P1–P5 y su incremento posterior;
+- comparar Oficial/Borrador en tiempo real;
+- ver diferencias porcentuales y muestras de niveles;
+- restaurar un campo o todo el borrador;
+- validar rangos, secuencias y relaciones;
+- detectar inflación, estancamiento, costos no finitos y desbloqueos tardíos;
+- revisar la última normalización realizada.
 
-### Bloqueos deliberados
+### Aplicación reversible a sesión
 
-Todavía no se permite:
+Se pueden aplicar actualmente:
 
-- editar parámetros;
-- aplicar un perfil a la sesión;
-- cargar perfiles automáticamente;
-- modificar el guardado normal;
-- importar o ejecutar expresiones libres;
-- usar `eval()` o `new Function()`.
+- costos base y crecimiento;
+- parámetros del Autoclicker;
+- multiplicadores P1–P5 del Zafiro;
+- incremento provisional posterior a P5.
 
-La partida normal y los perfiles DEV usan claves independientes.
+Al aplicar:
+
+- la configuración cambia únicamente en memoria;
+- energía, clics, prestigio y niveles comprados se conservan;
+- cargas parciales se recortan solamente si quedan fuera del nuevo límite;
+- Sobrecarga y PRISMA activos se cancelan para evitar duraciones o multiplicadores híbridos;
+- cada ajuste queda registrado en el diagnóstico;
+- cualquier error de validación rechaza toda la operación;
+- **Restaurar sesión oficial** revierte inmediatamente las fórmulas;
+- recargar la página vuelve al balance oficial.
+
+### Parámetros todavía de solo simulación
+
+- capacidad de la esfera;
+- bono de Presión por tramo;
+- desbloqueo de Presión;
+- desbloqueo de Cavitación;
+- desbloqueo del Autoclicker;
+- prestigio requerido para Refracción.
+
+Modificar alguno de estos campos bloquea `Aplicar a sesión`. La restricción existe tanto en la interfaz como en `balanceSessionPolicy.ts`, por lo que una llamada interna tampoco puede omitirla.
+
+### Persistencia y seguridad
+
+- La partida normal y los perfiles DEV usan claves independientes.
+- Un perfil experimental no se escribe dentro del guardado principal.
+- El perfil DEV no se carga automáticamente al iniciar.
+- Todavía no hay controles de interfaz para guardar, nombrar, cargar o borrar perfiles persistentes.
+- No se permiten expresiones JavaScript libres.
+- No se usa `eval()` ni `new Function()`.
+- Los límites absolutos del motor permanecen visibles y no editables.
 
 ## 6. Controles DualSense / Gamepad integrados
 
@@ -278,16 +320,21 @@ La partida normal y los perfiles DEV usan claves independientes.
 ## 8. Arquitectura y archivos relevantes
 
 - `src/game.ts`: estado, reducer, costos, configuración activa, migración y guardado.
-- `src/App.tsx`: estado autoritativo, tick y efectos.
+- `src/App.tsx`: estado autoritativo, tick, efectos y aplicación de perfiles de sesión.
 - `src/refraction.ts`: Matriz y PRISMA.
 - `src/pulseTrigger.ts`: fórmulas y estado auxiliar del Gatillo.
 - `src/bulkPurchase.ts`: simulación estratégica y límite de iteraciones.
-- `src/BalanceLaboratorySystem.tsx`: interfaz de inspección matemática.
+- `src/BalanceLaboratorySystem.tsx`: editor y controles del Laboratorio.
 - `src/balanceConfig.ts`: valores oficiales y límites.
+- `src/balanceDraft.ts`: modelo editable de borrador.
 - `src/balanceValidation.ts`: validación de perfiles.
 - `src/balanceRuntime.ts`: configuración activa y perfiles DEV.
 - `src/balanceSimulation.ts`: tablas y diagnósticos.
 - `src/balanceParity.ts`: paridad numérica oficial.
+- `src/balanceStateNormalization.ts`: transición segura del estado.
+- `src/balanceNormalizationParity.ts`: paridad de normalización.
+- `src/balanceSessionPolicy.ts`: alcance permitido por fase.
+- `src/balanceSessionBridge.ts`: solicitudes atómicas entre UI y partida.
 - `src/SapphireGem.tsx`: gema, fallback y conexión del nivel con la órbita.
 - `src/SapphireOrbit3D.tsx`: partículas y estelas WebGL.
 - `src/SapphireOrbit.css`: respaldo orbital CSS.
@@ -327,61 +374,86 @@ Conviven tick de 1 segundo, reloj de 100 ms, sondeos auxiliares, varios bucles d
 - Diagnóstico físico y validación de BUG-001.
 - Diagnóstico del foco invisible: botones 12–15 correctos, ejes neutrales y cambio real de `document.activeElement`.
 - Comprobación aislada de TypeScript estricto para seguimiento de modalidad.
-- Integraciones autorizadas mediante PR #1, #2, #3 y #4.
-- GitHub confirmó que los PR #3 y #4 eran fusionables contra el `main` correspondiente.
-- Arturo reportó que las partículas orbitales y el Laboratorio de Balance funcionan correctamente en su entorno local.
-- La primera versión del Laboratorio permanece en modo de inspección y no altera la partida.
+- Integraciones autorizadas mediante PR #1, #2, #3, #4, #5 y #6.
+- GitHub confirmó que todos estos PR eran fusionables contra su `main` correspondiente.
+- Arturo reportó que las partículas orbitales funcionan correctamente en su entorno local.
+- Arturo validó el editor de borradores del Laboratorio:
+  - edición de costos y crecimiento;
+  - comparación Oficial/Borrador;
+  - errores por campos vacíos o secuencias inválidas;
+  - restauración individual y global.
+- Arturo validó la aplicación reversible a sesión:
+  - cambio visible de costos;
+  - cambio visible del Autoclicker;
+  - cambio visible de Zafiro;
+  - restauración inmediata del balance oficial;
+  - cancelación y registro de Sobrecarga o PRISMA activos;
+  - bloqueo de capacidad de esfera y parámetros aún no migrados;
+  - regreso al balance oficial al recargar;
+  - conservación del progreso normal.
 - No quedan PR abiertos después de las integraciones.
 
 ### No afirmado / pendiente
 
 - No hay GitHub Actions asociados a los commits de estas ramas.
-- No se registró explícitamente en la conversación el resultado textual de `npm run lint`.
-- No se registró explícitamente en la conversación el resultado textual de `npm run build`.
-- Conviene ejecutar nuevamente `lint`, `build` y una prueba combinada sobre el nuevo `main` que contiene ambos PR.
+- No se registró explícitamente en la conversación la salida textual de `npm run lint`.
+- No se registró explícitamente en la conversación la salida textual de `npm run build`.
 - Actualizar formalmente BUG-002 a validado físicamente cuando se complete su matriz específica.
 - Repetir auditoría de rendimiento y una sesión prolongada cuando corresponda.
 
 ## 11. Orden recomendado para continuar
 
-### Paso inmediato después de las fusiones
+### Paso inmediato después de la fusión
 
 1. En GitHub Desktop, cambiar a `main`.
 2. Ejecutar **Fetch origin** y **Pull origin**.
-3. Ejecutar:
+3. Realizar una comprobación breve de humo del Laboratorio integrado:
+   - abrir y cerrar;
+   - aplicar un costo experimental;
+   - restaurar la sesión oficial;
+   - recargar y confirmar `official`.
 
-```powershell
-npm run lint
-npm run build
-npm run dev
+No es necesario repetir toda la matriz manual ya validada salvo que aparezca una diferencia en `main`.
+
+### Siguiente fase estructural — cobertura completa del Laboratorio
+
+Crear una rama nueva, por ejemplo:
+
+```text
+Dev-Balance-Laboratory-Phase-4
 ```
 
-4. Comprobar conjuntamente:
-   - partículas P1–P5;
-   - fallback orbital si se fuerza la ausencia de WebGL;
-   - apertura y cierre del Laboratorio;
-   - selector de curvas y tablas;
-   - diagnóstico de paridad;
-   - compras individuales y Comprar todo;
-   - Gatillo, Cavitación, Sobrecarga, PRISMA y cristalización;
-   - mouse, teclado y gamepad.
+Objetivo: eliminar la diferencia entre **parámetros aplicables** y **parámetros de solo simulación**.
 
-### Siguiente fase estructural — Laboratorio de Balance
+Trabajo recomendado:
 
-Antes de habilitar edición:
+1. migrar a consultas dinámicas todos los consumidores de capacidad de esfera;
+2. migrar textos, requisitos y estados visuales de Presión, Cavitación y Autoclicker;
+3. migrar el prestigio requerido por Refracción en paneles y herramientas DEV;
+4. eliminar de componentes las constantes históricas usadas como valores visuales;
+5. ampliar la normalización para cambios de capacidad, desbloqueos y Presión;
+6. mostrar antes de aplicar si la esfera pasa a llena o deja de estar llena;
+7. definir qué ocurre con mejoras ya compradas cuando su desbloqueo se vuelve más alto;
+8. habilitar la aplicación de Núcleo y desbloqueos únicamente cuando toda la UI comparta la misma fuente;
+9. extender las comprobaciones de paridad y repetir prueba local.
 
-1. auditar y migrar consumidores visuales que todavía usen constantes oficiales;
-2. crear `normalizeGameStateForBalance()`;
-3. definir la política para efectos temporales activos;
-4. preparar una previsualización del impacto sobre la partida;
-5. forzar rerender coordinado tras aplicar configuración;
-6. suspender controles del reactor mientras la ventana editable esté abierta;
-7. añadir restauración oficial antes de cualquier aplicación;
-8. después habilitar borrador, validación inmediata y aplicación de sesión.
+La política recomendada es **no quitar niveles comprados** aunque un nuevo requisito quede por encima del progreso actual; el requisito solo impediría nuevas compras hasta volver a cumplirlo. Esta decisión debe confirmarse antes de programarse.
+
+### Fase posterior — perfiles DEV persistentes
+
+Cuando todos los parámetros sean aplicables de forma segura:
+
+- guardar un perfil con nombre;
+- cargarlo manualmente;
+- reemplazarlo o eliminarlo;
+- mostrar fecha y versión del esquema;
+- exportar/importar JSON validado;
+- mantener desactivada la carga automática por defecto;
+- disponer siempre de **Restaurar balance oficial**.
 
 ### Siguiente etapa de contenido — Esmeralda
 
-Antes de crear su rama de implementación, definir:
+Después de cerrar la cobertura completa del Laboratorio, diseñar Esmeralda usando las herramientas de simulación:
 
 1. identidad mecánica;
 2. relación con Zafiro 5;
@@ -412,4 +484,4 @@ No implementar todavía: ECS, Typed Arrays para niveles, min-heap, Web Workers p
 
 ## 13. Prompt recomendado para el siguiente chat
 
-> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. La rama activa y estable es `main`. El estado integrado incluye: PR #1 de rendimiento y selección robusta del gamepad (`8a6d628...`), PR #2 de navegación confinada y foco (`e429082...`), PR #3 de partículas orbitales del Zafiro (`438d93e...`) y PR #4 de la base segura del Laboratorio de Balance (`90975a3...`). Lee primero `HISTORIAL_GPT.MD`, `PLAN_MAESTRO.md`, `MODELO_MATEMATICO.md`, `BALANCE_LABORATORY.md`, `PERFORMANCE_AUDIT.md` y `GAMEPAD_DEVICE_SELECTION.md`. No integres ni elimines ramas sin autorización explícita. El Zafiro muestra de una a cinco partículas equidistantes según su nivel. El Laboratorio está integrado en modo de solo lectura; centraliza configuración, validación, runtime, simulación, paridad y guardado DEV separado, pero la edición permanece bloqueada. Arturo reportó que ambas implementaciones funcionan localmente, aunque la conversación no contiene resultados textuales de `npm run lint` ni `npm run build` sobre el `main` combinado. Antes de habilitar edición, audita consumidores visuales, crea normalización de estado, política para efectos activos, previsualización, rerender coordinado y restauración oficial. Esmeralda sigue siendo la siguiente etapa de contenido y debe diseñarse primero en los documentos maestros. BUG-001 está validado; BUG-002 tiene corrección integrada y actualización formal pendiente. Trabaja de forma directa, evita comprobaciones redundantes y usa GitHub Desktop para el flujo local normal.
+> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. La rama activa y estable es `main`. El estado integrado incluye PR #1 de rendimiento y selección robusta del gamepad (`8a6d628...`), PR #2 de navegación confinada y foco (`e429082...`), PR #3 de partículas orbitales del Zafiro (`438d93e...`), PR #4 de la base del Laboratorio (`90975a3...`), PR #5 del editor de borradores (`734aadd...`) y PR #6 de aplicación reversible y normalización (`852de78...`). Lee primero `HISTORIAL_GPT.MD`, `PLAN_MAESTRO.md`, `MODELO_MATEMATICO.md`, `BALANCE_LABORATORY.md`, `PERFORMANCE_AUDIT.md` y `GAMEPAD_DEVICE_SELECTION.md`. No integres ni elimines ramas sin autorización explícita. El Laboratorio permite editar y aplicar a sesión costos, Autoclicker y Zafiro; conserva progreso, registra normalizaciones, restaura valores oficiales y vuelve a `official` al recargar. Capacidad de esfera, Presión y desbloqueos siguen como solo simulación mediante una política central. Arturo validó localmente todas las pruebas funcionales de las fases 2 y 3. La siguiente fase recomendada es migrar todos los consumidores restantes y habilitar esos parámetros sin discrepancias visuales ni lógicas; después vendrían perfiles DEV persistentes y luego el diseño matemático de Esmeralda. No hay resultados textuales registrados de `npm run lint` ni `npm run build`. BUG-001 está validado; BUG-002 tiene corrección integrada y actualización formal pendiente. Trabaja de forma directa, evita comprobaciones redundantes y usa GitHub Desktop para el flujo local normal.
