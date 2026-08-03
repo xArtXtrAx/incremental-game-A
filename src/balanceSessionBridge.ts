@@ -6,13 +6,9 @@ import type { BalanceValidationIssue } from './balanceValidation'
 export const BALANCE_SESSION_REQUEST_EVENT =
   'incremental-game-a:balance-session-request'
 
-export type BalanceSessionRequestMode =
-  | 'preview'
-  | 'apply'
-  | 'restore-official'
+export type BalanceSessionRequestMode = 'apply' | 'restore-official'
 
 export type BalanceSessionOutcome = {
-  handled: boolean
   applied: boolean
   snapshot: BalanceRuntimeSnapshot | null
   normalization: BalanceNormalizationPreview | null
@@ -28,7 +24,6 @@ export type BalanceSessionRequest = {
 
 function unavailableOutcome(): BalanceSessionOutcome {
   return {
-    handled: false,
     applied: false,
     snapshot: null,
     normalization: null,
@@ -56,12 +51,6 @@ function dispatchBalanceSessionRequest(
   )
 
   return outcome
-}
-
-export function requestBalanceSessionPreview(
-  config: Readonly<BalanceConfig>,
-): BalanceSessionOutcome {
-  return dispatchBalanceSessionRequest('preview', config)
 }
 
 export function requestBalanceSessionApply(
