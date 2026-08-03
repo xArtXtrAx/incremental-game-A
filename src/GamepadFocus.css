@@ -1,0 +1,39 @@
+/*
+ * Chrome no considera la Gamepad API como modalidad de teclado y puede
+ * ocultar :focus-visible después de usar el mouse. El juego mantiene su
+ * propio modo de entrada en data-incremental-input-mode, por lo que el foco
+ * del mando debe dibujarse explícitamente mientras ese modo sea gamepad.
+ */
+
+:is(
+  .core-layout-section,
+  .upgrades-layout-section,
+  .mobile-section-tabs,
+  .gamepad-panel
+)
+  :is(
+    button,
+    [role='button'],
+    [role='tab'],
+    input
+  ):focus-visible {
+  outline: 3px solid white;
+  outline-offset: 4px;
+}
+
+html[data-incremental-input-mode='gamepad']
+  :is(
+    .core-layout-section,
+    .upgrades-layout-section,
+    .mobile-section-tabs,
+    .gamepad-panel
+  )
+  :is(
+    button,
+    [role='button'],
+    [role='tab'],
+    input
+  ):focus {
+  outline: 3px solid white !important;
+  outline-offset: 4px !important;
+}

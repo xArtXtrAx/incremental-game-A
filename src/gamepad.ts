@@ -19,6 +19,7 @@ export const DEFAULT_GAMEPAD_SETTINGS: GamepadSettings = {
 }
 
 export type ControllerFamily = 'playstation' | 'xbox' | 'generic'
+export type ActiveInputMode = 'gamepad' | 'mouse'
 
 export const STANDARD_BUTTON = {
   primary: 0,
@@ -42,6 +43,9 @@ export const STANDARD_BUTTON = {
 } as const
 
 const GAMEPAD_ACTIVITY_AXIS_THRESHOLD = 0.65
+const INPUT_MODE_DATASET_KEY = 'incrementalInputMode'
+const INPUT_MODE_TRACKING_FLAG = '__incrementalGameAInputModeTracking'
+const MOUSE_MOVE_THRESHOLD = 2
 let activeGamepadIndex: number | null = null
 
 export function loadGamepadSettings(): GamepadSettings {
@@ -99,6 +103,55 @@ function clampNumber(
   return typeof value === 'number' && Number.isFinite(value)
     ? Math.min(maximum, Math.max(minimum, value))
     : fallback
+}
+
+function setActiveInputMode(mode: ActiveInputMode) {
+  if (typeof document === 'undefined') return
+  document.documentElement.dataset[INPUT_MODE_DATASET_KEY] = mode
+}
+
+export function getActiveInputMode(): ActiveInputMode {
+  if (typeof document === 'undefined') return 'gamepad'
+  return document.documentElement.dataset[INPUT_MODE_DATASET_KEY] === 'mouse'
+    ? 'mouse'
+    : 'gamepad'
+}
+
+export function isGamepadInputActive() {
+  return getActiveInputMode() === 'gamepad'
+}
+
+export function ensureInputModeTracking() {
+  if (typeof window === 'undefined' || typeof document === 'undefined') return
+
+  const trackedWindow = window as unknown as Record<string, unknown>
+  if (trackedWindow[INPUT_MODE_TRACKING_FLAG]) return
+  trackedWindow[INPUT_MODE_TRACKING_FLAG] = true
+
+  if (!document.documentElement.dataset[INPUT_MODE_DATASET_KEY]) {
+    setActiveInputMode('gamepad')
+  }
+
+  const handlePointerDown = (event: PointerEvent) => {
+    if (event.pointerType === 'mouse') setActiveInputMode('mouse')
+  }
+  const handlePointerMove = (event: PointerEvent) => {
+    if (
+      event.pointerType === 'mouse' &&
+      Math.abs(event.movementX) + Math.abs(event.movementY) >=
+        MOUSE_MOVE_THRESHOLD
+    ) {
+      setActiveInputMode('mouse')
+    }
+  }
+  const handleWheel = () => setActiveInputMode('mouse')
+
+  document.addEventListener('pointerdown', handlePointerDown, true)
+  document.addEventListener('pointermove', handlePointerMove, true)
+  document.addEventListener('wheel', handleWheel, {
+    capture: true,
+    passive: true,
+  })
 }
 
 export function getControllerFamily(id: string): ControllerFamily {
@@ -199,6 +252,7 @@ function getConnectedGamepads() {
  */
 export function getFirstConnectedGamepad() {
   if (!('getGamepads' in navigator)) return null
+  ensureInputModeTracking()
 
   const gamepads = getConnectedGamepads()
   if (gamepads.length === 0) {
@@ -211,11 +265,15 @@ export function getFirstConnectedGamepad() {
       ? null
       : gamepads.find((gamepad) => gamepad.index === activeGamepadIndex) ?? null
 
-  if (selected && hasGamepadActivity(selected)) return selected
+  if (selected && hasGamepadActivity(selected)) {
+    setActiveInputMode('gamepad')
+    return selected
+  }
 
   const active = gamepads.find(hasGamepadActivity)
   if (active) {
     activeGamepadIndex = active.index
+    setActiveInputMode('gamepad')
     return active
   }
 
