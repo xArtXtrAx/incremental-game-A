@@ -6,9 +6,10 @@
 
 - Rama de implementación: `Dev-Performance-Audit`.
 - Descubrimiento: 2 de agosto de 2026.
+- Validación física del incidente original: **aprobada el 2 de agosto de 2026**.
 - Severidad de diseño: **crítica**.
 - Alcance del parche: selección del dispositivo de entrada; no modifica gameplay, balance, guardado ni mapa de controles.
-- Validación pendiente: prueba física completa después de actualizar la rama local.
+- Resultado confirmado por Arturo: después de actualizar la rama y repetir las pruebas, el control volvió a funcionar correctamente bajo la condición que había revelado el fallo.
 
 ## Incidente que reveló el problema
 
@@ -76,6 +77,20 @@ El parche beneficia automáticamente a los consumidores actuales:
 - `PulseTriggerSystem`;
 - `ChromaticGamepadBridge`.
 
+## Validación física realizada
+
+Arturo actualizó `Dev-Performance-Audit`, ejecutó el juego y repitió las pruebas con la condición problemática presente: el DualSense físico seguía enumerado junto con el dispositivo virtual que recibía las entradas.
+
+Resultado:
+
+- el juego dejó de quedar fijado al dispositivo neutral;
+- la entrada activa volvió a ser reconocida;
+- el control volvió a operar dentro del juego;
+- no fue necesario retirar el dispositivo virtual ni elegir manualmente un índice;
+- la causa raíz y la estrategia de corrección quedaron confirmadas en hardware real.
+
+Esta validación cierra el incidente original. La matriz amplia incluida abajo se conserva como prueba de regresión obligatoria para futuras refactorizaciones, sistemas multijugador y otros videojuegos.
+
 ## Consideración futura: entrada y hápticos
 
 Un dispositivo virtual puede recibir los botones mientras el mando físico ofrece mejores capacidades hápticas. A largo plazo, el servicio unificado de mando debe considerar por separado:
@@ -109,9 +124,15 @@ Antes de considerar estable cualquier integración de mando, probar:
 
 ## Criterio de validación de este parche
 
-La corrección se considera aprobada solamente cuando:
+La corrección del incidente original quedó aprobada al confirmar que:
 
 - el juego responde usando el objeto virtual activo aunque el DualSense neutral aparezca primero;
+- la entrada del control vuelve a accionar el juego;
+- el dispositivo neutral deja de bloquear al dispositivo que recibe las pulsaciones;
+- no se altera ninguna fórmula ni estado de gameplay.
+
+Para futuras modificaciones del sistema de entrada deberán repetirse además:
+
 - X pulsa el núcleo;
 - Cuadrado activa el foco;
 - L1/R1 y la cruceta navegan;
@@ -119,8 +140,7 @@ La corrección se considera aprobada solamente cuando:
 - las combinaciones con L2 funcionan;
 - la Cámara Cromática conserva sus controles;
 - desconectar el dispositivo activo permite adoptar otro;
-- lint y build siguen pasando;
-- no se altera ninguna fórmula ni estado de gameplay.
+- lint y build siguen pasando.
 
 ## Lección reusable
 
