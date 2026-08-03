@@ -15,6 +15,7 @@ import {
   BALANCE_AUTOCLICK_FIELDS,
   BALANCE_CORE_FIELDS,
   BALANCE_COST_SYSTEMS,
+  BALANCE_EDITABLE_PATHS,
   BALANCE_SAPPHIRE_FIELDS,
   BALANCE_UNLOCK_FIELDS,
   countBalanceDraftChanges,
@@ -33,12 +34,17 @@ import {
   subscribeBalanceRuntime,
 } from './balanceRuntime'
 import {
+  requestBalanceSessionApply,
+  requestOfficialBalanceRestore,
+} from './balanceSessionBridge'
+import {
   BALANCE_COST_LEVEL_SAMPLES,
   createBalanceDiagnostics,
   getConfiguredSapphireMultiplier,
   simulateAutoclickRates,
   simulateCostCurve,
 } from './balanceSimulation'
+import type { BalanceNormalizationChange } from './balanceStateNormalization'
 import {
   validateBalanceConfig,
   type BalanceValidationIssue,
@@ -114,6 +120,27 @@ function getIssuesForPath(
   )
 }
 
+function isSessionApplicablePath(path: BalanceEditablePath) {
+  return (
+    path.startsWith('costs.') ||
+    path.startsWith('autoclick.') ||
+    path.startsWith('sapphire.')
+  )
+}
+
+function getChangedPaths(
+  draft: Readonly<BalanceConfig>,
+  official: Readonly<BalanceConfig>,
+) {
+  return BALANCE_EDITABLE_PATHS.filter(
+    (path) =>
+      !Object.is(
+        getBalanceDraftNumber(draft, path),
+        getBalanceDraftNumber(official, path),
+      ),
+  )
+}
+
 function BalanceNumberField({
   field,
   draft,
@@ -175,6 +202,38 @@ function BalanceNumberField({
   )
 }
 
+function FieldGrid({
+  fields,
+  draft,
+  official,
+  issues,
+  onChange,
+  onRestore,
+}: {
+  fields: readonly BalanceFieldDefinition[]
+  draft: Readonly<BalanceConfig>
+  official: Readonly<BalanceConfig>
+  issues: readonly BalanceValidationIssue[]
+  onChange: (path: BalanceEditablePath, rawValue: string) => void
+  onRestore: (path: BalanceEditablePath) => void
+}) {
+  return (
+    <div className="balance-laboratory-field-grid">
+      {fields.map((field) => (
+        <BalanceNumberField
+          key={field.path}
+          field={field}
+          draft={draft}
+          official={official}
+          issues={issues}
+          onChange={onChange}
+          onRestore={onRestore}
+        />
+      ))}
+    </div>
+  )
+}
+
 function ComparisonTable({
   headers,
   rows,
@@ -210,35 +269,34 @@ function ComparisonTable({
   )
 }
 
-function FieldGrid({
-  fields,
-  draft,
-  official,
-  issues,
-  onChange,
-  onRestore,
+function NormalizationList({
+  changes,
 }: {
-  fields: readonly BalanceFieldDefinition[]
-  draft: Readonly<BalanceConfig>
-  official: Readonly<BalanceConfig>
-  issues: readonly BalanceValidationIssue[]
-  onChange: (path: BalanceEditablePath, rawValue: string) => void
-  onRestore: (path: BalanceEditablePath) => void
+  changes: readonly BalanceNormalizationChange[]
 }) {
+  if (changes.length === 0) {
+    return (
+      <p className="balance-laboratory-success">
+        La aplicación no necesitó modificar cargas ni efectos de la partida.
+      </p>
+    )
+  }
+
   return (
-    <div className="balance-laboratory-field-grid">
-      {fields.map((field) => (
-        <BalanceNumberField
-          key={field.path}
-          field={field}
-          draft={draft}
-          official={official}
-          issues={issues}
-          onChange={onChange}
-          onRestore={onRestore}
-        />
+    <ul className="balance-laboratory-diagnostics">
+      {changes.map((change) => (
+        <li
+          key={`${change.path}-${change.before}-${change.after}`}
+          data-severity={change.severity}
+        >
+          <strong>{change.severity}</strong>
+          <span>
+            {change.label}: {numberFormat.format(change.before)} →{' '}
+            {numberFormat.format(change.after)} · {change.reason}
+          </span>
+        </li>
       ))}
-    </div>
+    </ul>
   )
 }
 
@@ -252,14 +310,27 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
   const [selectedSystem, setSelectedSystem] =
     useState<BalanceCostSystem>('click')
   const [draft, setDraft] = useState<BalanceConfig>(() =>
-    cloneBalanceConfig(DEFAULT_BALANCE_CONFIG),
+    cloneBalanceConfig(getBalanceRuntimeSnapshot().config),
   )
+  const [sessionMessage, setSessionMessage] = useState(
+    'El borrador aún no se ha aplicado a la sesión.',
+  )
+  const [lastNormalization, setLastNormalization] = useState<
+    readonly BalanceNormalizationChange[]
+  >([])
 
   const validation = useMemo(() => validateBalanceConfig(draft), [draft])
   const issues = validation.issues
   const previewConfig = validation.valid ? validation.config : null
   const dirty = isBalanceDraftDirty(draft, DEFAULT_BALANCE_CONFIG)
   const changeCount = countBalanceDraftChanges(draft, DEFAULT_BALANCE_CONFIG)
+  const changedPaths = useMemo(
+    () => getChangedPaths(draft, DEFAULT_BALANCE_CONFIG),
+    [draft],
+  )
+  const blockedPaths = changedPaths.filter(
+    (path) => !isSessionApplicablePath(path),
+  )
   const errorCount = issues.filter((issue) => issue.severity === 'error').length
   const warningCount = issues.filter(
     (issue) => issue.severity === 'warning',
@@ -295,6 +366,8 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
     [dirty, previewConfig],
   )
   const storedProfile = useMemo(() => readStoredBalanceProfile(), [])
+  const canApply =
+    previewConfig !== null && dirty && blockedPaths.length === 0 && errorCount === 0
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -308,16 +381,40 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
   function updateDraft(path: BalanceEditablePath, rawValue: string) {
     const value = rawValue.trim() === '' ? Number.NaN : Number(rawValue)
     setDraft((current) => updateBalanceDraftNumber(current, path, value))
+    setSessionMessage('Borrador modificado; los cambios aún no afectan la partida.')
   }
 
   function restorePath(path: BalanceEditablePath) {
     setDraft((current) =>
       restoreBalanceDraftPath(current, DEFAULT_BALANCE_CONFIG, path),
     )
+    setSessionMessage('El campo volvió a su valor oficial.')
   }
 
-  function restoreAll() {
+  function restoreDraft() {
     setDraft(cloneBalanceConfig(DEFAULT_BALANCE_CONFIG))
+    setSessionMessage('El borrador volvió a los valores oficiales.')
+  }
+
+  function applyDraftToSession() {
+    if (!previewConfig || !canApply) return
+
+    const outcome = requestBalanceSessionApply(previewConfig)
+    setSessionMessage(outcome.message)
+    setLastNormalization(outcome.normalization?.changes ?? [])
+    if (outcome.applied) {
+      setSection('diagnostics')
+    }
+  }
+
+  function restoreOfficialSession() {
+    const outcome = requestOfficialBalanceRestore()
+    setSessionMessage(outcome.message)
+    setLastNormalization(outcome.normalization?.changes ?? [])
+    if (outcome.applied) {
+      setDraft(cloneBalanceConfig(DEFAULT_BALANCE_CONFIG))
+      setSection('diagnostics')
+    }
   }
 
   const statusLabel = errorCount > 0
@@ -363,9 +460,10 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
         </header>
 
         <div className="balance-laboratory-notice" role="status">
-          <strong>Previsualización editable.</strong> Los campos modifican únicamente
-          un borrador en memoria. El reducer, la partida y el guardado continúan
-          usando los valores oficiales.
+          <strong>Aplicación reversible de sesión.</strong> Costos, Autoclicker y
+          Zafiro pueden aplicarse sin persistencia. Núcleo y desbloqueos siguen
+          disponibles únicamente para simulación hasta migrar sus consumidores
+          visuales restantes.
         </div>
 
         <nav className="balance-laboratory-tabs" aria-label="Secciones del laboratorio">
@@ -378,9 +476,10 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
               onClick={() => setSection(item.id)}
             >
               {item.label}
-              {item.id === 'diagnostics' && (errorCount > 0 || warningCount > 0) && (
-                <b>{errorCount + warningCount}</b>
-              )}
+              {item.id === 'diagnostics' &&
+                (errorCount > 0 || warningCount > 0 || blockedPaths.length > 0) && (
+                  <b>{errorCount + warningCount + blockedPaths.length}</b>
+                )}
             </button>
           ))}
         </nav>
@@ -391,7 +490,7 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
               <section className="balance-laboratory-card">
                 <div className="balance-laboratory-card-heading">
                   <div>
-                    <span>Economía</span>
+                    <span>Economía · aplicable</span>
                     <h3>Curva de costos</h3>
                   </div>
                   <select
@@ -410,12 +509,10 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
                     ))}
                   </select>
                 </div>
-
                 <p>
-                  Edita los dos parámetros de {selectedDefinition.label}. La
-                  estructura exponencial permanece fija durante esta fase.
+                  Edita los parámetros de {selectedDefinition.label}. La forma
+                  exponencial de la curva permanece fija.
                 </p>
-
                 <FieldGrid
                   fields={selectedCostFields}
                   draft={draft}
@@ -458,13 +555,10 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
                   />
                 ) : (
                   <p className="balance-laboratory-empty">
-                    Corrige los errores del borrador para recalcular la curva.
+                    Corrige los errores para recalcular la curva.
                   </p>
                 )}
-                <small>
-                  Muestras: {BALANCE_COST_LEVEL_SAMPLES.join(', ')}. No se realizan
-                  compras ni se modifica energía.
-                </small>
+                <small>Muestras: {BALANCE_COST_LEVEL_SAMPLES.join(', ')}.</small>
               </section>
             </div>
           )}
@@ -474,7 +568,7 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
               <section className="balance-laboratory-card">
                 <div className="balance-laboratory-card-heading">
                   <div>
-                    <span>Núcleo</span>
+                    <span>Solo simulación</span>
                     <h3>Prestigio y Presión</h3>
                   </div>
                 </div>
@@ -486,55 +580,12 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
                   onChange={updateDraft}
                   onRestore={restorePath}
                 />
-                {previewConfig && (
-                  <ComparisonTable
-                    headers={['Métrica', 'Oficial', 'Borrador', 'Diferencia']}
-                    rows={[
-                      {
-                        key: 'sphere',
-                        direction: getDifferenceDirection(
-                          DEFAULT_BALANCE_CONFIG.core.sphereClickCapacity,
-                          previewConfig.core.sphereClickCapacity,
-                        ),
-                        cells: [
-                          'Clics para cristalizar',
-                          numberFormat.format(
-                            DEFAULT_BALANCE_CONFIG.core.sphereClickCapacity,
-                          ),
-                          numberFormat.format(
-                            previewConfig.core.sphereClickCapacity,
-                          ),
-                          formatDifference(
-                            DEFAULT_BALANCE_CONFIG.core.sphereClickCapacity,
-                            previewConfig.core.sphereClickCapacity,
-                          ),
-                        ],
-                      },
-                      {
-                        key: 'pressure',
-                        direction: getDifferenceDirection(
-                          DEFAULT_BALANCE_CONFIG.core.pressureBonusPerTier * 10,
-                          previewConfig.core.pressureBonusPerTier * 10,
-                        ),
-                        cells: [
-                          'Bono máximo por nivel',
-                          `${numberFormat.format(DEFAULT_BALANCE_CONFIG.core.pressureBonusPerTier * 10)}%`,
-                          `${numberFormat.format(previewConfig.core.pressureBonusPerTier * 10)}%`,
-                          formatDifference(
-                            DEFAULT_BALANCE_CONFIG.core.pressureBonusPerTier * 10,
-                            previewConfig.core.pressureBonusPerTier * 10,
-                          ),
-                        ],
-                      },
-                    ]}
-                  />
-                )}
               </section>
 
               <section className="balance-laboratory-card">
                 <div className="balance-laboratory-card-heading">
                   <div>
-                    <span>Progresión inicial</span>
+                    <span>Solo simulación</span>
                     <h3>Requisitos de desbloqueo</h3>
                   </div>
                 </div>
@@ -546,6 +597,11 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
                   onChange={updateDraft}
                   onRestore={restorePath}
                 />
+                <p>
+                  Los cambios de esta sección bloquean temporalmente el botón de
+                  aplicación para evitar discrepancias con textos y controles aún
+                  ligados a valores oficiales.
+                </p>
               </section>
             </div>
           )}
@@ -555,7 +611,7 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
               <section className="balance-laboratory-card">
                 <div className="balance-laboratory-card-heading">
                   <div>
-                    <span>Automatización</span>
+                    <span>Automatización · aplicable</span>
                     <h3>Parámetros del Autoclicker</h3>
                   </div>
                 </div>
@@ -568,10 +624,10 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
                   onRestore={restorePath}
                 />
                 <p>
-                  Límite absoluto del motor: <strong>
+                  Límite del motor: <strong>
                     {DEFAULT_BALANCE_CONFIG.engineLimits.maximumAutomaticClicksPerTick}
                   </strong>{' '}
-                  clics por tick. Este valor no es editable.
+                  clics por tick. No es editable.
                 </p>
               </section>
 
@@ -607,7 +663,7 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
                   />
                 ) : (
                   <p className="balance-laboratory-empty">
-                    Corrige los errores del borrador para recalcular las tasas.
+                    Corrige los errores para recalcular las tasas.
                   </p>
                 )}
               </section>
@@ -619,7 +675,7 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
               <section className="balance-laboratory-card">
                 <div className="balance-laboratory-card-heading">
                   <div>
-                    <span>Metaprogresión</span>
+                    <span>Metaprogresión · aplicable</span>
                     <h3>Multiplicadores de Zafiro</h3>
                   </div>
                 </div>
@@ -632,8 +688,7 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
                   onRestore={restorePath}
                 />
                 <p>
-                  P0 permanece fijo en ×1.00. La validación exige que P1–P5 formen
-                  una secuencia estrictamente creciente.
+                  P0 permanece fijo en ×1.00 y P1–P5 deben crecer estrictamente.
                 </p>
               </section>
 
@@ -691,8 +746,7 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
                 </div>
                 {issues.length === 0 ? (
                   <p className="balance-laboratory-success">
-                    El borrador cumple la estructura, rangos y relaciones de
-                    seguridad registradas.
+                    El borrador cumple estructura, rangos y relaciones de seguridad.
                   </p>
                 ) : (
                   <ul className="balance-laboratory-diagnostics">
@@ -704,6 +758,20 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
                         <strong>{issue.severity}</strong>
                         <span>
                           <code>{issue.path}</code> · {issue.message}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {blockedPaths.length > 0 && (
+                  <ul className="balance-laboratory-diagnostics">
+                    {blockedPaths.map((path) => (
+                      <li key={path} data-severity="warning">
+                        <strong>bloqueado</strong>
+                        <span>
+                          <code>{path}</code> · disponible para simulación, pero no
+                          para aplicación en esta fase.
                         </span>
                       </li>
                     ))}
@@ -728,38 +796,12 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
               <section className="balance-laboratory-card">
                 <div className="balance-laboratory-card-heading">
                   <div>
-                    <span>Protecciones</span>
-                    <h3>Límites no editables</h3>
+                    <span>Sesión</span>
+                    <h3>Última transición</h3>
                   </div>
                 </div>
-                <dl className="balance-laboratory-limits">
-                  <div>
-                    <dt>Clics automáticos por tick</dt>
-                    <dd>
-                      {numberFormat.format(
-                        DEFAULT_BALANCE_CONFIG.engineLimits
-                          .maximumAutomaticClicksPerTick,
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Iteraciones de Comprar todo</dt>
-                    <dd>
-                      {numberFormat.format(
-                        DEFAULT_BALANCE_CONFIG.engineLimits
-                          .maximumBulkPurchaseIterations,
-                      )}
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Valor finito máximo</dt>
-                    <dd>
-                      {numberFormat.format(
-                        DEFAULT_BALANCE_CONFIG.engineLimits.maximumFiniteValue,
-                      )}
-                    </dd>
-                  </div>
-                </dl>
+                <p>{sessionMessage}</p>
+                <NormalizationList changes={lastNormalization} />
                 <p>
                   Perfil DEV guardado:{' '}
                   <strong>
@@ -769,8 +811,7 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
                   </strong>
                 </p>
                 <p>
-                  La aplicación de perfiles, normalización de estado y persistencia
-                  siguen bloqueadas hasta la fase siguiente.
+                  Al recargar, el runtime vuelve automáticamente al balance oficial.
                 </p>
               </section>
             </div>
@@ -779,20 +820,32 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
 
         <footer className="balance-laboratory-footer">
           <span>
-            Borrador temporal · al cerrar se descarta · guardado DEV separado:{' '}
-            <code>incremental-game-a:balance-dev:v1</code>
+            Fuente activa: <strong>{snapshot.source}</strong> · los perfiles de
+            sesión no se guardan.
           </span>
           <div>
-            <button type="button" onClick={restoreAll} disabled={!dirty}>
-              Restaurar valores oficiales
+            <button type="button" onClick={restoreDraft} disabled={!dirty}>
+              Restaurar borrador
             </button>
             <button
               type="button"
               className="is-primary"
-              disabled
-              title="Se habilitará después de implementar normalización y rollback"
+              disabled={!canApply}
+              title={
+                blockedPaths.length > 0
+                  ? 'Restaura los campos marcados como solo simulación.'
+                  : 'Aplicar borrador únicamente a esta sesión.'
+              }
+              onClick={applyDraftToSession}
             >
-              Aplicar a sesión · Fase 3
+              Aplicar a sesión
+            </button>
+            <button
+              type="button"
+              disabled={snapshot.source === 'official'}
+              onClick={restoreOfficialSession}
+            >
+              Restaurar sesión oficial
             </button>
             <button type="button" onClick={onClose}>
               Cerrar
@@ -819,7 +872,7 @@ export function BalanceLaboratorySystem() {
               <span aria-hidden="true">∑</span>
               <span>
                 <strong>Laboratorio de Balance</strong>
-                <small>Editar borradores y comparar curvas</small>
+                <small>Comparar y aplicar perfiles de sesión</small>
               </span>
               <b aria-hidden="true">ABRIR</b>
             </button>

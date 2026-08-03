@@ -1,70 +1,58 @@
 # LABORATORIO DE BALANCE — Arquitectura y estado
 
-> Documento técnico del sistema integrado en `main` y de la rama activa
-> `Dev-Balance-Laboratory-Phase-2`.
+> Documento técnico del sistema de inspección, simulación y edición controlada del balance.
 >
-> El objetivo es permitir inspección, simulación y edición controlada de parámetros matemáticos sin duplicar fórmulas, crear estados inválidos ni corromper el guardado normal.
+> El objetivo es experimentar con la economía sin duplicar fórmulas, introducir estados imposibles ni mezclar el perfil DEV con el guardado normal.
 
 ## 1. Estado actual
 
-### Base integrada en `main`
+### Integrado en `main` mediante PR #4
 
 - contrato tipado `BalanceConfig`;
 - configuración oficial congelada `DEFAULT_BALANCE_CONFIG`;
-- clave de almacenamiento DEV separada;
 - validación de estructura, números finitos, rangos y relaciones;
-- runtime reversible con fuente oficial, sesión o perfil almacenado;
+- runtime reversible con fuente `official`, `session` o `stored-profile`;
+- guardado DEV separado de la partida;
 - simulador puro de costos, Autoclicker y Zafiro;
 - matriz de paridad del balance anterior;
-- fórmulas autoritativas centralizadas en:
-  - `src/game.ts`;
-  - `src/refraction.ts`;
-  - `src/pulseTrigger.ts`;
-  - `src/bulkPurchase.ts`;
-- límite real de Comprar todo centralizado en 320 iteraciones;
-- ventana inicial de inspección dentro del Panel de Desarrollador.
+- migración inicial de fórmulas autoritativas en `game.ts`, Refracción, Gatillo y Comprar todo;
+- ventana de inspección dentro del Panel de Desarrollador.
 
-### Fase 2 implementada en la rama actual
+### Integrado en `main` mediante PR #5
 
-- modelo independiente `src/balanceDraft.ts`;
-- borrador completo clonado desde los valores oficiales;
-- edición controlada de:
-  - costos base y factores de crecimiento;
-  - capacidad de esfera y bono de Presión;
-  - requisitos de desbloqueo;
-  - tasa inicial, crecimiento y límite del Autoclicker;
-  - multiplicadores P1–P5 del Zafiro;
-  - incremento provisional posterior a P5;
-- validación inmediata mientras se escribe;
+- editor de borradores en memoria;
+- campos controlados para costos, núcleo, desbloqueos, Autoclicker y Zafiro;
 - comparación Oficial/Borrador;
-- tablas recalculadas para costos, Autoclicker y Zafiro;
-- restauración individual de cada campo;
-- restauración completa del borrador oficial;
-- contador de cambios, errores y advertencias;
-- límites del motor visibles pero no editables;
-- botón de aplicación presente pero deshabilitado hasta la fase de normalización.
+- restauración individual y global;
+- detección de inflación, estancamiento, desbloqueos tardíos y límites finitos;
+- comprobaciones de clonación, modificación y restauración del borrador.
 
-La interfaz de esta fase es **editable**, pero el borrador sigue siendo únicamente una previsualización en memoria.
+### Implementado en `Dev-Balance-Laboratory-Phase-3`
 
-## 2. Flujo vigente
+- aplicación de configuraciones válidas únicamente a la sesión;
+- restauración inmediata del balance oficial;
+- normalización conservadora de la partida;
+- reporte de los ajustes realizados durante la transición;
+- cancelación de efectos temporales para evitar duraciones híbridas;
+- separación estricta entre parámetros aplicables y parámetros todavía limitados a simulación.
+
+## 2. Fuente de verdad
 
 ```text
 DEFAULT_BALANCE_CONFIG
           │
-          ├── gameplay oficial
-          │     ├── game.ts
-          │     ├── refraction.ts
-          │     ├── pulseTrigger.ts
-          │     └── bulkPurchase.ts
+          ▼
+Balance Runtime
           │
-          └── clon de borrador DEV
-                ├── edición controlada
-                ├── validación inmediata
-                ├── comparación
-                └── simulación pura
+          ├── game.ts
+          ├── refraction.ts
+          ├── pulseTrigger.ts
+          ├── bulkPurchase.ts
+          ├── simulación DEV
+          └── editor del Laboratorio
 ```
 
-La edición no llama todavía a `applySessionBalanceConfig()`.
+Las constantes históricas continúan exportándose temporalmente para compatibilidad. Ninguna fórmula nueva debe depender de ellas.
 
 ## 3. Guardados separados
 
@@ -80,115 +68,144 @@ Perfil experimental:
 incremental-game-a:balance-dev:v1
 ```
 
-En la Fase 2 el borrador no se guarda automáticamente. Cerrar el Laboratorio lo descarta.
+La Fase 3 **no guarda automáticamente** el perfil aplicado. Recargar la página reconstruye el runtime con `DEFAULT_BALANCE_CONFIG`.
 
-## 4. Invariantes de seguridad
+## 4. Aplicación atómica de sesión
+
+El Laboratorio envía una solicitud síncrona a `App`:
+
+```text
+Borrador validado
+      │
+      ▼
+Normalización pura de GameState
+      │
+      ▼
+Aplicación completa al runtime
+      │
+      ▼
+Reemplazo del estado normalizado
+```
+
+Si la validación falla, ni el runtime ni la partida cambian.
+
+La restauración oficial utiliza el mismo proceso en sentido inverso.
+
+## 5. Política de normalización
+
+Se conservan:
+
+- energía;
+- clics acumulados;
+- niveles comprados;
+- prestigio;
+- conteo histórico de descargas;
+- último valor de recompensa registrado.
+
+Se ajustan únicamente cuando es necesario:
+
+- nivel del Gatillo, si excede su máximo;
+- carga parcial de Cavitación;
+- progreso fraccionario del Autoclicker;
+- carga parcial de Sobrecarga;
+- progreso orbital de Refracción;
+- facetas cargadas.
+
+Se cancelan al cambiar de perfil:
+
+- Sobrecarga activa;
+- PRISMA activo.
+
+Esto evita conservar efectos temporales calculados con una configuración anterior.
+
+## 6. Parámetros aplicables en Fase 3
+
+### Aplicables a sesión
+
+- costos base de las nueve evoluciones;
+- crecimiento de las nueve curvas de costo;
+- tasa inicial del Autoclicker;
+- crecimiento del Autoclicker;
+- tasa máxima del Autoclicker;
+- multiplicadores P1–P5 del Zafiro;
+- incremento provisional posterior a P5.
+
+### Solo simulación
+
+- capacidad de la esfera;
+- bono de Presión por tramo;
+- desbloqueo de Presión;
+- desbloqueo de Cavitación;
+- desbloqueo del Autoclicker;
+- desbloqueo de Refracción.
+
+Estos campos bloquean el botón de aplicación hasta migrar todos sus textos, barras y controles visuales restantes.
+
+## 7. Invariantes de seguridad
 
 1. Una configuración se aplica completa o no se aplica.
 2. Todo valor debe ser finito y permanecer dentro de límites absolutos.
-3. Los límites operativos del motor no son editables desde el panel.
-4. El Autoclicker no puede superar el máximo seguro de operaciones por tick.
-5. Comprar todo no puede superar el máximo configurado de iteraciones.
-6. Los multiplicadores P0–P5 deben conservar una secuencia estrictamente creciente.
-7. La duración orbital mínima no puede superar la máxima.
-8. Los umbrales mínimos no pueden superar sus umbrales base.
-9. El perfil DEV no se carga automáticamente.
-10. No se admiten expresiones JavaScript libres.
-11. No se usa `eval()` ni `new Function()`.
-12. Restaurar valores oficiales debe permanecer siempre disponible.
+3. Los límites del motor no son editables.
+4. El Autoclicker no puede superar el máximo de operaciones por tick.
+5. Comprar todo conserva su límite de iteraciones.
+6. Zafiro mantiene una secuencia estrictamente creciente.
+7. No se admiten expresiones JavaScript libres.
+8. No se usa `eval()` ni `new Function()`.
+9. El perfil de sesión no se guarda automáticamente.
+10. Restaurar valores oficiales siempre está disponible.
+11. La partida normal no contiene una copia del perfil DEV.
 
-## 5. Auditoría de consumidores
+## 8. Validación requerida de la Fase 3
 
-### Ya consumen la configuración activa
+### Automatizada/local
 
-- cálculos autoritativos de `src/game.ts`;
-- costos y mecánicas de Refracción;
-- costos, tasa, reserva y carga del Gatillo;
-- simulación de Comprar todo;
-- simulaciones del Laboratorio.
+```powershell
+npm run lint
+npm run build
+```
 
-### Conservan constantes oficiales por compatibilidad visual
+### Prueba funcional
 
-Se detectaron referencias históricas en componentes que todavía muestran requisitos o límites oficiales, principalmente:
-
-- `src/App.tsx`;
-- `src/GameCore.tsx`;
-- `src/UpgradesPanelCompact.tsx`;
-- `src/PulseTriggerSystem.tsx`.
-
-Esto no crea discrepancias durante la Fase 2 porque el borrador no se aplica. Antes de habilitar la aplicación a sesión, esos consumidores deberán leer consultas dinámicas y reaccionar a una revisión nueva del runtime.
-
-## 6. Paridad oficial
-
-`src/balanceParity.ts` conserva comprobaciones conocidas de la versión anterior a la centralización:
-
-- costos de todas las evoluciones;
-- llenado de esfera y Presión;
-- Zafiro P5 y P6;
-- tasas del Autoclicker;
-- Sobrecarga y Cavitación;
-- Refracción;
-- Gatillo de pulso.
-
-La paridad detecta cambios numéricos accidentales, pero no sustituye `lint`, `build` ni pruebas físicas.
-
-## 7. Bloqueos actuales
-
-Permanecen deshabilitados:
-
-- aplicar el borrador a la sesión;
-- guardar o cargar perfiles desde la interfaz;
-- carga automática de perfiles;
-- modificación del guardado normal;
-- edición de límites absolutos del motor;
-- cambio de familia matemática;
-- ejecución de expresiones personalizadas.
-
-## 8. Requisitos para la Fase 3
-
-Antes de habilitar `Aplicar a sesión`:
-
-- migrar los consumidores visuales restantes a consultas dinámicas;
-- crear `normalizeGameStateForBalance()`;
-- definir la política para Sobrecarga y Refracción activas;
-- normalizar cargas de Cavitación, Autoclicker y Gatillo;
-- coordinar el rerender de todos los portales después de aplicar;
-- suspender controles del reactor mientras el modal esté abierto;
-- mostrar una lista previa de ajustes sobre la partida activa;
-- implementar rollback a valores oficiales;
-- ejecutar la matriz de paridad;
-- ejecutar `npm run lint`;
-- ejecutar `npm run build`;
-- completar pruebas físicas de mouse, teclado y gamepad.
+1. modificar el costo base de una mejora;
+2. aplicar a sesión y confirmar que el costo del juego cambia;
+3. restaurar la sesión oficial y confirmar el valor original;
+4. modificar el Autoclicker y observar la tasa en el reactor;
+5. modificar Zafiro y comprobar el multiplicador mostrado;
+6. activar Sobrecarga o PRISMA y aplicar un perfil;
+7. confirmar que el efecto temporal se cancela y queda reportado;
+8. intentar aplicar con un campo inválido;
+9. intentar aplicar después de modificar capacidad o desbloqueos;
+10. recargar y confirmar que vuelve el balance oficial.
 
 ## 9. Fases siguientes
 
-### Fase 3 — Normalización y aplicación reversible
+### Fase 4 — Migración visual completa
 
-- previsualizar el impacto sobre la partida activa;
-- aplicar a esta sesión;
-- restaurar valores oficiales;
-- cancelar o normalizar estados incompatibles;
-- no persistir el perfil automáticamente.
+- sustituir consumidores de `SPHERE_CLICK_CAPACITY` por consultas dinámicas;
+- migrar requisitos visuales de desbloqueo;
+- migrar textos del Panel DEV;
+- habilitar aplicación de Núcleo y desbloqueos.
 
-### Fase 4 — Perfiles DEV
+### Fase 5 — Perfiles persistentes
 
-- nombrar y guardar perfiles;
-- cargar perfiles manualmente;
-- importar y exportar JSON validado;
-- mantener el guardado normal aislado.
+- asignar nombre;
+- guardar perfil DEV;
+- cargarlo manualmente;
+- eliminarlo;
+- exportar e importar JSON validado;
+- mantener desactivada la carga automática por defecto.
 
-### Fase 5 — Plantillas matemáticas
+### Fase 6 — Plantillas matemáticas
 
-Evaluar curvas exponenciales, lineales, potencia, raíz, logarítmicas y rendimientos decrecientes mediante plantillas seguras. No aceptar código arbitrario.
+Evaluar curvas exponenciales, lineales, potencia, raíz, logarítmicas y rendimientos decrecientes mediante plantillas seguras.
 
 ## 10. Regla de integración
 
-Esta rama no debe integrarse a `main` hasta que:
+`Dev-Balance-Laboratory-Phase-3` no debe integrarse hasta que:
 
 - `lint` y `build` pasen;
-- el editor sea usable en escritorio y móvil;
-- modificar y restaurar campos no altere el gameplay;
-- cerrar y recargar mantenga el balance oficial;
-- la comparación y los errores coincidan con los valores introducidos;
+- aplicación y restauración funcionen en la misma sesión;
+- el guardado normal permanezca intacto;
+- recargar restaure el balance oficial;
+- la normalización se compruebe con efectos temporales activos;
 - Arturo autorice expresamente la integración.

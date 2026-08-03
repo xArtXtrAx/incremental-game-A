@@ -2,6 +2,18 @@ import { useEffect, useReducer, useRef, useState } from 'react'
 import './App.css'
 import './ProposalA.css'
 import './PrestigeSapphire.css'
+import { DEFAULT_BALANCE_CONFIG } from './balanceConfig'
+import {
+  getActiveBalanceConfig,
+  getBalanceRuntimeSnapshot,
+  applySessionBalanceConfig,
+  resetOfficialBalanceConfig,
+} from './balanceRuntime'
+import {
+  BALANCE_SESSION_REQUEST_EVENT,
+  type BalanceSessionRequest,
+} from './balanceSessionBridge'
+import { normalizeGameStateForBalance } from './balanceStateNormalization'
 import { BulkPurchaseControls } from './BulkPurchaseControls'
 import {
   planBulkPurchases,
@@ -34,11 +46,11 @@ import {
   getOverloadRemainingSeconds,
   getPressureBonusPercent,
   getSapphireMultiplier,
+  getSphereClickCapacity,
   initialGameState,
   isOverloadActive,
   loadGameState,
   saveGameState,
-  SPHERE_CLICK_CAPACITY,
   type GameAction,
   type GameState,
 } from './game'
@@ -47,7 +59,6 @@ import {
   getRefractionBonusMultiplier,
   getRefractionFacetCount,
   isRefractionActive,
-  REFRACTION_REQUIRED_PRESTIGE,
 } from './refraction'
 
 type MobileView = 'core' | 'upgrades'
@@ -55,19 +66,26 @@ type AppAction =
   | GameAction
   | { type: 'developer-set-values'; values: DeveloperValues }
   | { type: 'apply-bulk-purchase'; strategy: BulkPurchaseStrategy }
+  | { type: 'replace-normalized-state'; state: GameState }
 
 const format = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 })
 
 function appReducer(state: GameState, action: AppAction): GameState {
+  if (action.type === 'replace-normalized-state') {
+    return action.state
+  }
+
   if (action.type === 'apply-bulk-purchase') {
     return planBulkPurchases(state, action.strategy).finalState
   }
 
   if (action.type === 'developer-set-values') {
     const values = sanitizeDeveloperValues(action.values)
-    const sphereBelowCapacity = values.manualClicks < SPHERE_CLICK_CAPACITY
+    const balance = getActiveBalanceConfig()
+    const sphereBelowCapacity =
+      values.manualClicks < balance.core.sphereClickCapacity
     const refractionAllowed =
-      values.prestigeCount >= REFRACTION_REQUIRED_PRESTIGE &&
+      values.prestigeCount >= balance.unlocks.refractionRequiredPrestige &&
       state.refractionLevel > 0
     const refractionFacetCount = getRefractionFacetCount(values.prestigeCount)
 
@@ -125,6 +143,7 @@ function App() {
   )
   const refractionBurstTimer = useRef<number | null>(null)
   const crystallizeTimers = useRef<number[]>([])
+  const sphereClickCapacity = getSphereClickCapacity()
 
   const overloadActive = isOverloadActive(game.overloadUntil, clockNow)
   const overloadMultiplier = overloadActive
@@ -187,6 +206,109 @@ function App() {
   }, [isCrystallizing])
 
   useEffect(() => {
+    const handleBalanceSessionRequest = (event: Event) => {
+      const request = (event as CustomEvent<BalanceSessionRequest>).detail
+      if (!request || typeof request.respond !== 'function') return
+
+      if (isCrystallizing) {
+        request.respond({
+          applied: false,
+          snapshot: getBalanceRuntimeSnapshot(),
+          normalization: null,
+          issues: [],
+          message: 'Espera a que termine la cristalización.',
+        })
+        return
+      }
+
+      const targetConfig =
+        request.mode === 'restore-official'
+          ? DEFAULT_BALANCE_CONFIG
+          : request.config
+
+      if (!targetConfig) {
+        request.respond({
+          applied: false,
+          snapshot: getBalanceRuntimeSnapshot(),
+          normalization: null,
+          issues: [],
+          message: 'La solicitud no contiene una configuración válida.',
+        })
+        return
+      }
+
+      const now = Date.now()
+      const normalization = normalizeGameStateForBalance(
+        game,
+        targetConfig,
+        now,
+      )
+
+      if (request.mode === 'restore-official') {
+        const snapshot = resetOfficialBalanceConfig()
+        previousClicks.current = normalization.state.manualClicks
+        previousRefractionDischargeCount.current =
+          normalization.state.refractionDischargeCount
+        setClockNow(now)
+        dispatch({
+          type: 'replace-normalized-state',
+          state: normalization.state,
+        })
+        setOverloadBurst(null)
+        setRefractionBurst(null)
+        request.respond({
+          applied: true,
+          snapshot,
+          normalization,
+          issues: [],
+          message: 'Valores oficiales restaurados para esta sesión.',
+        })
+        return
+      }
+
+      const result = applySessionBalanceConfig(targetConfig)
+      if (!result.applied) {
+        request.respond({
+          applied: false,
+          snapshot: result.snapshot,
+          normalization: null,
+          issues: result.issues,
+          message: 'El perfil fue rechazado por la validación de seguridad.',
+        })
+        return
+      }
+
+      previousClicks.current = normalization.state.manualClicks
+      previousRefractionDischargeCount.current =
+        normalization.state.refractionDischargeCount
+      setClockNow(now)
+      dispatch({
+        type: 'replace-normalized-state',
+        state: normalization.state,
+      })
+      setOverloadBurst(null)
+      setRefractionBurst(null)
+      request.respond({
+        applied: true,
+        snapshot: result.snapshot,
+        normalization,
+        issues: result.issues,
+        message: 'Borrador aplicado únicamente a esta sesión.',
+      })
+    }
+
+    document.addEventListener(
+      BALANCE_SESSION_REQUEST_EVENT,
+      handleBalanceSessionRequest,
+    )
+    return () =>
+      document.removeEventListener(
+        BALANCE_SESSION_REQUEST_EVENT,
+        handleBalanceSessionRequest,
+      )
+  }, [game, isCrystallizing])
+
+  useEffect(() => {
     const now = Date.now()
 
     if (game.overloadUntil <= now && game.refractionUntil <= now) {
@@ -202,14 +324,14 @@ function App() {
 
   useEffect(() => {
     if (
-      previousClicks.current < SPHERE_CLICK_CAPACITY &&
-      game.manualClicks >= SPHERE_CLICK_CAPACITY
+      previousClicks.current < sphereClickCapacity &&
+      game.manualClicks >= sphereClickCapacity
     ) {
       setSapphireBirthId((current) => current + 1)
     }
 
     previousClicks.current = game.manualClicks
-  }, [game.manualClicks])
+  }, [game.manualClicks, sphereClickCapacity])
 
   useEffect(() => {
     const previousCount = previousRefractionDischargeCount.current
@@ -300,7 +422,7 @@ function App() {
   }
 
   function handleCrystallize() {
-    if (isCrystallizing || game.manualClicks < SPHERE_CLICK_CAPACITY) {
+    if (isCrystallizing || game.manualClicks < sphereClickCapacity) {
       return
     }
 
