@@ -13,6 +13,7 @@ import { PulseTriggerSystem } from './PulseTriggerSystem'
 import { RegionFocusGuide } from './RegionFocusGuide'
 import { UpgradeProgressSystem } from './UpgradeProgressSystem'
 import './PulseTriggerLevel.css'
+import './GamepadFocus.css'
 
 const editableSelector =
   'input, textarea, [contenteditable="true"], [data-allow-selection="true"]'
