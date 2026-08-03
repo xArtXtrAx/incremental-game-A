@@ -198,7 +198,7 @@ export const DEFAULT_BALANCE_CONFIG = freezeBalanceConfig({
   },
   engineLimits: {
     maximumAutomaticClicksPerTick: 200,
-    maximumBulkPurchaseIterations: 10_000,
+    maximumBulkPurchaseIterations: 320,
     maximumFiniteValue: Number.MAX_SAFE_INTEGER,
   },
 } satisfies BalanceConfig)
