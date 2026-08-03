@@ -1,486 +1,498 @@
 # HISTORIAL_GPT — Incremental Game A
 
 > Bitácora compartida entre Arturo y GPT.  
-> **Regla para nuevos chats:** leer este archivo y comprobar la rama activa antes de modificar el proyecto.
+> **Regla para nuevos chats:** leer este archivo, leer `PERFORMANCE_AUDIT.md`, leer `GAMEPAD_DEVICE_SELECTION.md` y comprobar la rama activa antes de modificar el proyecto.
 
-## 1. Estado del repositorio
+## 1. Estado actual del repositorio
 
 - Repositorio: `xArtXtrAx/incremental-game-A`.
+- **Repositorio transversal de bugs críticos corregidos:** [`xArtXtrAx/bugs-universales-corregidos`](https://github.com/xArtXtrAx/bugs-universales-corregidos).
+- **IMPORTANCIA MAYÚSCULA:** cada bug crítico, difícil de detectar o reutilizable que encontremos, resolvamos y validemos debe documentarse también en ese repositorio como conocimiento aplicable a todos los videojuegos futuros.
+- El repositorio universal debe registrar, como mínimo: síntoma, condiciones que revelaron el fallo, causa raíz, solución genérica, riesgos, matriz de pruebas y lección arquitectónica reutilizable.
+- Esta práctica forma parte obligatoria del flujo de desarrollo: su objetivo es acumular defensas comprobadas, evitar repetir fallos y conseguir progresos mucho más estables en todos los juegos futuros.
+- La documentación universal complementa la bitácora específica de cada proyecto; no la sustituye.
+- El fallo de selección del primer gamepad enumerado es el primer candidato para ese repositorio, una vez terminada su validación física.
 - Rama estable: `main`.
-- No hay una rama funcional pendiente de integración.
-- Últimas ramas aprobadas e integradas:
+- Commit estable desde el que comenzó la auditoría: `756a6aefb28091e564057dcaa3b4b5bf1a90e13e`.
+- Rama de trabajo activa: `Dev-Performance-Audit`.
+- La rama de auditoría no está integrada a `main`.
+- La rama contiene diagnóstico, documentación, herramientas de medición y un parche aislado de robustez para seleccionar el mando por actividad real; no cambia gameplay, economía, balance ni presentación visual.
+- Últimas ramas funcionales aprobadas e integradas:
   - `Dev-Camara-Cromatica`;
   - `Dev-Smooth-Progress-Bars`;
   - `Dev-DualSense-L2-Hotkeys`.
-- Ramas históricas adicionales: `Dev-Prestigio-Test`, `Dev-Orbita-Zafiro-Test`, `Dev-Matriz-Refraccion-Test`, `Dev-Gamepad-Test` y `Dev-Pulse-Trigger-Level`.
-- Entorno: React + TypeScript + Vite + Motion.
+- Entorno: React 19 + TypeScript 6 + Vite 8 + Motion.
 - Guardado principal: `incremental-game-a:save:v1`.
 - Ajustes de mando: `incremental-game-a:gamepad:v1`.
 - Reserva del Gatillo: `incremental-game-a:pulse-trigger:v1`.
-- Última actualización: **2 de agosto de 2026**.
+- Última actualización: **2 de agosto de 2026, 20:31 CDMX**.
 
-Arturo aprobó visualmente y funcionalmente la Cámara Cromática, el Nexo Prismático, el acceso normal y DEV, el control de cristalizaciones, el Zafiro WebGL orbital, las barras de progreso fluidas y el esquema final de controles DualSense. Todo está integrado en `main`.
+`main` contiene la versión jugable aprobada por Arturo. La auditoría actual busca preparar la arquitectura para varias capas cromáticas sin optimizar prematuramente ni alterar la sensación del juego.
 
-## 2. Forma de trabajo
+El repositorio `bugs-universales-corregidos` debe tratarse como una biblioteca de estabilidad entre proyectos. Cuando una corrección crítica quede validada, se preparará allí una versión autocontenida y generalizada, sin depender innecesariamente de la arquitectura particular del juego donde apareció.
+
+## 2. Forma de trabajo obligatoria
 
 - Trabajar de forma directa y evitar microcomprobaciones redundantes.
 - Usar GitHub Desktop para el flujo local normal.
 - Crear ramas para cambios visuales, estructurales o mecánicos importantes.
-- Integrar a `main` solamente después de la validación de Arturo.
-- Antes de integrar, comparar la rama con `main`, reportar alcance y esperar autorización explícita.
-- Conservar las ramas remotas como respaldo salvo autorización expresa para eliminarlas.
-- Evitar reescrituras destructivas del historial remoto salvo necesidad técnica clara y autorización.
+- Antes de integrar, comparar la rama con `main`, reportar alcance y esperar autorización explícita de Arturo.
+- Nunca integrar a `main` ni eliminar ramas sin autorización explícita.
+- Conservar ramas remotas como respaldo salvo instrucción contraria.
+- Evitar reescrituras destructivas del historial, `force push`, resets agresivos y divergencias innecesarias.
 - Evitar ZIP, manifiestos y hashes salvo necesidad técnica o petición expresa.
-- Agrupar pruebas y registrar aquí las decisiones relevantes.
-- No afirmar que se ejecutó `npm run build`, `lint` o pruebas físicas cuando el entorno remoto no dispone del checkout y dependencias reales.
+- Agrupar validaciones; no repetir `git status` ni comprobaciones equivalentes sin motivo.
+- No afirmar que se ejecutaron `npm run build`, `npm run lint`, pruebas físicas o benchmarks cuando no se ejecutaron realmente.
+- Mantener gameplay, fórmulas y visuales idénticos durante la auditoría salvo aprobación específica.
+- Cuando un bug crítico corregido tenga aplicación transversal, documentarlo también en `xArtXtrAx/bugs-universales-corregidos` después de validarlo.
+- No se encontró un archivo `WORKFLOW_RULES.md`; estas reglas son la referencia vigente.
 
-## 3. Interfaz estable
+## 3. Estado jugable estable en `main`
+
+### Interfaz
 
 - Resumen superior compacto.
 - Núcleo fijo a la izquierda en escritorio.
 - Evoluciones en panel desplazable con pestañas Producción, Núcleo y Avanzadas.
 - Tarjetas expandibles.
 - Navegación móvil entre Núcleo y Evoluciones.
-- Panel de desarrollador a la derecha en pantallas amplias y debajo en pantallas estrechas.
-- Selección de texto deshabilitada globalmente salvo en campos editables.
-- Flecha normal sobre textos, mano sobre controles y cursor de texto solo en campos editables.
-- Un listener global de `selectstart` evita selecciones iniciadas desde el fondo exterior.
-- Guía visual por regiones:
-  - L1 ilumina Núcleo.
-  - R1 ilumina Evoluciones.
-  - El mouse ilumina temporalmente la región bajo el cursor.
-  - Al salir, reaparece la última selección del mando.
-  - La última entrada tiene prioridad.
-  - El borde es un neón azul tenue, no bloquea clics y respeta movimiento reducido.
-- Acceso superior a la Cámara Cromática:
-  - visible desde P0;
-  - bloqueado hasta Zafiro P5;
-  - muestra progreso `Zafiro X/5`;
-  - se activa como entrada de metaprogresión en P5.
+- Panel DEV responsivo.
+- Selección de texto deshabilitada salvo campos editables.
+- Guía visual por regiones para mouse y mando.
+- Acceso superior a la Cámara Cromática desde P0, bloqueado hasta Zafiro P5.
 
-## 4. Evoluciones y sistemas del núcleo
+### Evoluciones actuales
 
-### Evolución 01 — Amplificador de pulso
+1. Amplificador de pulso.
+2. Microgenerador.
+3. Reactor de resonancia.
+4. Condensador de presión.
+5. Cámara de cavitación.
+6. Válvula de sobrecarga.
+7. Módulo de pulsación autónoma.
+8. Matriz de refracción.
+9. Acelerador de pulso del Gatillo, con nivel máximo 6.
 
-- +1 de energía base por nivel y clic.
-- Costo inicial: 10.
-- Crecimiento: ×1.7.
+Las mecánicas están conectadas: clics, producción, presión, cavitación, autoclick, sobrecarga, PRISMA, Gatillo y prestigio comparten el reducer autoritativo.
 
-### Evolución 02 — Microgenerador
+### Gatillo de pulso
 
-- Produce energía automáticamente.
-- Costo inicial: 25.
-- Crecimiento: ×1.8.
-
-### Evolución 03 — Reactor de resonancia
-
-- Multiplicador: `nivel + 1`.
-- Costo inicial: 120.
-- Crecimiento: ×2.2.
-
-### Evolución 04 — Condensador de presión
-
-- Cada nivel concede +2% global por cada tramo completo del 10% de llenado.
-- Requisito inicial: 100 clics.
-- Costo inicial: 500.
-- Crecimiento: ×2.4.
-
-### Evolución 05 — Cámara de cavitación
-
-- Nivel 1: descarga cada 25 clics y recompensa equivalente a 5 segundos de producción.
-- Los niveles reducen el ciclo y aumentan los segundos recompensados.
-- Requiere 500 clics y un microgenerador antes del primer prestigio.
-- Costo inicial: 2,000.
-- Crecimiento: ×2.6.
-
-### Evolución 06 — Válvula de sobrecarga
-
-- Los clics posteriores al llenado cargan una fase temporal.
-- Nivel 1: 100 clics, multiplicador ×2 y duración 15 segundos.
-- Afecta clics, producción y cavitación.
-- Requiere esfera llena y cavitación nivel 1 antes del primer prestigio.
-- Costo inicial: 10,000.
-- Crecimiento: ×3.
-
-### Evolución 07 — Módulo de pulsación autónoma
-
-- Genera clics reales del núcleo.
-- Llena la esfera y carga presión, cavitación y sobrecarga.
-- Progresión: `0.20 × 1.6^(nivel - 1)` clic/s.
-- Límite técnico: 20 clic/s.
-- Requiere 500 clics y un microgenerador antes del primer prestigio.
-- Costo inicial: 5,000.
-- Crecimiento: ×2.8.
-
-### Evolución 08 — Matriz de refracción
-
-- Requiere prestigio 1 y un microgenerador.
-- Costo inicial: 25,000.
-- Crecimiento: ×3.15.
-- Facetas requeridas: P1=6, P2=8, P3=10, P4+=12.
-- Carga: `1 + 0.15 × (nivel − 1)` facetas por vuelta.
-- Usa la misma duración orbital 20→3 segundos del zafiro.
-- Recompensa: producción base × `(8 + 3 × nivel)` segundos.
-- Multiplicador PRISMA: `1.20 + 0.05 × nivel`.
-- Duración PRISMA: `4 + nivel` segundos.
-- Nivel 1: 1 faceta/vuelta, 11 segundos de producción, ×1.25 durante 5 segundos.
-- PRISMA se combina multiplicativamente con sobrecarga y afecta clics, producción y cavitación.
-- Las descargas posteriores extienden la duración activa.
-- Al cristalizar se reinician nivel, progreso, facetas y bonificación.
-
-### Acelerador de pulso — mejora del Gatillo
-
-- `pulseTriggerLevel` forma parte del estado principal.
-- Nivel inicial: 0.
-- Nivel máximo: 6.
-- Cadencia:
-
-```text
-pulsos/s = min(9, 6 + 0.5 × nivel)
-```
-
-- Costo:
-
-```text
-costo = ceil(6000 × 2.25^nivel)
-```
-
-| Nivel | Cadencia | Costo siguiente |
-|---:|---:|---:|
-| 0 | 6.0/s | 6,000 |
-| 1 | 6.5/s | 13,500 |
-| 2 | 7.0/s | 30,375 |
-| 3 | 7.5/s | 68,344 |
-| 4 | 8.0/s | 153,774 |
-| 5 | 8.5/s | 345,991 |
-| 6 | 9.0/s | Máximo |
-
-- Partidas anteriores reciben nivel 0.
-- Valores inválidos se limitan a nivel 6.
-- Cristalizar y reiniciar devuelven el nivel a 0.
-- Participa en Comprar todo:
-  - prioridad alta en Juego activo;
-  - moderada en Equilibrado;
-  - muy baja en Automático.
-
-## 5. Gatillo de pulso
-
-- La tarjeta aparece inmediatamente debajo de la esfera y antes del estado del núcleo.
 - 10 clics directos generan 1 segundo de reserva.
 - Reserva máxima: 10 segundos.
-- El Gatillo consume la reserva a la cadencia determinada por `pulseTriggerLevel`.
-- Se activa manteniendo:
-  - el botón visual con mouse;
-  - R2/RT;
-  - Espacio o Enter cuando el botón tiene foco;
-  - botón derecho del mouse dentro del área jugable.
-- El clic izquierdo puede seguir utilizándose mientras el botón derecho mantiene activo el Gatillo.
-- El menú contextual se bloquea solamente dentro del área del juego.
-- Los pulsos del Gatillo no recargan su propia reserva.
-- El Autoclicker tampoco recarga la reserva.
-- X/A sobre el núcleo sí cuenta como clic directo.
-- Usa el mismo botón real del núcleo, por lo que mantiene energía, presión, cavitación, sobrecarga, partículas y demás reglas.
-- Se detiene al soltar, agotar la reserva, ocultar la pestaña, perder foco o desconectar/desactivar el mando.
-- La reserva temporal se guarda separada del estado principal y se reinicia al cristalizar o borrar progreso.
-- Vibración:
-  - pulso ligero por disparo;
-  - doble toque al ganar un segundo;
-  - golpe corto al agotar la reserva.
+- Cadencia: `min(9, 6 + 0.5 × nivel)` pulsos/s.
+- Se activa con R2/RT, botón visual, teclado o clic derecho en el área jugable.
+- El clic izquierdo puede usarse simultáneamente.
+- Gatillo y Autoclicker no recargan la reserva.
+- Los pulsos usan el clic real del núcleo.
+- La reserva se guarda separada del estado principal.
 
-## 6. Prestigio del zafiro
+### Prestigio y Zafiro
 
-- El núcleo se llena a 5,000 clics.
-- El prestigio se confirma con `CRISTALIZAR`; nunca ocurre automáticamente.
-- La gema se ensambla, sale del núcleo y se instala en el soporte permanente.
-
-Multiplicadores:
-
-- P0: ×1.00.
-- P1: ×1.50.
-- P2: ×1.85.
-- P3: ×2.20.
-- P4: ×2.60.
-- P5: ×3.05.
-- Posteriores: +0.50 por cristalización mientras se define la progresión cromática.
-
-Al cristalizar se reinician energía, clics, evoluciones temporales, Acelerador del Gatillo y cargas. Se conservan prestigio, zafiro, multiplicador y planos descubiertos.
-
-## 7. Zafiro, órbita e iluminación
-
-- Zafiro WebGL con geometría real, caras triangulares, normales y shaders.
-- P1: 6 sectores; P2: 8; P3: 10; P4+: 12.
-- Órbita elíptica WebGL separada en capa trasera y delantera transparentes.
-- Chispa cian con núcleo blanco y estela de doce partículas.
-- La chispa funciona como fuente de luz dinámica sobre las facetas.
-- Duración de órbita y pulso:
+- La esfera se llena a 5,000 clics.
+- La cristalización siempre requiere confirmación.
+- Multiplicadores actuales:
+  - P0 ×1.00;
+  - P1 ×1.50;
+  - P2 ×1.85;
+  - P3 ×2.20;
+  - P4 ×2.60;
+  - P5 ×3.05;
+  - posteriores +0.50 mientras se diseña la progresión cromática.
+- El Zafiro usa geometría WebGL, iluminación orbital, chispa y estela.
+- La duración orbital depende del llenado:
 
 ```text
 duración = 3 + 17 × (1 − clics / 5000)^1.6
 ```
 
-- Núcleo vacío: 20 segundos por vuelta.
-- Núcleo lleno: 3 segundos por vuelta.
-- La fase se conserva al cambiar la velocidad.
-- SVG y órbita CSS permanecen como respaldo si WebGL falla.
-- La Matriz muestra indicadores alrededor del zafiro y genera halo, haces y mensaje de descarga prismática.
-- La Cámara Cromática reutiliza exactamente el mismo componente `SapphireGem`:
-  - misma geometría WebGL;
-  - mismo giro vertical;
-  - misma flotación, halo, chispa y estela;
-  - respaldo SVG/CSS idéntico.
-- Dentro de la Cámara, el Zafiro completo realiza una órbita exterior de 15 segundos alrededor del Nexo.
-- Cambia de profundidad para pasar íntegramente por detrás y por delante del Nexo.
-- Su posición alimenta un reflejo azul móvil sobre las facetas grises; el reflejo es más intenso al pasar por delante y nunca sustituye el estado real de las facetas.
+### Barras de progreso
 
-## 8. Barras de progreso
-
-- Existe un componente universal de barras para niveles, requisitos y sistemas internos.
-- Las tarjetas de mejoras muestran progreso hacia el siguiente nivel o requisito cuando corresponde.
-- Hay barras internas para Presión, Cavitación, Autoclicker, Sobrecarga y Refracción.
-- Conservan segmentación, tonos de estado, etiquetas accesibles y conteos activos.
-- La animación usa la Web Animations API nativa del navegador.
-- Cada actualización comienza desde la posición visual real de la barra, aunque la animación anterior siga en curso.
-- Se evita la doble interpolación: el reloj visual nativo controla el movimiento y CSS no vuelve a suavizarlo.
-- Las barras cíclicas siempre avanzan hacia la derecha:
+- Componente universal para costos, requisitos y ciclos internos.
+- Barras de Presión, Cavitación, Autoclicker, Sobrecarga y Refracción.
+- Animación mediante Web Animations API.
+- Cada trayectoria parte de la posición visual real.
+- Ciclos correctos:
 
 ```text
-70% → 100% → reinicio inmediato en 0% → 10%
+70% → 100% → 0% → 10%
 ```
 
-- Los ciclos nunca retroceden de 70% a 10% hacia la izquierda.
-- Una reducción hacia la izquierda solo se permite cuando el recurso realmente disminuye.
-- Arturo validó visualmente que las barras se ven continuas, fluidas y sin congelamientos.
+- No existe doble interpolación CSS.
+- Arturo validó visualmente continuidad, reinicios y ausencia de congelamientos.
 
-## 9. Soporte Gamepad / DualSense
+### Comprar todo estratégico
 
-La capa de mando acciona controles reales del DOM y no duplica fórmulas del reducer.
+Perfiles:
 
-### Controles en el reactor
+- `Equilibrado`;
+- `Juego activo`;
+- `Automático`.
 
-- X/A: pulsa siempre la esfera, sin depender del elemento enfocado.
-- X/A queda reservado y no pulsa la esfera mientras L2/LT está presionado.
+El planificador simula compras mediante el reducer, calcula utilidad y aplica un único estado final. Límite actual: 320 compras por ejecución.
+
+### Cámara Cromática
+
+- Nexo Prismático con cinco frecuencias previstas:
+  - Zafiro;
+  - Esmeralda;
+  - Amarilla;
+  - Naranja;
+  - Roja.
+- En P5 se activa la primera órbita azul y la Esmeralda queda señalada como siguiente frecuencia.
+- Las otras cuatro gemas todavía no tienen economía ni bonificaciones.
+- El Zafiro orbita por delante y por detrás del Nexo y produce un reflejo dinámico.
+- Existe acceso DEV y previsualización visual de los cinco colores sin alterar guardado, economía ni prestigio.
+- El reactor sigue funcionando mientras la Cámara está abierta.
+
+## 4. Controles finales DualSense / Gamepad
+
+### Reactor
+
+- X/A: pulsa siempre la esfera.
+- X/A no pulsa la esfera mientras L2/LT está sostenido.
 - Cuadrado/X de Xbox: selector general; activa el control enfocado.
-  - compra una mejora individual;
-  - selecciona pestañas y menús;
-  - activa botones, radios y casillas;
-  - si no hay un foco compatible, no ejecuta una acción alternativa.
-- R2/RT: Gatillo de pulso con reserva.
-- L2 + Triángulo / LT + Y: cambia entre `Equilibrado`, `Juego activo` y `Automático`.
-- L2 + Cuadrado / LT + X: ejecuta `Comprar todo lo posible`.
+- R2/RT: Gatillo de pulso.
+- L2 + Triángulo / LT + Y: cambia estrategia de Comprar todo.
+- L2 + Cuadrado / LT + X: Comprar todo lo posible.
 - Triángulo/Y sin L2 conserva el atajo anterior de compra global.
-- L1/LB: cambia inmediatamente a Núcleo.
-- R1/RB: cambia inmediatamente a Evoluciones.
-- L1 + R1 / LB + RB: abre la Cámara Cromática cuando está desbloqueada.
-- La cruceta ya no cambia directamente de ventana.
-- Cruceta y stick navegan espacialmente por los controles enfocables.
-- Las cuatro direcciones de la cruceta están disponibles para navegar.
-- Izquierda/derecha ajustan controles deslizantes cuando uno tiene el foco.
-- Círculo/B: vuelve al Núcleo o cierra la Cámara según el contexto.
-- Options/Menu: abre o cierra el panel del mando.
+- L1/LB: Núcleo.
+- R1/RB: Evoluciones.
+- Cruceta y stick: navegación espacial.
+- La cruceta no cambia directamente de ventana en el reactor.
+- Izquierda/derecha ajustan sliders cuando tienen foco.
+- Círculo/B: volver o cerrar según contexto.
+- Options/Menu: panel del mando.
 
-### Prioridad de hotkeys
-
-- L2/LT funciona como modificador.
-- La combinación tiene prioridad sobre la acción normal del botón acompañante.
-- Las combinaciones se ejecutan una sola vez por pulsación; no repiten mientras el botón permanece sostenido.
-- L2 por sí solo no ejecuta ninguna acción.
-- Las combinaciones del reactor quedan suspendidas mientras la Cámara Cromática está abierta.
-
-### Dentro de la Cámara Cromática
-
-La Cámara conserva su puente específico de navegación:
+### Cámara Cromática
 
 - L1/R1 o cruceta izquierda/derecha recorren gemas.
 - Cruceta arriba enfoca regresar.
 - Cruceta abajo vuelve a la gema seleccionada.
-- X/A activa el control enfocado de la Cámara y no pulsa el núcleo por detrás del overlay.
+- X/A activa el control de la Cámara y no pulsa el núcleo por detrás.
 - Círculo/B regresa al reactor.
 
-### Protecciones y rendimiento
+Arturo validó físicamente DualSense, vibraciones, Gatillo, hotkeys, selector general y navegación libre antes del parche de selección por actividad. La corrección nueva requiere repetir la validación física.
 
-- Gamepad API estándar.
-- Detección por flancos para acciones discretas.
-- `requestAnimationFrame` solamente para sondeo del mando y animaciones visuales.
-- No se escribe estado React en cada cuadro.
-- Primer mando conectado como principal.
-- Pausa funcional con pestaña oculta.
-- Funciona simultáneamente con mouse y teclado.
-- Sin WebHID por ahora; no hay gatillos adaptativos, barra de luz, altavoz, touchpad avanzado ni giroscopio propietarios.
+## 5. Arquitectura relevante
 
-Vibraciones contextuales opcionales:
-
-- navegación;
-- clic normal;
-- Gatillo;
-- Cavitación;
-- Sobrecarga;
-- Descarga prismática;
-- cristalización del zafiro;
-- Comprar todo.
-
-La ausencia o fallo del actuador háptico nunca bloquea acciones.
-
-## 10. Comprar todo estratégico
-
-Perfiles:
-
-- `Equilibrado`: clics, producción, presión y apertura de sistemas.
-- `Juego activo`: Amplificador, Gatillo, Presión, Cavitación y Sobrecarga.
-- `Automático`: Microgenerador, Resonancia, Autoclicker y Refracción; Gatillo con prioridad mínima.
-
-Funcionamiento:
-
-1. Simula compras mediante el reducer real.
-2. Descarta compras bloqueadas o inasequibles.
-3. Calcula utilidad según perfil.
-4. Divide ganancia entre costo.
-5. Aplica pesos, bonos de apertura y penalización de concentración.
-6. Compra virtualmente la mejor opción.
-7. Recalcula hasta que no haya compras posibles.
-8. Al confirmar, recalcula sobre el estado autoritativo y aplica una sola actualización.
-
-Máximo técnico: 320 compras por pulsación.
-
-## 11. Cámara Cromática y Nexo Prismático
-
-- Vista completa de metaprogresión montada sobre el reactor sin desmontarlo.
-- El reactor sigue produciendo, guardando y ejecutando temporizadores mientras la Cámara está abierta.
-- El Nexo Prismático comienza gris, apagado e incompleto.
-- Requiere cinco gemas a nivel 5:
-  - Zafiro;
-  - Esmeralda;
-  - Amarilla;
-  - Naranja;
-  - Roja.
-- El Zafiro usa `prestigeCount` como progreso real entre 0 y 5.
-- En P0–P4:
-  - acceso normal bloqueado;
-  - Nexo inerte;
-  - faceta azul apagada;
-  - Zafiro sin orbitar;
-  - Esmeralda sellada.
-- En P5:
-  - se habilita el acceso normal;
-  - el Zafiro orbita el Nexo;
-  - se activa la primera faceta azul;
-  - se contabiliza 1/5 órbitas completas;
-  - la Esmeralda aparece como siguiente frecuencia.
-- Las otras cuatro gemas todavía no tienen economía, compras ni bonificaciones.
-- El inspector lateral muestra nombre, nivel, progreso, estado y descripción de la gema seleccionada.
-- La vista respeta `prefers-reduced-motion` y es responsiva.
-
-### Acceso y previsualización DEV
-
-- El panel de desarrollador contiene `Cámara Cromática — ABRIR`.
-- Puede abrir una inspección incluso en P0–P4.
-- Se identifica como `Vista DEV · Estado real`.
-- Nunca concede P5 ni modifica desbloqueos.
-- Permanece abierta si el progreso se reinicia para mostrar inmediatamente el estado posterior.
-- La previsualización cromática permite mostrar temporalmente:
-  - Zafiro;
-  - Esmeralda;
-  - Amarilla;
-  - Naranja;
-  - Roja.
-- La previsualización es únicamente visual y dura durante la sesión.
-- No modifica guardado, prestigio, desbloqueos ni economía.
-- Recargar devuelve la vista al Zafiro real.
-
-### Control de cristalizaciones
-
-El panel DEV permite editar atómicamente:
-
-- Energía acumulada.
-- Clics del núcleo.
-- Cristalizaciones (`prestigeCount`).
-
-Reglas de cristalizaciones:
-
-- solamente enteros no negativos;
-- bloquea letras, signos, espacios, comas, decimales y notación científica;
-- máximo 1,000,000,000;
-- actualiza el multiplicador, indicador P#, planos, Cámara y guardado;
-- no ejecuta la animación ni el reinicio de una cristalización real.
-
-Consistencia de refracción al reducir prestigio:
-
-- P0 elimina nivel, progreso, facetas, PRISMA y recompensas de refracción.
-- Bajar entre P4, P3, P2 y P1 limita las facetas cargadas al nuevo máximo.
-
-## 12. Arquitectura relevante
-
-- `src/game.ts`: estado, migración, compras, reducer y multiplicadores.
-- `src/refraction.ts`: Matriz de refracción.
-- `src/bulkPurchase.ts`: perfiles y planificación de Comprar todo.
-- `src/App.tsx`: ciclo principal, acciones y aplicación atómica de valores DEV.
-- `src/GameCore.tsx`: núcleo, estados y eventos visuales.
-- `src/UpgradeProgressBar.tsx`: barras universales, animación nativa y reinicio de ciclos.
-- `src/UpgradeProgressBar.css`: apariencia, segmentación y tonos de barras.
-- `src/SapphireGem.tsx`: componente compartido del Zafiro.
-- `src/SapphireGem3D.tsx`: geometría y shader de la gema.
-- `src/SapphireOrbit3D.tsx`: órbita interna, chispa y estela WebGL.
-- `src/SapphireOrbitState.ts`: fase y posiciones orbitales compartidas.
-- `src/gamepad.ts`: ajustes, etiquetas y detección de mandos.
-- `src/GamepadController.tsx`: navegación, selección, hotkeys y acciones discretas.
+- `src/game.ts`: `GameState`, reducer, costos, migración y guardado.
+- `src/App.tsx`: estado autoritativo, tick, efectos visuales y aplicación de acciones.
+- `src/refraction.ts`: Matriz y PRISMA.
+- `src/bulkPurchase.ts`: simulación estratégica.
+- `src/UpgradesPanelCompact.tsx`: panel y tarjetas.
+- `src/UpgradeProgressBar.tsx`: animación nativa de barras.
+- `src/UpgradeProgressSystem.tsx`: portales y snapshots de barras.
+- `src/gamepad.ts`: etiquetas, ajustes, detección y selección del mando por actividad real.
+- `src/GamepadController.tsx`: navegación y hotkeys del reactor.
+- `src/ChromaticGamepadBridge.tsx`: navegación específica de la Cámara.
 - `src/GamepadEventHaptics.tsx`: vibraciones contextuales.
-- `src/pulseTrigger.ts`: reserva, fórmulas, nivel y protocolo del Gatillo.
-- `src/PulseTriggerSystem.tsx`: interfaz, mouse, teclado, R2 y descargas.
-- `src/PulseTriggerSystem.css` y `src/PulseTriggerLevel.css`: diseño del Gatillo.
-- `src/RegionFocusGuide.tsx`: guía visual mouse/mando.
-- `src/RegionFocusGuide.css`: borde neón de regiones.
-- `src/chromatic.ts`: protocolo, gemas y modos de apertura cromática.
-- `src/ChromaticChamberSystem.tsx`: acceso, escena, estados e inspector.
-- `src/ChromaticGamepadBridge.tsx`: navegación del mando dentro de la Cámara.
-- `src/ChromaticSapphireOrbit.tsx`: órbita exterior del Zafiro y posición de iluminación.
-- `src/ChromaticSapphireOrbit.css`: profundidad, escala y reflejo sobre el Nexo.
-- `src/DeveloperPanel.tsx`: acceso cromático, previsualización y campos DEV.
-- `SMOOTH_PROGRESS_FIX.md`: decisiones técnicas de las barras fluidas.
-- `DUALSENSE_L2_HOTKEYS.md`: mapa y decisiones de controles DualSense.
+- `src/pulseTrigger.ts`: reserva, fórmulas y eventos del Gatillo.
+- `src/PulseTriggerSystem.tsx`: entradas, disparos y portal del Gatillo.
+- `src/ChromaticChamberSystem.tsx`: acceso, Cámara e inspector.
+- `src/SapphireGem3D.tsx` y `src/SapphireOrbit3D.tsx`: WebGL.
+- `src/DeveloperPanel.tsx`: herramientas DEV.
+- `SMOOTH_PROGRESS_FIX.md`: decisiones de barras.
+- `DUALSENSE_L2_HOTKEYS.md`: decisiones del mando.
+- `GAMEPAD_DEVICE_SELECTION.md`: bug crítico, causa raíz, parche y regla universal de selección por actividad.
+- `PERFORMANCE_AUDIT.md`: auditoría actual detallada.
 
-## 13. Validaciones y límites conocidos
+## 6. Auditoría de rendimiento activa
 
-- No se añadieron dependencias para las barras ni los hotkeys.
-- Guardados anteriores reciben campos nuevos en cero.
-- Estados temporales vencidos no se restauran.
-- Autoclics múltiples se procesan secuencialmente.
-- Gatillo y Autoclicker no autorrecargan la reserva.
-- El nivel 6 bloquea compras adicionales del Acelerador.
-- La Cámara no añade claves ni campos nuevos al guardado.
-- P0–P4 no montan Zafiro ni reflejo cromático.
-- El Zafiro cromático pasó comprobación TypeScript estricta aislada.
-- El componente de barras pasó comprobaciones TypeScript aisladas durante el desarrollo.
-- Las barras fueron validadas visualmente después de corregir una versión que quedaba invisible y otra que se congelaba.
-- La solución final usa animaciones nativas enlazadas desde la posición visual actual.
-- Arturo validó físicamente DualSense, vibraciones, Gatillo, hotkeys, selector con Cuadrado y navegación libre con cruceta.
-- Arturo validó visualmente el Gatillo escalable, la Cámara Cromática, el Zafiro orbital, el reflejo dinámico y las barras fluidas.
-- GitHub no tiene CI configurado para estos commits.
-- No se ejecutó el `build` completo en el entorno remoto por falta de checkout/dependencias accesibles.
+### Rama y alcance
 
-Comprobación local recomendada antes de publicar versiones:
+- Rama: `Dev-Performance-Audit`.
+- Base: `main` en `756a6aef...`.
+- La rama comenzó como auditoría sin cambios de gameplay.
+- Incluye una corrección aislada de infraestructura de entrada para seleccionar el gamepad activo por actividad real.
+- Archivos principales de la auditoría y corrección:
+  - `PERFORMANCE_AUDIT.md`;
+  - `GAMEPAD_DEVICE_SELECTION.md`;
+  - `scripts/performance-audit.mjs`;
+  - `package.json` con comandos de auditoría;
+  - `src/gamepad.ts` con selección robusta del dispositivo;
+  - esta actualización de `HISTORIAL_GPT.MD`.
+
+### Comandos añadidos
+
+```powershell
+npm run audit:performance
+npm run audit:performance:json
+```
+
+El auditor estático recorre `src/**/*.ts` y `src/**/*.tsx` y reporta:
+
+- archivos, líneas y bytes;
+- archivos más grandes;
+- `setInterval`;
+- bucles `requestAnimationFrame`;
+- lecturas y escrituras de `localStorage`;
+- `JSON.parse` y `JSON.stringify`;
+- `MutationObserver` global;
+- consultas DOM;
+- cantidad aproximada de hooks React;
+- patrones que requieren revisión humana.
+
+No se añadieron dependencias. La línea base local de auditoría, lint y build se ejecutó correctamente antes del parche de selección del mando; las comprobaciones deben repetirse después de actualizar la rama local.
+
+## 7. Hallazgos confirmados de la auditoría
+
+### P0 — Nunca seleccionar el mando solamente por orden de enumeración
+
+Un cierre inesperado de Chrome reveló que podían coexistir:
+
+- `DualSense Wireless Controller`, enumerado primero pero neutral;
+- `Controller (XBOX 360 For Windows)`, que recibía las entradas reales.
+
+El juego mostraba un control conectado, pero no respondía porque elegía el primer objeto devuelto por `navigator.getGamepads()`. La presencia y el índice no demuestran intención ni actividad.
+
+La corrección en `src/gamepad.ts` conserva la interfaz existente, pero selecciona por actividad real y mantiene estable el índice activo. La lección completa está en `GAMEPAD_DEVICE_SELECTION.md` y debe convertirse en el primer caso del repositorio universal una vez aprobada físicamente.
+
+### P1 — `localStorage` se usa como bus interno
+
+Además del guardado después de cada cambio de `game`, varios sistemas releen y deserializan el estado periódicamente:
+
+- `UpgradeProgressSystem`: cada 100 ms.
+- `PulseTriggerSystem`: cada 160 ms.
+- `ChromaticChamberSystem`: cada 180 ms.
+
+Esto fue práctico para montar portales, pero no escala bien. Produce trabajo duplicado, retraso artificial y varias copias parciales del estado.
+
+**Primera recomendación estructural:** crear una fuente ligera de snapshots en memoria, compatible con suscripciones selectivas, y reservar `localStorage` exclusivamente para persistencia.
+
+Orden propuesto:
+
+1. barras;
+2. Cámara;
+3. Gatillo.
+
+El reducer debe seguir siendo la única autoridad del gameplay.
+
+### P1 — Sondeo duplicado del mando
+
+Existen bucles independientes en:
+
+- `GamepadController`;
+- `PulseTriggerSystem` para R2;
+- `ChromaticGamepadBridge`.
+
+A mediano plazo conviene un servicio único de entrada que produzca botones, flancos, ejes y conexión. Esta migración debe realizarse después y por separado de la fuente de estado para facilitar pruebas físicas.
+
+### P1 — Guardado completo y síncrono por cada estado
+
+`App` ejecuta `saveGameState(game)` cada vez que cambia el estado principal. El objeto es pequeño hoy, pero clics, Gatillo y automatizaciones futuras aumentarán la frecuencia.
+
+Recomendación posterior:
+
+- marca `dirty`;
+- debounce de 250–500 ms;
+- guardado inmediato en cristalización y reset;
+- flush en `visibilitychange` y `pagehide`;
+- métricas de tamaño y duración;
+- conservar migración y sanitización.
+
+No debe cambiarse sin medir y definir eventos críticos.
+
+### P1/P2 — Demasiados relojes independientes
+
+Conviven:
+
+- tick de 1 segundo;
+- reloj de 100 ms para estados temporales;
+- sondeo de barras de 100 ms;
+- sondeo del Gatillo de 160 ms;
+- sondeo cromático de 180 ms;
+- varios `requestAnimationFrame` de mando;
+- WebGL y Web Animations API.
+
+`clockNow` vive en `App`, por lo que Sobrecarga o PRISMA pueden provocar reevaluaciones globales cada 100 ms aunque solo algunas cuentas regresivas lo necesiten.
+
+Recomendación: reloj visual compartido y selectivo; aislar temporizadores visibles de los renders globales.
+
+### P2 — Barras integradas mediante DOM y persistencia
+
+`UpgradeProgressSystem`:
+
+- carga su propia copia del guardado;
+- compara claves;
+- observa todo el `body`;
+- busca tarjetas por texto visible;
+- crea hosts imperativos.
+
+Debe conservarse `UpgradeProgressBar` y la animación nativa. El mecanismo de alimentación y montaje debe evolucionar hacia estado en memoria e IDs/hosts declarativos.
+
+### P2 — Gatillo y Cámara mantienen snapshots parciales
+
+El Gatillo obtiene energía, nivel y prestigio desde el guardado. La Cámara obtiene `prestigeCount` del mismo modo. Ambos deben migrar gradualmente a la fuente compartida.
+
+### P2 — Comprar todo escala por rondas y candidatos
+
+Con 320 rondas y nueve candidatos puede alcanzar hasta 2,880 intentos de compra, además de cálculos de utilidad.
+
+No se debe reescribir aún. Primero medir duración por estrategia y estado. Si supera el presupuesto:
+
+- caché de partes invariantes;
+- descarte temprano;
+- registro central de mejoras;
+- compras por bloques;
+- fórmulas cerradas y búsqueda binaria para costos geométricos;
+- Web Worker solo si sigue bloqueando la interfaz.
+
+### P2 — Autoclicks individuales
+
+El tick procesa los clics automáticos uno a uno. El límite actual de 20/s hace que sea correcto y seguro. Una futura función por lotes deberá probar equivalencia exacta para energía, presión, cavitación, sobrecarga y PRISMA.
+
+No optimizar todavía.
+
+### P2 — Definiciones distribuidas
+
+Costos, requisitos, etiquetas, categorías, acciones, barras y pesos estratégicos aparecen en varios archivos. Antes de crecer mucho conviene un registro tipado de mejoras con IDs estables, sin quitar al reducer su validación autoritativa.
+
+### Estrategia numérica
+
+`number` es suficiente hoy. No introducir todavía BigNumber, mantisa/exponente ni librerías decimales. Primero decidir si el juego tendrá cifras contenidas o progresión exponencial extrema. Centralizar formateo y operaciones sensibles antes de que muchas gemas dependan directamente de operadores numéricos.
+
+## 8. Presupuestos iniciales de rendimiento
+
+Objetivos orientativos:
+
+| Operación | Objetivo | Señal de intervención |
+|---|---:|---:|
+| Tick de 1 segundo | promedio < 1 ms | máximo repetido > 4 ms |
+| Comprar todo normal | < 16 ms | repetido > 25 ms |
+| Comprar todo extremo | < 50 ms | > 100 ms o bloqueo visible |
+| Serializar y guardar | < 2 ms | repetido > 5 ms |
+| Tamaño del guardado | < 20 KB | > 100 KB |
+| Commit React normal | < 8 ms | repetido > 16 ms |
+| Cuadro visual | p95 < 20 ms | tirones repetidos > 33 ms |
+| Memoria tras 30 min | estable | crecimiento continuo |
+
+Deben medirse en la PC principal y posteriormente en un equipo de gama media.
+
+## 9. Escenarios de medición
+
+### A — Partida nueva
+
+- P0 y sin mejoras.
+- 30 segundos de clics.
+- Abrir tarjetas y cambiar categorías con mando.
+
+### B — Reactor cargado
+
+- Esfera llena.
+- Todas las evoluciones actuales.
+- Sobrecarga y PRISMA activos.
+- Gatillo, clic manual y Autoclicker simultáneos.
+
+### C — Comprar todo
+
+- Energía alta desde DEV.
+- Medir las tres estrategias.
+- Registrar duración, compras y estado final.
+
+### D — Cámara Cromática
+
+- P5 y modo DEV.
+- Mantenerla abierta al menos 60 segundos.
+- Navegar con mouse y DualSense.
+- Confirmar continuidad del reactor.
+
+### E — Sesión prolongada
+
+- 30–60 minutos.
+- Cambios repetidos entre reactor y Cámara.
+- Revisar memoria, listeners, timers y nodos desconectados.
+
+## 10. Orden recomendado para continuar
+
+### Fase A — Línea base
+
+Estado: iniciada y con línea base estructural local capturada antes del parche de gamepad.
+
+1. Cambiar en GitHub Desktop a `Dev-Performance-Audit`.
+2. Ejecutar después de actualizar la rama:
 
 ```powershell
 npm run lint
 npm run build
+npm run audit:performance
 npm run dev
 ```
 
-## 14. Próxima expansión
+3. Validar físicamente la selección del gamepad activo.
+4. Guardar la nueva salida del auditor.
+5. Medir Chrome Performance en escenarios A–D.
+6. Medir renders con React Profiler.
+7. Registrar resultados en `PERFORMANCE_AUDIT.md`.
+8. Decidir el primer cambio estructural con datos reales.
 
-El reactor, la Cámara Cromática, las barras y el mando están estables según las pruebas actuales. El siguiente desarrollo debe comenzar en una rama nueva creada desde `main`.
+### Fase B — Comunicación interna
 
-Opciones naturales:
+Sujeta a medición:
 
-- diseñar la economía y los cinco niveles de la Esmeralda;
-- definir qué sistemas existentes transforma la frecuencia verde;
-- diseñar la transición Zafiro P5 → desbloqueo de Esmeralda;
-- añadir sonido ambiental y señales acústicas;
-- continuar el pulido del Nexo sin activar prematuramente otras facetas;
-- seguir refinando navegación y accesibilidad del mando conforme crezca la interfaz.
+- fuente de snapshots en memoria;
+- eliminar sondeos de `localStorage` en barras, Cámara y Gatillo;
+- conservar guardado y migraciones;
+- comparar antes/después.
 
-Regla de diseño vigente:
+### Fase C — Entrada del mando
 
-> Cada gema nueva debe transformar mecánicas existentes y no limitarse a añadir otra moneda o porcentaje aislado.
+- unificar los bucles de mando;
+- separar dispositivo de entrada, dispositivo háptico e identidad visual;
+- migrar reactor, Gatillo y Cámara por etapas;
+- prueba física completa.
 
-## 15. Inicio recomendado para otro chat
+### Fase D — Persistencia
 
-> Continúa el proyecto `xArtXtrAx/incremental-game-A`. Lee primero `HISTORIAL_GPT.MD`, revisa `WORKFLOW_RULES.md` si existe y comprueba la rama activa antes de escribir. La rama estable `main` incorpora Gamepad/DualSense, Gatillo de pulso escalable, Matriz de refracción, Cámara Cromática y Nexo Prismático, acceso y previsualización DEV, edición de cristalizaciones, Zafiro WebGL orbital, barras de progreso fluidas mediante Web Animations API y el esquema final de controles: X pulsa la esfera, Cuadrado selecciona el foco, L2+Triángulo cambia estrategia, L2+Cuadrado compra todo, L1/R1 cambia de ventana y la cruceta navega libremente. Crea una rama nueva antes de cualquier expansión importante. No integres cambios nuevos a `main` sin aprobación explícita de Arturo.
+- coordinador `dirty` + debounce + flush;
+- pruebas de cierre, reset y cristalización.
+
+### Fase E — Preparación para Esmeralda
+
+- registro tipado de mejoras;
+- selectores y view models;
+- división de paneles grandes;
+- pruebas del reducer y Comprar todo;
+- nueva medición antes de añadir economía verde.
+
+## 11. Optimizaciones que deben esperar
+
+No implementar todavía:
+
+- ECS;
+- Typed Arrays para niveles;
+- reemplazar objetos por `Map` indiscriminadamente;
+- min-heap para los pocos temporizadores actuales;
+- Web Workers para el tick normal;
+- IndexedDB para el guardado actual;
+- biblioteca de números enormes sin definir escala;
+- memoización indiscriminada;
+- reescritura completa del reducer;
+- cambios simultáneos de arquitectura y balance.
+
+## 12. Validaciones pendientes
+
+Se ejecutaron correctamente en la PC local antes del parche de selección por actividad:
+
+- `npm run lint`: 0 errores y 3 advertencias no bloqueantes;
+- `npm run build`: compilación de producción correcta;
+- `npm run audit:performance`: línea base de 28 archivos y 8,852 líneas;
+- `npm run audit:performance:json`: captura guardada en `%TEMP%`.
+
+Pendiente después de actualizar la rama local:
+
+- repetir lint, build y auditor;
+- prueba física del mando virtual activo con DualSense neutral enumerado primero;
+- X, Cuadrado, L1/R1, cruceta, R2 y combinaciones con L2;
+- Cámara Cromática;
+- cambio entre dispositivos y reconexión;
+- vibración después del cambio de dispositivo activo;
+- benchmarks de duración;
+- Chrome Performance;
+- React Profiler;
+- sesión prolongada.
+
+La rama no debe integrarse a `main` hasta completar mediciones, probar equivalencia, validar físicamente el parche y recibir autorización expresa de Arturo.
+
+## 13. Prompt recomendado para el siguiente chat
+
+> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. La rama estable es `main`, pero el trabajo activo está en `Dev-Performance-Audit`, creada desde el commit estable `756a6aefb28091e564057dcaa3b4b5bf1a90e13e`. Lee primero `HISTORIAL_GPT.MD`, `PERFORMANCE_AUDIT.md` y `GAMEPAD_DEVICE_SELECTION.md`. No crees otra rama y no integres nada a `main` sin mi autorización explícita. Existe un repositorio transversal de máxima importancia, `xArtXtrAx/bugs-universales-corregidos`, donde cada bug crítico resuelto y validado debe documentarse como ejemplo reutilizable para todos los juegos futuros. La rama de auditoría contiene el informe, `scripts/performance-audit.mjs`, los comandos `npm run audit:performance` y `npm run audit:performance:json`, y un parche aislado en `src/gamepad.ts` que selecciona el mando por actividad real en vez de confiar en el primer índice enumerado. Primero actualiza la rama local, ejecuta lint, build y auditor, y valida físicamente el caso DualSense neutral + mando virtual activo. Después continúa las mediciones antes de refactorizar. Los principales hallazgos actuales son: selección de gamepad por actividad real; `localStorage` usado como canal interno por barras, Gatillo y Cámara; varios relojes y bucles de mando independientes; guardado completo tras cada estado; `clockNow` con posibles renders globales cada 100 ms; Comprar todo con hasta 320 rondas por nueve candidatos; autoclics individuales; y definiciones de mejoras distribuidas. La primera refactorización recomendada, sujeta a medición, es una fuente ligera de snapshots en memoria para retirar el sondeo de `localStorage`, empezando por barras, luego Cámara y Gatillo. Mantén reducer, fórmulas, balance, visuales, barras fluidas y controles exactamente iguales. Trabaja de forma directa, evita comprobaciones redundantes y usa GitHub Desktop para el flujo local normal.

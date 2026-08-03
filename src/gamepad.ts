@@ -41,6 +41,9 @@ export const STANDARD_BUTTON = {
   touchpad: 17,
 } as const
 
+const GAMEPAD_ACTIVITY_AXIS_THRESHOLD = 0.65
+let activeGamepadIndex: number | null = null
+
 export function loadGamepadSettings(): GamepadSettings {
   try {
     const raw = window.localStorage.getItem(GAMEPAD_SETTINGS_KEY)
@@ -173,11 +176,51 @@ export function isButtonPressed(button: GamepadButton | undefined) {
   return Boolean(button && (button.pressed || button.value >= 0.55))
 }
 
+export function hasGamepadActivity(gamepad: Gamepad) {
+  return (
+    gamepad.buttons.some(isButtonPressed) ||
+    gamepad.axes.some(
+      (axis) => Math.abs(axis) >= GAMEPAD_ACTIVITY_AXIS_THRESHOLD,
+    )
+  )
+}
+
+function getConnectedGamepads() {
+  return Array.from(navigator.getGamepads()).filter(
+    (gamepad): gamepad is Gamepad => Boolean(gamepad?.connected),
+  )
+}
+
+/**
+ * Conserva el nombre histórico para no romper consumidores existentes.
+ * Selecciona el mando con actividad real y no simplemente el primer índice
+ * que Chrome enumera. Esto evita quedar fijado a un dispositivo físico o
+ * virtual conectado pero neutral cuando otro mando sí recibe las entradas.
+ */
 export function getFirstConnectedGamepad() {
   if (!('getGamepads' in navigator)) return null
-  return (
-    Array.from(navigator.getGamepads()).find(
-      (gamepad): gamepad is Gamepad => Boolean(gamepad?.connected),
-    ) ?? null
-  )
+
+  const gamepads = getConnectedGamepads()
+  if (gamepads.length === 0) {
+    activeGamepadIndex = null
+    return null
+  }
+
+  const selected =
+    activeGamepadIndex === null
+      ? null
+      : gamepads.find((gamepad) => gamepad.index === activeGamepadIndex) ?? null
+
+  if (selected && hasGamepadActivity(selected)) return selected
+
+  const active = gamepads.find(hasGamepadActivity)
+  if (active) {
+    activeGamepadIndex = active.index
+    return active
+  }
+
+  if (selected) return selected
+
+  activeGamepadIndex = gamepads[0].index
+  return gamepads[0]
 }
