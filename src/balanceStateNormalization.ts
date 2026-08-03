@@ -75,7 +75,7 @@ function registerChange(
 export function normalizeGameStateForBalance(
   state: Readonly<GameState>,
   nextConfig: Readonly<BalanceConfig>,
-  now = Date.now(),
+  _now = Date.now(),
 ): BalanceNormalizationPreview {
   const changes: BalanceNormalizationChange[] = []
   const next: GameState = { ...state }
@@ -147,7 +147,7 @@ export function normalizeGameStateForBalance(
   )
   next.overloadCharge = overloadCharge
 
-  const overloadUntil = state.overloadUntil > now ? 0 : state.overloadUntil === 0 ? 0 : 0
+  const overloadUntil = 0
   registerChange(
     changes,
     'overloadUntil',
@@ -193,7 +193,7 @@ export function normalizeGameStateForBalance(
   )
   next.refractionFacetsCharged = refractionFacetsCharged
 
-  const refractionUntil = state.refractionUntil > now ? 0 : state.refractionUntil === 0 ? 0 : 0
+  const refractionUntil = 0
   registerChange(
     changes,
     'refractionUntil',
