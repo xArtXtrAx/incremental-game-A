@@ -1,5 +1,13 @@
 import { DEFAULT_BALANCE_CONFIG } from './balanceConfig'
-import { getActiveBalanceConfig } from './balanceRuntime'
+import {
+  getActiveBalanceConfig,
+  subscribeBalanceRuntime,
+} from './balanceRuntime'
+import {
+  getBalanceUnlockRequirement,
+  isBalanceUpgradePurchaseLocked,
+  type BalanceUnlockId,
+} from './balanceUnlockPolicy'
 import {
   advanceRefractionMatrix,
   getRefractionBonusMultiplier,
@@ -23,14 +31,29 @@ export const AUTOCLICK_BASE_COST =
   DEFAULT_BALANCE_CONFIG.costs.autoclick.baseCost
 export const OVERLOAD_BASE_COST =
   DEFAULT_BALANCE_CONFIG.costs.overload.baseCost
-export const PRESSURE_REQUIRED_CLICKS =
+
+export let PRESSURE_REQUIRED_CLICKS =
   DEFAULT_BALANCE_CONFIG.unlocks.pressureRequiredClicks
-export const CAVITATION_REQUIRED_CLICKS =
+export let CAVITATION_REQUIRED_CLICKS =
   DEFAULT_BALANCE_CONFIG.unlocks.cavitationRequiredClicks
-export const AUTOCLICK_REQUIRED_CLICKS =
+export let AUTOCLICK_REQUIRED_CLICKS =
   DEFAULT_BALANCE_CONFIG.unlocks.autoclickRequiredClicks
-export const SPHERE_CLICK_CAPACITY =
+export let SPHERE_CLICK_CAPACITY =
   DEFAULT_BALANCE_CONFIG.core.sphereClickCapacity
+export let PRESSURE_BONUS_PER_TIER =
+  DEFAULT_BALANCE_CONFIG.core.pressureBonusPerTier
+
+function syncLegacyBalanceExports() {
+  const balance = getActiveBalanceConfig()
+  PRESSURE_REQUIRED_CLICKS = balance.unlocks.pressureRequiredClicks
+  CAVITATION_REQUIRED_CLICKS = balance.unlocks.cavitationRequiredClicks
+  AUTOCLICK_REQUIRED_CLICKS = balance.unlocks.autoclickRequiredClicks
+  SPHERE_CLICK_CAPACITY = balance.core.sphereClickCapacity
+  PRESSURE_BONUS_PER_TIER = balance.core.pressureBonusPerTier
+}
+
+subscribeBalanceRuntime(syncLegacyBalanceExports)
+
 export const GAME_STORAGE_KEY = 'incremental-game-a:save:v1'
 const LEGACY_PRESTIGE_TEST_STORAGE_KEY =
   'incremental-game-a:save:prestige-test:v1'
@@ -339,6 +362,24 @@ export function canCrystallize(state: GameState) {
 
 export function hasUnlockedBlueprints(state: GameState) {
   return state.prestigeCount > 0
+}
+
+export function getUpgradeUnlockRequirement(
+  state: Readonly<GameState>,
+  id: BalanceUnlockId,
+) {
+  return getBalanceUnlockRequirement(state, id, getActiveBalanceConfig())
+}
+
+export function isUpgradePurchaseLockedByRequirement(
+  state: Readonly<GameState>,
+  id: BalanceUnlockId,
+) {
+  return isBalanceUpgradePurchaseLocked(
+    state,
+    id,
+    getActiveBalanceConfig(),
+  )
 }
 
 export function getAutoclickRate(autoclickLevel: number) {
@@ -827,12 +868,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'buy-pressure': {
       const cost = getPressureCost(state.pressureLevel)
-      const requiresDiscovery = !hasUnlockedBlueprints(state)
 
       if (
-        (requiresDiscovery &&
-          state.manualClicks <
-            getActiveBalanceConfig().unlocks.pressureRequiredClicks) ||
+        isUpgradePurchaseLockedByRequirement(state, 'pressure') ||
         state.energy < cost
       ) {
         return state
@@ -847,12 +885,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'buy-cavitation': {
       const cost = getCavitationCost(state.cavitationLevel)
-      const requiresDiscovery = !hasUnlockedBlueprints(state)
 
       if (
-        (requiresDiscovery &&
-          state.manualClicks <
-            getActiveBalanceConfig().unlocks.cavitationRequiredClicks) ||
+        isUpgradePurchaseLockedByRequirement(state, 'cavitation') ||
         state.generatorLevel === 0 ||
         state.energy < cost
       ) {
@@ -875,12 +910,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'buy-autoclicker': {
       const cost = getAutoclickCost(state.autoclickLevel)
-      const requiresDiscovery = !hasUnlockedBlueprints(state)
 
       if (
-        (requiresDiscovery &&
-          state.manualClicks <
-            getActiveBalanceConfig().unlocks.autoclickRequiredClicks) ||
+        isUpgradePurchaseLockedByRequirement(state, 'autoclick') ||
         state.generatorLevel === 0 ||
         state.energy < cost
       ) {
@@ -896,10 +928,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
 
     case 'buy-overload': {
       const cost = getOverloadCost(state.overloadLevel)
-      const requiresDiscovery = !hasUnlockedBlueprints(state)
 
       if (
-        (requiresDiscovery && state.manualClicks < getSphereClickCapacity()) ||
+        isUpgradePurchaseLockedByRequirement(state, 'overload') ||
         state.cavitationLevel === 0 ||
         state.energy < cost
       ) {
@@ -921,8 +952,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const cost = getRefractionCost(state.refractionLevel)
 
       if (
-        state.prestigeCount <
-          getActiveBalanceConfig().unlocks.refractionRequiredPrestige ||
+        isUpgradePurchaseLockedByRequirement(state, 'refraction') ||
         state.generatorLevel === 0 ||
         state.energy < cost
       ) {
