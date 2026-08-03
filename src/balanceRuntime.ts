@@ -128,7 +128,7 @@ export function createStoredBalanceProfile(
     schemaVersion: BALANCE_CONFIG_SCHEMA_VERSION,
     name: name.trim() || 'Perfil DEV sin nombre',
     createdAt: Date.now(),
-    config: cloneBalanceConfig(config as BalanceConfig),
+    config: cloneBalanceConfig(config),
   }
 }
 
@@ -151,7 +151,7 @@ export function saveStoredBalanceProfile(
       Number.isFinite(profile.createdAt) && profile.createdAt > 0
         ? Math.floor(profile.createdAt)
         : Date.now(),
-    config: cloneBalanceConfig(validation.config as BalanceConfig),
+    config: cloneBalanceConfig(validation.config),
   }
 
   try {
@@ -208,7 +208,7 @@ export function readStoredBalanceProfile(): BalanceProfileReadResult {
         schemaVersion: BALANCE_CONFIG_SCHEMA_VERSION,
         name: candidate.name,
         createdAt: candidate.createdAt,
-        config: cloneBalanceConfig(validation.config as BalanceConfig),
+        config: cloneBalanceConfig(validation.config),
       },
       issues: validation.issues,
     }
