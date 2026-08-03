@@ -1,5 +1,10 @@
 import { useEffect } from 'react'
-import { getFirstConnectedGamepad, loadGamepadSettings } from './gamepad'
+import {
+  ensureInputModeTracking,
+  getFirstConnectedGamepad,
+  isGamepadInputActive,
+  loadGamepadSettings,
+} from './gamepad'
 import {
   PULSE_TRIGGER_CHARGED_EVENT,
   PULSE_TRIGGER_DEPLETED_EVENT,
@@ -42,6 +47,8 @@ function playStep(
   intensity: number,
   step: HapticStep,
 ) {
+  if (!isGamepadInputActive()) return
+
   const weakMagnitude = Math.min(1, step.weak * intensity)
   const strongMagnitude = Math.min(1, step.strong * intensity)
 
@@ -65,6 +72,8 @@ function playStep(
 
 export function GamepadEventHaptics() {
   useEffect(() => {
+    ensureInputModeTracking()
+
     const root = document.querySelector('.game-screen')
     if (!root) return
 
@@ -77,7 +86,13 @@ export function GamepadEventHaptics() {
       cooldown = EVENT_COOLDOWN,
     ) {
       const settings = loadGamepadSettings()
-      if (!settings.enabled || !settings.hapticsEnabled) return
+      if (
+        !settings.enabled ||
+        !settings.hapticsEnabled ||
+        !isGamepadInputActive()
+      ) {
+        return
+      }
 
       const gamepad = getFirstConnectedGamepad() as GamepadWithHaptics | null
       if (!gamepad || document.visibilityState !== 'visible') return
