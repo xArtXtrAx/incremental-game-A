@@ -19,6 +19,8 @@
   - `src/game.ts`;
   - `src/refraction.ts`;
   - `src/pulseTrigger.ts`;
+  - `src/bulkPurchase.ts`;
+- límite real de Comprar todo centralizado en 320 iteraciones;
 - primera ventana del Laboratorio dentro del Panel de Desarrollador;
 - selector interactivo de curvas y diagnósticos.
 
@@ -44,6 +46,7 @@ Balance Runtime
           ├── game.ts
           ├── refraction.ts
           ├── pulseTrigger.ts
+          ├── bulkPurchase.ts
           ├── simulación DEV
           └── futura interfaz editable
 ```
@@ -71,13 +74,14 @@ Un perfil DEV inválido nunca debe modificar ni invalidar la partida normal.
 1. Una configuración se aplica completa o no se aplica.
 2. Todo valor debe ser finito y estar dentro de límites absolutos.
 3. El Autoclicker no puede superar el límite de operaciones por tick.
-4. Las secuencias de Zafiro y facetas deben mantener un orden creciente.
-5. La duración orbital mínima no puede superar la máxima.
-6. Los umbrales mínimos no pueden superar sus umbrales base.
-7. El código oficial sigue siendo la autoridad final.
-8. No se admiten fórmulas JavaScript libres.
-9. El perfil DEV no se carga automáticamente.
-10. Restaurar valores oficiales siempre debe estar disponible antes de habilitar edición.
+4. Comprar todo no puede superar el máximo de iteraciones configurado.
+5. Las secuencias de Zafiro y facetas deben mantener un orden creciente.
+6. La duración orbital mínima no puede superar la máxima.
+7. Los umbrales mínimos no pueden superar sus umbrales base.
+8. El código oficial sigue siendo la autoridad final.
+9. No se admiten fórmulas JavaScript libres.
+10. El perfil DEV no se carga automáticamente.
+11. Restaurar valores oficiales siempre debe estar disponible antes de habilitar edición.
 
 ## 5. Paridad oficial
 
@@ -99,7 +103,6 @@ Estas comprobaciones detectan cambios numéricos accidentales, pero no sustituye
 - migrar todos los consumidores de `SPHERE_CLICK_CAPACITY` a una consulta dinámica;
 - migrar indicadores y textos de requisitos en la interfaz;
 - migrar límites y visuales del Gatillo;
-- revisar `bulkPurchase.ts` y establecer un máximo real de iteraciones;
 - crear `normalizeGameStateForBalance()`;
 - definir política para efectos temporales activos al cambiar parámetros;
 - forzar rerender coordinado después de aplicar una configuración;
