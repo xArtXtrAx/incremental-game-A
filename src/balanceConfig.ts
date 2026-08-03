@@ -31,6 +31,7 @@ export type BalanceConfig = {
     pressureBonusPerTier: number
   }
   cavitation: {
+    inactiveClicksRequired: number
     baseClicksRequired: number
     clicksReducedPerLevel: number
     minimumClicksRequired: number
@@ -43,6 +44,7 @@ export type BalanceConfig = {
     maximumRate: number
   }
   overload: {
+    inactiveClicksRequired: number
     baseClicksRequired: number
     clicksReducedPerLevel: number
     minimumClicksRequired: number
@@ -109,11 +111,15 @@ function deepFreeze<T>(value: T): Readonly<T> {
   return value
 }
 
-export function cloneBalanceConfig(config: BalanceConfig): BalanceConfig {
+export function cloneBalanceConfig(
+  config: Readonly<BalanceConfig>,
+): BalanceConfig {
   return structuredClone(config)
 }
 
-export function freezeBalanceConfig(config: BalanceConfig): Readonly<BalanceConfig> {
+export function freezeBalanceConfig(
+  config: BalanceConfig,
+): Readonly<BalanceConfig> {
   return deepFreeze(config)
 }
 
@@ -141,6 +147,7 @@ export const DEFAULT_BALANCE_CONFIG = freezeBalanceConfig({
     pressureBonusPerTier: 2,
   },
   cavitation: {
+    inactiveClicksRequired: 25,
     baseClicksRequired: 28,
     clicksReducedPerLevel: 3,
     minimumClicksRequired: 10,
@@ -153,6 +160,7 @@ export const DEFAULT_BALANCE_CONFIG = freezeBalanceConfig({
     maximumRate: 20,
   },
   overload: {
+    inactiveClicksRequired: 100,
     baseClicksRequired: 110,
     clicksReducedPerLevel: 10,
     minimumClicksRequired: 40,
