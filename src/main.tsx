@@ -5,6 +5,7 @@ import './ChromaticChamberGuard.css'
 import './ChromaticDeveloperPreview.css'
 import './DeveloperChromaticAccess.css'
 import App from './App.tsx'
+import { BalanceLaboratorySystem } from './BalanceLaboratorySystem'
 import { ChromaticChamberSystem } from './ChromaticChamberSystem'
 import { ChromaticGamepadBridge } from './ChromaticGamepadBridge'
 import { GamepadController } from './GamepadController'
@@ -35,6 +36,7 @@ createRoot(document.getElementById('root')!).render(
     <PulseTriggerSystem />
     <UpgradeProgressSystem />
     <ChromaticChamberSystem />
+    <BalanceLaboratorySystem />
     <GamepadController />
     <ChromaticGamepadBridge />
     <GamepadEventHaptics />

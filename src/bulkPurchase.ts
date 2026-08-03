@@ -1,6 +1,5 @@
+import { getActiveBalanceConfig } from './balanceRuntime'
 import {
-  AUTOCLICK_REQUIRED_CLICKS,
-  CAVITATION_REQUIRED_CLICKS,
   gameReducer,
   getAutoclickRate,
   getCavitationClicksRequired,
@@ -12,14 +11,11 @@ import {
   getOverloadMultiplier,
   getPressureTier,
   getSapphireMultiplier,
-  SPHERE_CLICK_CAPACITY,
+  getSphereClickCapacity,
   type GameAction,
   type GameState,
 } from './game'
-import {
-  getPulseTriggerRate,
-  PULSE_TRIGGER_CHARGE_CLICKS,
-} from './pulseTrigger'
+import { getPulseTriggerRate } from './pulseTrigger'
 import {
   getRefractionBonusMultiplier,
   getRefractionChargeRate,
@@ -27,7 +23,6 @@ import {
   getRefractionFacetCount,
   getRefractionOrbitDuration,
   getRefractionRewardSeconds,
-  REFRACTION_REQUIRED_PRESTIGE,
 } from './refraction'
 
 export type BulkPurchaseStrategy = 'balanced' | 'active' | 'automatic'
@@ -65,8 +60,6 @@ export type BulkPurchasePlan = {
   remainingEnergy: number
   counts: Record<BulkPurchaseKind, number>
 }
-
-const MAX_PURCHASES_PER_RUN = 320
 
 const PURCHASES: readonly PurchaseDefinition[] = [
   {
@@ -182,6 +175,8 @@ function createEmptyCounts(): Record<BulkPurchaseKind, number> {
 }
 
 function getStateUtility(state: GameState, strategy: BulkPurchaseStrategy) {
+  const balance = getActiveBalanceConfig()
+  const sphereClickCapacity = getSphereClickCapacity()
   const sapphireMultiplier = getSapphireMultiplier(state.prestigeCount)
   const clickPower = getClickPower(
     state.clickLevel,
@@ -214,7 +209,7 @@ function getStateUtility(state: GameState, strategy: BulkPurchaseStrategy) {
   const triggerBonusRate =
     manualRate *
     (getPulseTriggerRate(state.pulseTriggerLevel) /
-      PULSE_TRIGGER_CHARGE_CLICKS)
+      balance.pulseTrigger.chargeClicks)
   const autoclickRate = getAutoclickRate(state.autoclickLevel)
   const totalClickRate = manualRate + triggerBonusRate + autoclickRate
   const valuePerClick = clickPower + cavitationPerClick
@@ -223,10 +218,10 @@ function getStateUtility(state: GameState, strategy: BulkPurchaseStrategy) {
   let overloadValue = 0
   if (state.overloadLevel > 0) {
     const readiness =
-      state.manualClicks >= SPHERE_CLICK_CAPACITY
+      state.manualClicks >= sphereClickCapacity
         ? 1
         : state.prestigeCount > 0
-          ? Math.min(0.35, state.manualClicks / SPHERE_CLICK_CAPACITY)
+          ? Math.min(0.35, state.manualClicks / sphereClickCapacity)
           : 0
     const chargeSeconds =
       getOverloadClicksRequired(state.overloadLevel) /
@@ -244,7 +239,7 @@ function getStateUtility(state: GameState, strategy: BulkPurchaseStrategy) {
   let refractionValue = 0
   if (
     state.refractionLevel > 0 &&
-    state.prestigeCount >= REFRACTION_REQUIRED_PRESTIGE
+    state.prestigeCount >= balance.unlocks.refractionRequiredPrestige
   ) {
     const cycleSeconds =
       (getRefractionFacetCount(state.prestigeCount) *
@@ -329,7 +324,8 @@ function getFoundationBoost(
   if (
     kind === 'refraction' &&
     state.refractionLevel === 0 &&
-    state.prestigeCount >= REFRACTION_REQUIRED_PRESTIGE
+    state.prestigeCount >=
+      getActiveBalanceConfig().unlocks.refractionRequiredPrestige
   ) {
     if (strategy === 'automatic') return 1.6
     return strategy === 'balanced' ? 1.4 : 0.9
@@ -343,10 +339,12 @@ function getDiscoveryBoost(
   kind: BulkPurchaseKind,
   strategy: BulkPurchaseStrategy,
 ) {
+  const balance = getActiveBalanceConfig()
+
   if (
     kind === 'cavitation' &&
     state.prestigeCount === 0 &&
-    state.manualClicks < CAVITATION_REQUIRED_CLICKS
+    state.manualClicks < balance.unlocks.cavitationRequiredClicks
   ) {
     return 0
   }
@@ -354,7 +352,7 @@ function getDiscoveryBoost(
   if (
     kind === 'autoclick' &&
     state.prestigeCount === 0 &&
-    state.manualClicks < AUTOCLICK_REQUIRED_CLICKS
+    state.manualClicks < balance.unlocks.autoclickRequiredClicks
   ) {
     return 0
   }
@@ -362,7 +360,7 @@ function getDiscoveryBoost(
   if (
     kind === 'overload' &&
     state.prestigeCount === 0 &&
-    state.manualClicks < SPHERE_CLICK_CAPACITY
+    state.manualClicks < balance.core.sphereClickCapacity
   ) {
     return 0
   }
@@ -381,10 +379,12 @@ export function planBulkPurchases(
   let state = initialState
   const purchases: BulkPurchaseItem[] = []
   const counts = createEmptyCounts()
+  const maximumPurchases =
+    getActiveBalanceConfig().engineLimits.maximumBulkPurchaseIterations
 
   for (
     let purchaseIndex = 0;
-    purchaseIndex < MAX_PURCHASES_PER_RUN;
+    purchaseIndex < maximumPurchases;
     purchaseIndex += 1
   ) {
     const currentUtility = getStateUtility(state, strategy)

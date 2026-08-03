@@ -1,0 +1,353 @@
+.developer-balance-access {
+  display: grid;
+  gap: 8px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid rgba(102, 215, 255, 0.16);
+}
+
+.developer-balance-access > span {
+  color: rgba(183, 232, 255, 0.72);
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.developer-balance-access > button {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(85, 220, 255, 0.34);
+  border-radius: 14px;
+  background:
+    linear-gradient(135deg, rgba(14, 67, 105, 0.78), rgba(7, 28, 52, 0.92));
+  color: #e8fbff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.developer-balance-access > button:hover {
+  border-color: rgba(126, 236, 255, 0.72);
+  box-shadow: 0 0 20px rgba(25, 179, 255, 0.16);
+}
+
+.developer-balance-access > button > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(56, 199, 255, 0.14);
+  color: #aaf2ff;
+  font-size: 1.15rem;
+}
+
+.developer-balance-access > button > span:nth-child(2) {
+  display: grid;
+  gap: 2px;
+}
+
+.developer-balance-access strong {
+  font-size: 0.9rem;
+}
+
+.developer-balance-access small {
+  color: rgba(205, 239, 255, 0.68);
+  font-size: 0.72rem;
+}
+
+.developer-balance-access b {
+  color: #8be8ff;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+.balance-laboratory-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(1, 8, 17, 0.82);
+  backdrop-filter: blur(10px);
+}
+
+.balance-laboratory-window {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 16px;
+  width: min(1120px, 96vw);
+  max-height: min(900px, 92vh);
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(96, 218, 255, 0.4);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(18, 117, 165, 0.18), transparent 38%),
+    linear-gradient(160deg, rgba(8, 26, 45, 0.99), rgba(3, 12, 24, 0.99));
+  color: #eefcff;
+  box-shadow:
+    0 30px 90px rgba(0, 0, 0, 0.62),
+    0 0 36px rgba(22, 160, 229, 0.12);
+}
+
+.balance-laboratory-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.balance-laboratory-header > div {
+  display: grid;
+  gap: 4px;
+}
+
+.balance-laboratory-header span,
+.balance-laboratory-card-heading span {
+  color: rgba(139, 229, 255, 0.78);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.balance-laboratory-header h2,
+.balance-laboratory-card h3,
+.balance-laboratory-header p,
+.balance-laboratory-card p {
+  margin: 0;
+}
+
+.balance-laboratory-header h2 {
+  font-size: clamp(1.35rem, 3vw, 2rem);
+}
+
+.balance-laboratory-header p {
+  color: rgba(216, 243, 255, 0.66);
+  font-size: 0.82rem;
+}
+
+.balance-laboratory-header > button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(119, 225, 255, 0.28);
+  border-radius: 12px;
+  background: rgba(16, 54, 80, 0.48);
+  color: #e8fbff;
+  font-size: 1.45rem;
+  cursor: pointer;
+}
+
+.balance-laboratory-notice {
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 207, 99, 0.25);
+  border-radius: 12px;
+  background: rgba(114, 73, 10, 0.16);
+  color: rgba(255, 236, 194, 0.88);
+  font-size: 0.8rem;
+  line-height: 1.5;
+}
+
+.balance-laboratory-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+  min-height: 0;
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.balance-laboratory-card {
+  align-content: start;
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  padding: 16px;
+  border: 1px solid rgba(93, 207, 247, 0.18);
+  border-radius: 16px;
+  background: rgba(8, 30, 50, 0.68);
+}
+
+.balance-laboratory-card-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.balance-laboratory-card-heading > div {
+  display: grid;
+  gap: 3px;
+}
+
+.balance-laboratory-card h3 {
+  font-size: 1rem;
+}
+
+.balance-laboratory-card p,
+.balance-laboratory-card small {
+  color: rgba(211, 239, 250, 0.7);
+  font-size: 0.77rem;
+  line-height: 1.45;
+}
+
+.balance-laboratory-card select {
+  min-width: 170px;
+  padding: 7px 9px;
+  border: 1px solid rgba(104, 217, 255, 0.28);
+  border-radius: 9px;
+  background: #071b2d;
+  color: #e9fbff;
+}
+
+.balance-laboratory-card table {
+  width: 100%;
+  border-collapse: collapse;
+  font-variant-numeric: tabular-nums;
+}
+
+.balance-laboratory-card th,
+.balance-laboratory-card td {
+  padding: 7px 8px;
+  border-bottom: 1px solid rgba(105, 204, 240, 0.1);
+  text-align: right;
+  font-size: 0.76rem;
+}
+
+.balance-laboratory-card th:first-child,
+.balance-laboratory-card td:first-child {
+  text-align: left;
+}
+
+.balance-laboratory-card th {
+  color: rgba(151, 229, 255, 0.72);
+  font-size: 0.68rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.balance-laboratory-sapphire-row {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.balance-laboratory-sapphire-row > div {
+  display: grid;
+  gap: 3px;
+  padding: 8px 5px;
+  border: 1px solid rgba(82, 207, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(18, 70, 102, 0.24);
+  text-align: center;
+}
+
+.balance-laboratory-sapphire-row span {
+  color: rgba(179, 231, 250, 0.68);
+  font-size: 0.68rem;
+}
+
+.balance-laboratory-sapphire-row strong {
+  color: #baf5ff;
+  font-size: 0.78rem;
+}
+
+.balance-laboratory-diagnostics {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.balance-laboratory-diagnostics li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: start;
+  gap: 8px;
+  padding: 8px 9px;
+  border-radius: 9px;
+  background: rgba(17, 58, 82, 0.35);
+  font-size: 0.75rem;
+}
+
+.balance-laboratory-diagnostics li strong {
+  color: #8ee9ff;
+  font-size: 0.64rem;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.balance-laboratory-diagnostics li[data-severity='warning'] {
+  background: rgba(121, 82, 18, 0.2);
+}
+
+.balance-laboratory-diagnostics li[data-severity='warning'] strong {
+  color: #ffd480;
+}
+
+.balance-laboratory-diagnostics li[data-severity='error'] {
+  background: rgba(129, 35, 35, 0.22);
+}
+
+.balance-laboratory-diagnostics li[data-severity='error'] strong {
+  color: #ff9b9b;
+}
+
+.balance-laboratory-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  color: rgba(204, 236, 248, 0.62);
+  font-size: 0.72rem;
+}
+
+.balance-laboratory-footer code {
+  color: #a7ebff;
+}
+
+.balance-laboratory-footer button {
+  padding: 9px 14px;
+  border: 1px solid rgba(98, 222, 255, 0.34);
+  border-radius: 10px;
+  background: rgba(24, 103, 142, 0.38);
+  color: #ecfcff;
+  cursor: pointer;
+}
+
+@media (max-width: 760px) {
+  .balance-laboratory-backdrop {
+    padding: 10px;
+  }
+
+  .balance-laboratory-window {
+    width: 100%;
+    max-height: 96vh;
+    padding: 14px;
+  }
+
+  .balance-laboratory-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .balance-laboratory-card-heading,
+  .balance-laboratory-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .balance-laboratory-card select {
+    width: 100%;
+  }
+
+  .balance-laboratory-sapphire-row {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

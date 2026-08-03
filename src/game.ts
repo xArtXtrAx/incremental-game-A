@@ -1,44 +1,41 @@
+import { DEFAULT_BALANCE_CONFIG } from './balanceConfig'
+import { getActiveBalanceConfig } from './balanceRuntime'
 import {
   advanceRefractionMatrix,
   getRefractionBonusMultiplier,
   getRefractionCost,
   getRefractionFacetCount,
   isRefractionActive,
-  REFRACTION_REQUIRED_PRESTIGE,
 } from './refraction'
-import {
-  getPulseTriggerUpgradeCost,
-  PULSE_TRIGGER_MAX_LEVEL,
-} from './pulseTrigger'
+import { getPulseTriggerUpgradeCost } from './pulseTrigger'
 
-export const CLICK_UPGRADE_BASE_COST = 10
-export const GENERATOR_BASE_COST = 25
-export const RESONANCE_BASE_COST = 120
-export const PRESSURE_BASE_COST = 500
-export const CAVITATION_BASE_COST = 2000
-export const AUTOCLICK_BASE_COST = 5000
-export const OVERLOAD_BASE_COST = 10000
-export const PRESSURE_REQUIRED_CLICKS = 100
-export const CAVITATION_REQUIRED_CLICKS = 500
-export const AUTOCLICK_REQUIRED_CLICKS = 500
-export const SPHERE_CLICK_CAPACITY = 5000
+export const CLICK_UPGRADE_BASE_COST =
+  DEFAULT_BALANCE_CONFIG.costs.click.baseCost
+export const GENERATOR_BASE_COST =
+  DEFAULT_BALANCE_CONFIG.costs.generator.baseCost
+export const RESONANCE_BASE_COST =
+  DEFAULT_BALANCE_CONFIG.costs.resonance.baseCost
+export const PRESSURE_BASE_COST =
+  DEFAULT_BALANCE_CONFIG.costs.pressure.baseCost
+export const CAVITATION_BASE_COST =
+  DEFAULT_BALANCE_CONFIG.costs.cavitation.baseCost
+export const AUTOCLICK_BASE_COST =
+  DEFAULT_BALANCE_CONFIG.costs.autoclick.baseCost
+export const OVERLOAD_BASE_COST =
+  DEFAULT_BALANCE_CONFIG.costs.overload.baseCost
+export const PRESSURE_REQUIRED_CLICKS =
+  DEFAULT_BALANCE_CONFIG.unlocks.pressureRequiredClicks
+export const CAVITATION_REQUIRED_CLICKS =
+  DEFAULT_BALANCE_CONFIG.unlocks.cavitationRequiredClicks
+export const AUTOCLICK_REQUIRED_CLICKS =
+  DEFAULT_BALANCE_CONFIG.unlocks.autoclickRequiredClicks
+export const SPHERE_CLICK_CAPACITY =
+  DEFAULT_BALANCE_CONFIG.core.sphereClickCapacity
 export const GAME_STORAGE_KEY = 'incremental-game-a:save:v1'
 const LEGACY_PRESTIGE_TEST_STORAGE_KEY =
   'incremental-game-a:save:prestige-test:v1'
 
-const CLICK_UPGRADE_GROWTH = 1.7
-const GENERATOR_GROWTH = 1.8
-const RESONANCE_GROWTH = 2.2
-const PRESSURE_GROWTH = 2.4
-const CAVITATION_GROWTH = 2.6
-const AUTOCLICK_GROWTH = 2.8
-const AUTOCLICK_RATE_GROWTH = 1.6
-const AUTOCLICK_BASE_RATE = 0.2
-const AUTOCLICK_MAX_RATE = 20
-const OVERLOAD_GROWTH = 3
-const PRESSURE_BONUS_PER_TIER = 2
 const SAVE_VERSION = 1
-const SAPPHIRE_MULTIPLIERS = [1, 1.5, 1.85, 2.2, 2.6, 3.05] as const
 
 export type GameState = {
   energy: number
@@ -148,6 +145,7 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
     return fallback
   }
 
+  const balance = getActiveBalanceConfig()
   const candidate = value as Partial<GameState>
   const prestigeCount = getSafeInteger(
     candidate.prestigeCount,
@@ -180,13 +178,15 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
     candidate.refractionUntil,
     fallback.refractionUntil,
   )
+  const refractionAllowed =
+    prestigeCount >= balance.unlocks.refractionRequiredPrestige
 
   return {
     energy: getSafeNumber(candidate.energy, fallback.energy),
     manualClicks: getSafeInteger(candidate.manualClicks, fallback.manualClicks),
     clickLevel: getSafeInteger(candidate.clickLevel, fallback.clickLevel),
     pulseTriggerLevel: Math.min(
-      PULSE_TRIGGER_MAX_LEVEL,
+      balance.pulseTrigger.maximumLevel,
       getSafeInteger(
         candidate.pulseTriggerLevel,
         fallback.pulseTriggerLevel,
@@ -243,7 +243,7 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
       overloadLevel > 0 && overloadUntil > Date.now() ? overloadUntil : 0,
     refractionLevel,
     refractionOrbitProgress:
-      refractionLevel > 0 && prestigeCount >= REFRACTION_REQUIRED_PRESTIGE
+      refractionLevel > 0 && refractionAllowed
         ? Math.min(
             roundProgress(
               getSafeNumber(
@@ -255,7 +255,7 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
           )
         : 0,
     refractionFacetsCharged:
-      refractionLevel > 0 && prestigeCount >= REFRACTION_REQUIRED_PRESTIGE
+      refractionLevel > 0 && refractionAllowed
         ? Math.min(
             getSafeInteger(
               candidate.refractionFacetsCharged,
@@ -280,8 +280,12 @@ function sanitizeGameState(value: unknown, fallback: GameState): GameState {
   }
 }
 
+export function getSphereClickCapacity() {
+  return getActiveBalanceConfig().core.sphereClickCapacity
+}
+
 export function getSphereFillPercentage(manualClicks: number) {
-  return Math.min((manualClicks / SPHERE_CLICK_CAPACITY) * 100, 100)
+  return Math.min((manualClicks / getSphereClickCapacity()) * 100, 100)
 }
 
 export function getPressureTier(manualClicks: number) {
@@ -292,7 +296,11 @@ export function getPressureBonusPercent(
   manualClicks: number,
   pressureLevel: number,
 ) {
-  return getPressureTier(manualClicks) * PRESSURE_BONUS_PER_TIER * pressureLevel
+  return (
+    getPressureTier(manualClicks) *
+    getActiveBalanceConfig().core.pressureBonusPerTier *
+    pressureLevel
+  )
 }
 
 export function getPressureMultiplier(
@@ -303,17 +311,21 @@ export function getPressureMultiplier(
 }
 
 export function getSapphireMultiplier(prestigeCount: number) {
+  const { multipliers, postMaximumLevelIncrement } =
+    getActiveBalanceConfig().sapphire
+
   if (prestigeCount <= 0) {
     return 1
   }
 
-  if (prestigeCount < SAPPHIRE_MULTIPLIERS.length) {
-    return SAPPHIRE_MULTIPLIERS[prestigeCount]
+  if (prestigeCount < multipliers.length) {
+    return multipliers[prestigeCount]
   }
 
   return roundEnergy(
-    SAPPHIRE_MULTIPLIERS[SAPPHIRE_MULTIPLIERS.length - 1] +
-      (prestigeCount - (SAPPHIRE_MULTIPLIERS.length - 1)) * 0.5,
+    multipliers[multipliers.length - 1] +
+      (prestigeCount - (multipliers.length - 1)) *
+        postMaximumLevelIncrement,
   )
 }
 
@@ -322,7 +334,7 @@ export function getNextSapphireMultiplier(prestigeCount: number) {
 }
 
 export function canCrystallize(state: GameState) {
-  return state.manualClicks >= SPHERE_CLICK_CAPACITY
+  return state.manualClicks >= getSphereClickCapacity()
 }
 
 export function hasUnlockedBlueprints(state: GameState) {
@@ -334,26 +346,44 @@ export function getAutoclickRate(autoclickLevel: number) {
     return 0
   }
 
+  const { baseRate, growth, maximumRate } =
+    getActiveBalanceConfig().autoclick
+
   return roundProgress(
-    Math.min(
-      AUTOCLICK_MAX_RATE,
-      AUTOCLICK_BASE_RATE * AUTOCLICK_RATE_GROWTH ** (autoclickLevel - 1),
-    ),
+    Math.min(maximumRate, baseRate * growth ** (autoclickLevel - 1)),
   )
 }
 
 export function getOverloadClicksRequired(overloadLevel: number) {
+  const {
+    inactiveClicksRequired,
+    baseClicksRequired,
+    clicksReducedPerLevel,
+    minimumClicksRequired,
+  } = getActiveBalanceConfig().overload
+
   return overloadLevel > 0
-    ? Math.max(40, 110 - overloadLevel * 10)
-    : 100
+    ? Math.max(
+        minimumClicksRequired,
+        baseClicksRequired - overloadLevel * clicksReducedPerLevel,
+      )
+    : inactiveClicksRequired
 }
 
 export function getOverloadDurationSeconds(overloadLevel: number) {
-  return overloadLevel > 0 ? 12 + overloadLevel * 3 : 0
+  if (overloadLevel <= 0) return 0
+
+  const { baseDurationSeconds, durationSecondsPerLevel } =
+    getActiveBalanceConfig().overload
+  return baseDurationSeconds + overloadLevel * durationSecondsPerLevel
 }
 
 export function getOverloadMultiplier(overloadLevel: number) {
-  return overloadLevel > 0 ? 1.5 + overloadLevel * 0.5 : 1
+  if (overloadLevel <= 0) return 1
+
+  const { baseMultiplier, multiplierPerLevel } =
+    getActiveBalanceConfig().overload
+  return baseMultiplier + overloadLevel * multiplierPerLevel
 }
 
 export function isOverloadActive(overloadUntil: number, now = Date.now()) {
@@ -404,13 +434,27 @@ export function getEnergyPerSecond(
 }
 
 export function getCavitationClicksRequired(cavitationLevel: number) {
+  const {
+    inactiveClicksRequired,
+    baseClicksRequired,
+    clicksReducedPerLevel,
+    minimumClicksRequired,
+  } = getActiveBalanceConfig().cavitation
+
   return cavitationLevel > 0
-    ? Math.max(10, 28 - cavitationLevel * 3)
-    : 25
+    ? Math.max(
+        minimumClicksRequired,
+        baseClicksRequired - cavitationLevel * clicksReducedPerLevel,
+      )
+    : inactiveClicksRequired
 }
 
 export function getCavitationSeconds(cavitationLevel: number) {
-  return cavitationLevel > 0 ? 3 + cavitationLevel * 2 : 0
+  if (cavitationLevel <= 0) return 0
+
+  const { baseDurationSeconds, durationSecondsPerLevel } =
+    getActiveBalanceConfig().cavitation
+  return baseDurationSeconds + cavitationLevel * durationSecondsPerLevel
 }
 
 export function getCavitationReward(
@@ -480,7 +524,7 @@ export function getClickOutcome(
 
   const canChargeOverload =
     state.overloadLevel > 0 &&
-    state.manualClicks >= SPHERE_CLICK_CAPACITY &&
+    state.manualClicks >= getSphereClickCapacity() &&
     !overloadWasActive
   const overloadThreshold = getOverloadClicksRequired(state.overloadLevel)
   const accumulatedOverloadCharge = canChargeOverload
@@ -507,31 +551,38 @@ export function getClickOutcome(
 }
 
 export function getClickUpgradeCost(level: number) {
-  return getScaledCost(CLICK_UPGRADE_BASE_COST, CLICK_UPGRADE_GROWTH, level)
+  const { baseCost, growth } = getActiveBalanceConfig().costs.click
+  return getScaledCost(baseCost, growth, level)
 }
 
 export function getGeneratorCost(level: number) {
-  return getScaledCost(GENERATOR_BASE_COST, GENERATOR_GROWTH, level)
+  const { baseCost, growth } = getActiveBalanceConfig().costs.generator
+  return getScaledCost(baseCost, growth, level)
 }
 
 export function getResonanceCost(level: number) {
-  return getScaledCost(RESONANCE_BASE_COST, RESONANCE_GROWTH, level)
+  const { baseCost, growth } = getActiveBalanceConfig().costs.resonance
+  return getScaledCost(baseCost, growth, level)
 }
 
 export function getPressureCost(level: number) {
-  return getScaledCost(PRESSURE_BASE_COST, PRESSURE_GROWTH, level)
+  const { baseCost, growth } = getActiveBalanceConfig().costs.pressure
+  return getScaledCost(baseCost, growth, level)
 }
 
 export function getCavitationCost(level: number) {
-  return getScaledCost(CAVITATION_BASE_COST, CAVITATION_GROWTH, level)
+  const { baseCost, growth } = getActiveBalanceConfig().costs.cavitation
+  return getScaledCost(baseCost, growth, level)
 }
 
 export function getAutoclickCost(level: number) {
-  return getScaledCost(AUTOCLICK_BASE_COST, AUTOCLICK_GROWTH, level)
+  const { baseCost, growth } = getActiveBalanceConfig().costs.autoclick
+  return getScaledCost(baseCost, growth, level)
 }
 
 export function getOverloadCost(level: number) {
-  return getScaledCost(OVERLOAD_BASE_COST, OVERLOAD_GROWTH, level)
+  const { baseCost, growth } = getActiveBalanceConfig().costs.overload
+  return getScaledCost(baseCost, growth, level)
 }
 
 export { getRefractionCost }
@@ -727,7 +778,10 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
     }
 
     case 'buy-pulse-trigger': {
-      if (state.pulseTriggerLevel >= PULSE_TRIGGER_MAX_LEVEL) {
+      if (
+        state.pulseTriggerLevel >=
+        getActiveBalanceConfig().pulseTrigger.maximumLevel
+      ) {
         return state
       }
 
@@ -776,7 +830,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const requiresDiscovery = !hasUnlockedBlueprints(state)
 
       if (
-        (requiresDiscovery && state.manualClicks < PRESSURE_REQUIRED_CLICKS) ||
+        (requiresDiscovery &&
+          state.manualClicks <
+            getActiveBalanceConfig().unlocks.pressureRequiredClicks) ||
         state.energy < cost
       ) {
         return state
@@ -794,7 +850,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const requiresDiscovery = !hasUnlockedBlueprints(state)
 
       if (
-        (requiresDiscovery && state.manualClicks < CAVITATION_REQUIRED_CLICKS) ||
+        (requiresDiscovery &&
+          state.manualClicks <
+            getActiveBalanceConfig().unlocks.cavitationRequiredClicks) ||
         state.generatorLevel === 0 ||
         state.energy < cost
       ) {
@@ -820,7 +878,9 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const requiresDiscovery = !hasUnlockedBlueprints(state)
 
       if (
-        (requiresDiscovery && state.manualClicks < AUTOCLICK_REQUIRED_CLICKS) ||
+        (requiresDiscovery &&
+          state.manualClicks <
+            getActiveBalanceConfig().unlocks.autoclickRequiredClicks) ||
         state.generatorLevel === 0 ||
         state.energy < cost
       ) {
@@ -839,7 +899,7 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const requiresDiscovery = !hasUnlockedBlueprints(state)
 
       if (
-        (requiresDiscovery && state.manualClicks < SPHERE_CLICK_CAPACITY) ||
+        (requiresDiscovery && state.manualClicks < getSphereClickCapacity()) ||
         state.cavitationLevel === 0 ||
         state.energy < cost
       ) {
@@ -861,7 +921,8 @@ export function gameReducer(state: GameState, action: GameAction): GameState {
       const cost = getRefractionCost(state.refractionLevel)
 
       if (
-        state.prestigeCount < REFRACTION_REQUIRED_PRESTIGE ||
+        state.prestigeCount <
+          getActiveBalanceConfig().unlocks.refractionRequiredPrestige ||
         state.generatorLevel === 0 ||
         state.energy < cost
       ) {

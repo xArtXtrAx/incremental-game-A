@@ -1,10 +1,10 @@
-export const REFRACTION_BASE_COST = 25000
-export const REFRACTION_REQUIRED_PRESTIGE = 1
+import { DEFAULT_BALANCE_CONFIG } from './balanceConfig'
+import { getActiveBalanceConfig } from './balanceRuntime'
 
-const REFRACTION_GROWTH = 3.15
-const MIN_ORBIT_DURATION_SECONDS = 3
-const MAX_ORBIT_DURATION_SECONDS = 20
-const ORBIT_ACCELERATION_POWER = 1.6
+export const REFRACTION_BASE_COST =
+  DEFAULT_BALANCE_CONFIG.costs.refraction.baseCost
+export const REFRACTION_REQUIRED_PRESTIGE =
+  DEFAULT_BALANCE_CONFIG.unlocks.refractionRequiredPrestige
 
 function roundEnergy(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100
@@ -15,30 +15,50 @@ function roundProgress(value: number) {
 }
 
 export function getRefractionCost(level: number) {
-  return Math.ceil(REFRACTION_BASE_COST * REFRACTION_GROWTH ** level)
+  const { baseCost, growth } = getActiveBalanceConfig().costs.refraction
+  return Math.ceil(baseCost * growth ** level)
 }
 
 export function getRefractionFacetCount(prestigeCount: number) {
-  if (prestigeCount >= 4) return 12
-  if (prestigeCount === 3) return 10
-  if (prestigeCount === 2) return 8
-  return 6
+  const [first, second, third, maximum] =
+    getActiveBalanceConfig().refraction.facetCounts
+
+  if (prestigeCount >= 4) return maximum
+  if (prestigeCount === 3) return third
+  if (prestigeCount === 2) return second
+  return first
 }
 
 export function getRefractionChargeRate(level: number) {
-  return level > 0 ? roundProgress(1 + (level - 1) * 0.15) : 0
+  if (level <= 0) return 0
+
+  const { baseChargeRate, chargeRatePerLevel } =
+    getActiveBalanceConfig().refraction
+  return roundProgress(baseChargeRate + (level - 1) * chargeRatePerLevel)
 }
 
 export function getRefractionBonusMultiplier(level: number) {
-  return level > 0 ? roundEnergy(1.2 + level * 0.05) : 1
+  if (level <= 0) return 1
+
+  const { baseBonusMultiplier, bonusMultiplierPerLevel } =
+    getActiveBalanceConfig().refraction
+  return roundEnergy(baseBonusMultiplier + level * bonusMultiplierPerLevel)
 }
 
 export function getRefractionDurationSeconds(level: number) {
-  return level > 0 ? 4 + level : 0
+  if (level <= 0) return 0
+
+  const { baseDurationSeconds, durationSecondsPerLevel } =
+    getActiveBalanceConfig().refraction
+  return baseDurationSeconds + level * durationSecondsPerLevel
 }
 
 export function getRefractionRewardSeconds(level: number) {
-  return level > 0 ? 8 + level * 3 : 0
+  if (level <= 0) return 0
+
+  const { baseRewardSeconds, rewardSecondsPerLevel } =
+    getActiveBalanceConfig().refraction
+  return baseRewardSeconds + level * rewardSecondsPerLevel
 }
 
 export function getRefractionReward(baseProduction: number, level: number) {
@@ -46,11 +66,22 @@ export function getRefractionReward(baseProduction: number, level: number) {
 }
 
 export function getRefractionOrbitDuration(manualClicks: number) {
-  const progress = Math.min(1, Math.max(0, manualClicks / 5000))
+  const {
+    minimumOrbitDurationSeconds,
+    maximumOrbitDurationSeconds,
+    orbitAccelerationPower,
+  } = getActiveBalanceConfig().refraction
+  const sphereClickCapacity =
+    getActiveBalanceConfig().core.sphereClickCapacity
+  const progress = Math.min(
+    1,
+    Math.max(0, manualClicks / sphereClickCapacity),
+  )
+
   return (
-    MIN_ORBIT_DURATION_SECONDS +
-    (MAX_ORBIT_DURATION_SECONDS - MIN_ORBIT_DURATION_SECONDS) *
-      (1 - progress) ** ORBIT_ACCELERATION_POWER
+    minimumOrbitDurationSeconds +
+    (maximumOrbitDurationSeconds - minimumOrbitDurationSeconds) *
+      (1 - progress) ** orbitAccelerationPower
   )
 }
 
@@ -89,7 +120,10 @@ export function advanceRefractionMatrix(
   baseProduction: number,
   now: number,
 ): RefractionAdvance {
-  if (input.level <= 0 || input.prestigeCount < REFRACTION_REQUIRED_PRESTIGE) {
+  const requiredPrestige =
+    getActiveBalanceConfig().unlocks.refractionRequiredPrestige
+
+  if (input.level <= 0 || input.prestigeCount < requiredPrestige) {
     return {
       orbitProgress: 0,
       facetsCharged: 0,
