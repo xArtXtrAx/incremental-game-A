@@ -1,4 +1,9 @@
-import { useCallback, useState } from 'react'
+import {
+  Fragment,
+  useCallback,
+  useState,
+  type CSSProperties,
+} from 'react'
 import { motion } from 'motion/react'
 import './SapphireOrbit.css'
 import { SapphireGem3D } from './SapphireGem3D'
@@ -26,6 +31,7 @@ type SapphireDockProps = {
 
 type SapphireOrbitLayerProps = {
   depth: 'back' | 'front'
+  particleCount: number
 }
 
 type RefractionFacetMatrixProps = {
@@ -35,7 +41,25 @@ type RefractionFacetMatrixProps = {
   discharging: boolean
 }
 
+const MAX_SAPPHIRE_ORBIT_PARTICLES = 5
+const SAPPHIRE_ORBIT_TRAIL_PHASE_STEP = 0.028
 const SAPPHIRE_ORBIT_TRAIL_STEPS = [1, 2, 3, 4, 5, 6] as const
+
+function normalizeSapphireOrbitParticleCount(prestigeCount: number) {
+  return Math.min(
+    MAX_SAPPHIRE_ORBIT_PARTICLES,
+    Math.max(1, Math.floor(prestigeCount)),
+  )
+}
+
+function getFallbackOrbitStyle(phase: number): CSSProperties {
+  const normalizedPhase = ((phase % 1) + 1) % 1
+
+  return {
+    offsetDistance: `${(normalizedPhase * 100).toFixed(4)}%`,
+    animationDelay: `calc(var(--sapphire-pulse-duration, 20s) * ${-normalizedPhase})`,
+  }
+}
 
 export function getSapphireName(prestigeCount: number) {
   if (prestigeCount <= 1) return 'Zafiro incipiente'
@@ -111,17 +135,34 @@ function SapphireFallback() {
   )
 }
 
-function SapphireOrbitLayer({ depth }: SapphireOrbitLayerProps) {
+function SapphireOrbitLayer({
+  depth,
+  particleCount,
+}: SapphireOrbitLayerProps) {
   return (
     <span className={`sapphire-orbit-layer sapphire-orbit-${depth}`}>
       <span className="sapphire-orbit-ring" />
-      {SAPPHIRE_ORBIT_TRAIL_STEPS.map((step) => (
-        <span
-          key={`${depth}-${step}`}
-          className={`sapphire-orbit-trail sapphire-orbit-trail-${step}`}
-        />
-      ))}
-      <span className="sapphire-orbit-spark" />
+      {Array.from({ length: particleCount }, (_, particleIndex) => {
+        const particlePhase = particleIndex / particleCount
+
+        return (
+          <Fragment key={`${depth}-${particleIndex}`}>
+            {SAPPHIRE_ORBIT_TRAIL_STEPS.map((step) => (
+              <span
+                key={`${depth}-${particleIndex}-${step}`}
+                className={`sapphire-orbit-trail sapphire-orbit-trail-${step}`}
+                style={getFallbackOrbitStyle(
+                  particlePhase - step * SAPPHIRE_ORBIT_TRAIL_PHASE_STEP,
+                )}
+              />
+            ))}
+            <span
+              className="sapphire-orbit-spark"
+              style={getFallbackOrbitStyle(particlePhase)}
+            />
+          </Fragment>
+        )
+      })}
     </span>
   )
 }
@@ -250,6 +291,8 @@ export function SapphireGem({
     [],
   )
   const useFallbackOrbit = webglUnavailable || orbitUnavailable
+  const orbitParticleCount =
+    normalizeSapphireOrbitParticleCount(prestigeCount)
 
   return (
     <motion.span
@@ -264,11 +307,15 @@ export function SapphireGem({
     >
       <span className="sapphire-gem-halo" />
       {useFallbackOrbit ? (
-        <SapphireOrbitLayer depth="back" />
+        <SapphireOrbitLayer
+          depth="back"
+          particleCount={orbitParticleCount}
+        />
       ) : (
         <SapphireOrbit3D
           depth="back"
           energized={energized}
+          particleCount={orbitParticleCount}
           onUnavailable={handleOrbitUnavailable}
         />
       )}
@@ -288,11 +335,15 @@ export function SapphireGem({
         </motion.span>
       )}
       {useFallbackOrbit ? (
-        <SapphireOrbitLayer depth="front" />
+        <SapphireOrbitLayer
+          depth="front"
+          particleCount={orbitParticleCount}
+        />
       ) : (
         <SapphireOrbit3D
           depth="front"
           energized={energized}
+          particleCount={orbitParticleCount}
           onUnavailable={handleOrbitUnavailable}
         />
       )}
