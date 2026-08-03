@@ -1,6 +1,7 @@
 import {
   BALANCE_CONFIG_LIMITS,
   BALANCE_CONFIG_SCHEMA_VERSION,
+  DEFAULT_BALANCE_CONFIG,
   cloneBalanceConfig,
   freezeBalanceConfig,
   type BalanceConfig,
@@ -26,510 +27,386 @@ export type BalanceValidationResult =
       issues: BalanceValidationIssue[]
     }
 
-type NumericRule = {
-  path: readonly string[]
+type RangeRule = {
+  path: string
   minimum: number
   maximum: number
   integer?: boolean
 }
 
-const COST_PATHS = [
-  'click',
-  'generator',
-  'resonance',
-  'pressure',
-  'cavitation',
-  'autoclick',
-  'overload',
-  'refraction',
-  'pulseTrigger',
-] as const
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
 
-const numericRules: NumericRule[] = [
-  ...COST_PATHS.flatMap((cost) => [
+function readPath(value: unknown, path: string) {
+  return path.split('.').reduce<unknown>((current, segment) => {
+    if (!isRecord(current)) return undefined
+    return current[segment]
+  }, value)
+}
+
+function addIssue(
+  issues: BalanceValidationIssue[],
+  path: string,
+  severity: BalanceValidationSeverity,
+  message: string,
+) {
+  issues.push({ path, severity, message })
+}
+
+function validateShape(
+  candidate: unknown,
+  template: unknown,
+  path: string,
+  issues: BalanceValidationIssue[],
+) {
+  if (Array.isArray(template)) {
+    if (!Array.isArray(candidate)) {
+      addIssue(issues, path, 'error', 'Debe ser una lista.')
+      return
+    }
+
+    if (candidate.length !== template.length) {
+      addIssue(
+        issues,
+        path,
+        'error',
+        `Debe contener exactamente ${template.length} valores.`,
+      )
+    }
+
+    template.forEach((item, index) => {
+      validateShape(candidate[index], item, `${path}.${index}`, issues)
+    })
+    return
+  }
+
+  if (isRecord(template)) {
+    if (!isRecord(candidate)) {
+      addIssue(issues, path, 'error', 'Debe ser un objeto.')
+      return
+    }
+
+    Object.entries(template).forEach(([key, value]) => {
+      validateShape(
+        candidate[key],
+        value,
+        path ? `${path}.${key}` : key,
+        issues,
+      )
+    })
+    return
+  }
+
+  if (typeof template === 'number') {
+    if (typeof candidate !== 'number' || !Number.isFinite(candidate)) {
+      addIssue(issues, path, 'error', 'Debe ser un número finito.')
+    }
+    return
+  }
+
+  if (typeof candidate !== typeof template) {
+    addIssue(issues, path, 'error', `Debe ser de tipo ${typeof template}.`)
+  }
+}
+
+function validateRange(
+  candidate: unknown,
+  rule: RangeRule,
+  issues: BalanceValidationIssue[],
+) {
+  const value = readPath(candidate, rule.path)
+  if (typeof value !== 'number' || !Number.isFinite(value)) return
+
+  if (rule.integer && !Number.isInteger(value)) {
+    addIssue(issues, rule.path, 'error', 'Debe ser un número entero.')
+  }
+
+  if (value < rule.minimum || value > rule.maximum) {
+    addIssue(
+      issues,
+      rule.path,
+      'error',
+      `Debe permanecer entre ${rule.minimum} y ${rule.maximum}.`,
+    )
+  }
+}
+
+function validateIncreasingArray(
+  candidate: unknown,
+  path: string,
+  issues: BalanceValidationIssue[],
+  options: { minimum: number; integer?: boolean },
+) {
+  const values = readPath(candidate, path)
+  if (!Array.isArray(values)) return
+
+  values.forEach((value, index) => {
+    if (typeof value !== 'number' || !Number.isFinite(value)) return
+
+    if (options.integer && !Number.isInteger(value)) {
+      addIssue(issues, `${path}.${index}`, 'error', 'Debe ser entero.')
+    }
+
+    if (value < options.minimum) {
+      addIssue(
+        issues,
+        `${path}.${index}`,
+        'error',
+        `Debe ser mayor o igual a ${options.minimum}.`,
+      )
+    }
+
+    if (
+      index > 0 &&
+      typeof values[index - 1] === 'number' &&
+      value <= values[index - 1]
+    ) {
+      addIssue(
+        issues,
+        `${path}.${index}`,
+        'error',
+        'La secuencia debe crecer estrictamente.',
+      )
+    }
+  })
+}
+
+const costSystems = Object.keys(DEFAULT_BALANCE_CONFIG.costs)
+
+const rangeRules: RangeRule[] = [
+  ...costSystems.flatMap((system) => [
     {
-      path: ['costs', cost, 'baseCost'],
+      path: `costs.${system}.baseCost`,
       ...BALANCE_CONFIG_LIMITS.costBase,
     },
     {
-      path: ['costs', cost, 'growth'],
+      path: `costs.${system}.growth`,
       ...BALANCE_CONFIG_LIMITS.growth,
     },
   ]),
-  {
-    path: ['unlocks', 'pressureRequiredClicks'],
+  ...[
+    'unlocks.pressureRequiredClicks',
+    'unlocks.cavitationRequiredClicks',
+    'unlocks.autoclickRequiredClicks',
+    'core.sphereClickCapacity',
+    'cavitation.inactiveClicksRequired',
+    'cavitation.baseClicksRequired',
+    'cavitation.minimumClicksRequired',
+    'overload.inactiveClicksRequired',
+    'overload.baseClicksRequired',
+    'overload.minimumClicksRequired',
+    'pulseTrigger.chargeClicks',
+  ].map((path) => ({
+    path,
     ...BALANCE_CONFIG_LIMITS.clicks,
     integer: true,
-  },
+  })),
   {
-    path: ['unlocks', 'cavitationRequiredClicks'],
-    ...BALANCE_CONFIG_LIMITS.clicks,
-    integer: true,
-  },
-  {
-    path: ['unlocks', 'autoclickRequiredClicks'],
-    ...BALANCE_CONFIG_LIMITS.clicks,
-    integer: true,
-  },
-  {
-    path: ['unlocks', 'refractionRequiredPrestige'],
+    path: 'unlocks.refractionRequiredPrestige',
     ...BALANCE_CONFIG_LIMITS.level,
     integer: true,
   },
   {
-    path: ['core', 'sphereClickCapacity'],
-    ...BALANCE_CONFIG_LIMITS.clicks,
-    integer: true,
-  },
-  {
-    path: ['core', 'pressureBonusPerTier'],
+    path: 'core.pressureBonusPerTier',
     minimum: 0,
     maximum: 1_000,
   },
   {
-    path: ['cavitation', 'baseClicksRequired'],
-    ...BALANCE_CONFIG_LIMITS.clicks,
-    integer: true,
-  },
-  {
-    path: ['cavitation', 'clicksReducedPerLevel'],
+    path: 'cavitation.clicksReducedPerLevel',
     minimum: 0,
     maximum: BALANCE_CONFIG_LIMITS.clicks.maximum,
     integer: true,
   },
   {
-    path: ['cavitation', 'minimumClicksRequired'],
-    ...BALANCE_CONFIG_LIMITS.clicks,
+    path: 'overload.clicksReducedPerLevel',
+    minimum: 0,
+    maximum: BALANCE_CONFIG_LIMITS.clicks.maximum,
     integer: true,
   },
-  {
-    path: ['cavitation', 'baseDurationSeconds'],
-    ...BALANCE_CONFIG_LIMITS.seconds,
-  },
-  {
-    path: ['cavitation', 'durationSecondsPerLevel'],
+  ...[
+    'cavitation.baseDurationSeconds',
+    'overload.baseDurationSeconds',
+    'refraction.baseDurationSeconds',
+    'refraction.minimumOrbitDurationSeconds',
+    'refraction.maximumOrbitDurationSeconds',
+  ].map((path) => ({ path, ...BALANCE_CONFIG_LIMITS.seconds })),
+  ...[
+    'cavitation.durationSecondsPerLevel',
+    'overload.durationSecondsPerLevel',
+    'refraction.durationSecondsPerLevel',
+    'refraction.baseRewardSeconds',
+    'refraction.rewardSecondsPerLevel',
+  ].map((path) => ({
+    path,
     minimum: 0,
     maximum: BALANCE_CONFIG_LIMITS.seconds.maximum,
-  },
+  })),
+  ...[
+    'autoclick.baseRate',
+    'autoclick.maximumRate',
+    'refraction.baseChargeRate',
+    'refraction.chargeRatePerLevel',
+    'pulseTrigger.baseRate',
+    'pulseTrigger.ratePerLevel',
+    'pulseTrigger.maximumRate',
+  ].map((path) => ({ path, ...BALANCE_CONFIG_LIMITS.rate })),
   {
-    path: ['autoclick', 'baseRate'],
-    ...BALANCE_CONFIG_LIMITS.rate,
-  },
-  {
-    path: ['autoclick', 'growth'],
+    path: 'autoclick.growth',
     ...BALANCE_CONFIG_LIMITS.growth,
   },
-  {
-    path: ['autoclick', 'maximumRate'],
-    ...BALANCE_CONFIG_LIMITS.rate,
-  },
-  {
-    path: ['overload', 'baseClicksRequired'],
-    ...BALANCE_CONFIG_LIMITS.clicks,
-    integer: true,
-  },
-  {
-    path: ['overload', 'clicksReducedPerLevel'],
-    minimum: 0,
-    maximum: BALANCE_CONFIG_LIMITS.clicks.maximum,
-    integer: true,
-  },
-  {
-    path: ['overload', 'minimumClicksRequired'],
-    ...BALANCE_CONFIG_LIMITS.clicks,
-    integer: true,
-  },
-  {
-    path: ['overload', 'baseDurationSeconds'],
-    ...BALANCE_CONFIG_LIMITS.seconds,
-  },
-  {
-    path: ['overload', 'durationSecondsPerLevel'],
-    minimum: 0,
-    maximum: BALANCE_CONFIG_LIMITS.seconds.maximum,
-  },
-  {
-    path: ['overload', 'baseMultiplier'],
-    ...BALANCE_CONFIG_LIMITS.multiplier,
-  },
-  {
-    path: ['overload', 'multiplierPerLevel'],
+  ...[
+    'overload.baseMultiplier',
+    'refraction.baseBonusMultiplier',
+  ].map((path) => ({ path, ...BALANCE_CONFIG_LIMITS.multiplier })),
+  ...[
+    'overload.multiplierPerLevel',
+    'refraction.bonusMultiplierPerLevel',
+    'sapphire.postMaximumLevelIncrement',
+  ].map((path) => ({
+    path,
     minimum: 0,
     maximum: BALANCE_CONFIG_LIMITS.multiplier.maximum,
-  },
+  })),
   {
-    path: ['refraction', 'baseChargeRate'],
-    ...BALANCE_CONFIG_LIMITS.rate,
-  },
-  {
-    path: ['refraction', 'chargeRatePerLevel'],
-    minimum: 0,
-    maximum: BALANCE_CONFIG_LIMITS.rate.maximum,
-  },
-  {
-    path: ['refraction', 'baseBonusMultiplier'],
-    ...BALANCE_CONFIG_LIMITS.multiplier,
-  },
-  {
-    path: ['refraction', 'bonusMultiplierPerLevel'],
-    minimum: 0,
-    maximum: BALANCE_CONFIG_LIMITS.multiplier.maximum,
-  },
-  {
-    path: ['refraction', 'baseDurationSeconds'],
-    ...BALANCE_CONFIG_LIMITS.seconds,
-  },
-  {
-    path: ['refraction', 'durationSecondsPerLevel'],
-    minimum: 0,
-    maximum: BALANCE_CONFIG_LIMITS.seconds.maximum,
-  },
-  {
-    path: ['refraction', 'baseRewardSeconds'],
-    minimum: 0,
-    maximum: BALANCE_CONFIG_LIMITS.seconds.maximum,
-  },
-  {
-    path: ['refraction', 'rewardSecondsPerLevel'],
-    minimum: 0,
-    maximum: BALANCE_CONFIG_LIMITS.seconds.maximum,
-  },
-  {
-    path: ['refraction', 'minimumOrbitDurationSeconds'],
-    ...BALANCE_CONFIG_LIMITS.seconds,
-  },
-  {
-    path: ['refraction', 'maximumOrbitDurationSeconds'],
-    ...BALANCE_CONFIG_LIMITS.seconds,
-  },
-  {
-    path: ['refraction', 'orbitAccelerationPower'],
+    path: 'refraction.orbitAccelerationPower',
     minimum: 0.05,
     maximum: 20,
   },
   {
-    path: ['pulseTrigger', 'chargeClicks'],
-    ...BALANCE_CONFIG_LIMITS.clicks,
-    integer: true,
-  },
-  {
-    path: ['pulseTrigger', 'reserveGainMs'],
+    path: 'pulseTrigger.reserveGainMs',
     minimum: 1,
     maximum: 3_600_000,
   },
   {
-    path: ['pulseTrigger', 'maximumReserveMs'],
+    path: 'pulseTrigger.maximumReserveMs',
     minimum: 1,
     maximum: 86_400_000,
   },
   {
-    path: ['pulseTrigger', 'baseRate'],
-    ...BALANCE_CONFIG_LIMITS.rate,
-  },
-  {
-    path: ['pulseTrigger', 'ratePerLevel'],
-    minimum: 0,
-    maximum: BALANCE_CONFIG_LIMITS.rate.maximum,
-  },
-  {
-    path: ['pulseTrigger', 'maximumRate'],
-    ...BALANCE_CONFIG_LIMITS.rate,
-  },
-  {
-    path: ['pulseTrigger', 'maximumLevel'],
+    path: 'pulseTrigger.maximumLevel',
     ...BALANCE_CONFIG_LIMITS.level,
     integer: true,
   },
   {
-    path: ['sapphire', 'postMaximumLevelIncrement'],
-    minimum: 0,
-    maximum: BALANCE_CONFIG_LIMITS.multiplier.maximum,
-  },
-  {
-    path: ['engineLimits', 'maximumAutomaticClicksPerTick'],
+    path: 'engineLimits.maximumAutomaticClicksPerTick',
     minimum: 1,
     maximum: 100_000,
     integer: true,
   },
   {
-    path: ['engineLimits', 'maximumBulkPurchaseIterations'],
+    path: 'engineLimits.maximumBulkPurchaseIterations',
     minimum: 1,
     maximum: 1_000_000,
     integer: true,
   },
   {
-    path: ['engineLimits', 'maximumFiniteValue'],
+    path: 'engineLimits.maximumFiniteValue',
     ...BALANCE_CONFIG_LIMITS.finiteValue,
   },
 ]
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value)
-}
-
-function readPath(value: unknown, path: readonly string[]) {
-  let current = value
-
-  for (const segment of path) {
-    if (!isRecord(current)) return undefined
-    current = current[segment]
-  }
-
-  return current
-}
-
-function pathLabel(path: readonly string[]) {
-  return path.join('.')
-}
-
-function validateNumber(
+function compareNumbers(
   candidate: unknown,
-  rule: NumericRule,
+  leftPath: string,
+  rightPath: string,
   issues: BalanceValidationIssue[],
+  message: string,
 ) {
-  const value = readPath(candidate, rule.path)
-  const path = pathLabel(rule.path)
+  const left = readPath(candidate, leftPath)
+  const right = readPath(candidate, rightPath)
 
-  if (typeof value !== 'number' || !Number.isFinite(value)) {
-    issues.push({
-      path,
-      severity: 'error',
-      message: 'Debe ser un número finito.',
-    })
-    return
+  if (
+    typeof left === 'number' &&
+    typeof right === 'number' &&
+    left > right
+  ) {
+    addIssue(issues, leftPath, 'error', message)
   }
-
-  if (rule.integer && !Number.isInteger(value)) {
-    issues.push({
-      path,
-      severity: 'error',
-      message: 'Debe ser un número entero.',
-    })
-  }
-
-  if (value < rule.minimum || value > rule.maximum) {
-    issues.push({
-      path,
-      severity: 'error',
-      message: `Debe permanecer entre ${rule.minimum} y ${rule.maximum}.`,
-    })
-  }
-}
-
-function validateNumberArray(
-  candidate: unknown,
-  path: readonly string[],
-  expectedLength: number,
-  issues: BalanceValidationIssue[],
-  options: { minimum: number; strictlyIncreasing?: boolean },
-) {
-  const value = readPath(candidate, path)
-  const label = pathLabel(path)
-
-  if (!Array.isArray(value) || value.length !== expectedLength) {
-    issues.push({
-      path: label,
-      severity: 'error',
-      message: `Debe contener exactamente ${expectedLength} valores.`,
-    })
-    return
-  }
-
-  value.forEach((item, index) => {
-    if (typeof item !== 'number' || !Number.isFinite(item)) {
-      issues.push({
-        path: `${label}.${index}`,
-        severity: 'error',
-        message: 'Debe ser un número finito.',
-      })
-      return
-    }
-
-    if (item < options.minimum) {
-      issues.push({
-        path: `${label}.${index}`,
-        severity: 'error',
-        message: `Debe ser mayor o igual a ${options.minimum}.`,
-      })
-    }
-
-    if (
-      options.strictlyIncreasing &&
-      index > 0 &&
-      typeof value[index - 1] === 'number' &&
-      item <= value[index - 1]
-    ) {
-      issues.push({
-        path: `${label}.${index}`,
-        severity: 'error',
-        message: 'La secuencia debe crecer estrictamente.',
-      })
-    }
-  })
 }
 
 export function validateBalanceConfig(candidate: unknown): BalanceValidationResult {
   const issues: BalanceValidationIssue[] = []
 
-  if (!isRecord(candidate)) {
-    return {
-      valid: false,
-      config: null,
-      issues: [
-        {
-          path: 'root',
-          severity: 'error',
-          message: 'La configuración debe ser un objeto.',
-        },
-      ],
-    }
+  validateShape(candidate, DEFAULT_BALANCE_CONFIG, '', issues)
+
+  if (
+    isRecord(candidate) &&
+    candidate.schemaVersion !== BALANCE_CONFIG_SCHEMA_VERSION
+  ) {
+    addIssue(
+      issues,
+      'schemaVersion',
+      'error',
+      `Se requiere la versión ${BALANCE_CONFIG_SCHEMA_VERSION}.`,
+    )
   }
 
-  if (candidate.schemaVersion !== BALANCE_CONFIG_SCHEMA_VERSION) {
-    issues.push({
-      path: 'schemaVersion',
-      severity: 'error',
-      message: `Se requiere la versión ${BALANCE_CONFIG_SCHEMA_VERSION}.`,
-    })
-  }
-
-  numericRules.forEach((rule) => validateNumber(candidate, rule, issues))
-  validateNumberArray(candidate, ['refraction', 'facetCounts'], 4, issues, {
+  rangeRules.forEach((rule) => validateRange(candidate, rule, issues))
+  validateIncreasingArray(candidate, 'refraction.facetCounts', issues, {
     minimum: 1,
-    strictlyIncreasing: true,
+    integer: true,
   })
-  validateNumberArray(candidate, ['sapphire', 'multipliers'], 6, issues, {
+  validateIncreasingArray(candidate, 'sapphire.multipliers', issues, {
     minimum: 1,
-    strictlyIncreasing: true,
   })
 
-  const minimumCavitation = readPath(candidate, [
-    'cavitation',
-    'minimumClicksRequired',
-  ])
-  const baseCavitation = readPath(candidate, [
-    'cavitation',
-    'baseClicksRequired',
-  ])
-  if (
-    typeof minimumCavitation === 'number' &&
-    typeof baseCavitation === 'number' &&
-    minimumCavitation > baseCavitation
-  ) {
-    issues.push({
-      path: 'cavitation.minimumClicksRequired',
-      severity: 'error',
-      message: 'No puede superar el umbral base de Cavitación.',
-    })
-  }
+  compareNumbers(
+    candidate,
+    'cavitation.minimumClicksRequired',
+    'cavitation.baseClicksRequired',
+    issues,
+    'No puede superar el umbral base de Cavitación.',
+  )
+  compareNumbers(
+    candidate,
+    'overload.minimumClicksRequired',
+    'overload.baseClicksRequired',
+    issues,
+    'No puede superar el umbral base de Sobrecarga.',
+  )
+  compareNumbers(
+    candidate,
+    'refraction.minimumOrbitDurationSeconds',
+    'refraction.maximumOrbitDurationSeconds',
+    issues,
+    'No puede superar la duración orbital máxima.',
+  )
+  compareNumbers(
+    candidate,
+    'autoclick.baseRate',
+    'autoclick.maximumRate',
+    issues,
+    'No puede superar la tasa máxima del Autoclicker.',
+  )
+  compareNumbers(
+    candidate,
+    'pulseTrigger.baseRate',
+    'pulseTrigger.maximumRate',
+    issues,
+    'No puede superar la tasa máxima del Gatillo.',
+  )
+  compareNumbers(
+    candidate,
+    'autoclick.maximumRate',
+    'engineLimits.maximumAutomaticClicksPerTick',
+    issues,
+    'Supera el máximo seguro de clics automáticos por tick.',
+  )
 
-  const minimumOverload = readPath(candidate, [
-    'overload',
-    'minimumClicksRequired',
-  ])
-  const baseOverload = readPath(candidate, [
-    'overload',
-    'baseClicksRequired',
-  ])
-  if (
-    typeof minimumOverload === 'number' &&
-    typeof baseOverload === 'number' &&
-    minimumOverload > baseOverload
-  ) {
-    issues.push({
-      path: 'overload.minimumClicksRequired',
-      severity: 'error',
-      message: 'No puede superar el umbral base de Sobrecarga.',
-    })
-  }
-
-  const minimumOrbit = readPath(candidate, [
-    'refraction',
-    'minimumOrbitDurationSeconds',
-  ])
-  const maximumOrbit = readPath(candidate, [
-    'refraction',
-    'maximumOrbitDurationSeconds',
-  ])
-  if (
-    typeof minimumOrbit === 'number' &&
-    typeof maximumOrbit === 'number' &&
-    minimumOrbit > maximumOrbit
-  ) {
-    issues.push({
-      path: 'refraction.minimumOrbitDurationSeconds',
-      severity: 'error',
-      message: 'No puede superar la duración orbital máxima.',
-    })
-  }
-
-  const baseAutoclick = readPath(candidate, ['autoclick', 'baseRate'])
-  const maximumAutoclick = readPath(candidate, ['autoclick', 'maximumRate'])
-  if (
-    typeof baseAutoclick === 'number' &&
-    typeof maximumAutoclick === 'number' &&
-    baseAutoclick > maximumAutoclick
-  ) {
-    issues.push({
-      path: 'autoclick.baseRate',
-      severity: 'error',
-      message: 'No puede superar la tasa máxima del Autoclicker.',
-    })
-  }
-
-  const pulseBaseRate = readPath(candidate, ['pulseTrigger', 'baseRate'])
-  const pulseMaximumRate = readPath(candidate, [
-    'pulseTrigger',
-    'maximumRate',
-  ])
-  if (
-    typeof pulseBaseRate === 'number' &&
-    typeof pulseMaximumRate === 'number' &&
-    pulseBaseRate > pulseMaximumRate
-  ) {
-    issues.push({
-      path: 'pulseTrigger.baseRate',
-      severity: 'error',
-      message: 'No puede superar la tasa máxima del Gatillo.',
-    })
-  }
-
-  const reserveGain = readPath(candidate, ['pulseTrigger', 'reserveGainMs'])
-  const maximumReserve = readPath(candidate, [
-    'pulseTrigger',
-    'maximumReserveMs',
-  ])
+  const reserveGain = readPath(candidate, 'pulseTrigger.reserveGainMs')
+  const maximumReserve = readPath(candidate, 'pulseTrigger.maximumReserveMs')
   if (
     typeof reserveGain === 'number' &&
     typeof maximumReserve === 'number' &&
     reserveGain > maximumReserve
   ) {
-    issues.push({
-      path: 'pulseTrigger.reserveGainMs',
-      severity: 'warning',
-      message: 'Una sola carga llenará por completo la reserva.',
-    })
-  }
-
-  const requestedAutoclickMaximum = readPath(candidate, [
-    'autoclick',
-    'maximumRate',
-  ])
-  const engineAutoclickLimit = readPath(candidate, [
-    'engineLimits',
-    'maximumAutomaticClicksPerTick',
-  ])
-  if (
-    typeof requestedAutoclickMaximum === 'number' &&
-    typeof engineAutoclickLimit === 'number' &&
-    requestedAutoclickMaximum > engineAutoclickLimit
-  ) {
-    issues.push({
-      path: 'autoclick.maximumRate',
-      severity: 'error',
-      message:
-        'Supera el máximo seguro de clics automáticos que el motor permite por tick.',
-    })
+    addIssue(
+      issues,
+      'pulseTrigger.reserveGainMs',
+      'warning',
+      'Una sola carga llenará por completo la reserva.',
+    )
   }
 
   const hasErrors = issues.some((issue) => issue.severity === 'error')
@@ -540,7 +417,7 @@ export function validateBalanceConfig(candidate: unknown): BalanceValidationResu
   return {
     valid: true,
     config: freezeBalanceConfig(
-      cloneBalanceConfig(candidate as unknown as BalanceConfig),
+      cloneBalanceConfig(candidate as BalanceConfig),
     ),
     issues,
   }
