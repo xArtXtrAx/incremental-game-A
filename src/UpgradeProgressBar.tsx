@@ -32,6 +32,7 @@ const MIN_ANIMATION_MS = 180
 const MAX_ANIMATION_MS = 1300
 const DEFAULT_UPDATE_MS = 1000
 const OVERLAP_FACTOR = 1.15
+const WRAP_DURATION_FACTOR = 0.9
 const WRAP_JUMP_OFFSET = 0.001
 const EPSILON = 0.0001
 
@@ -102,6 +103,7 @@ function ProgressBar({ item }: { item: UpgradeProgressDefinition }) {
   const previousTargetRef = useRef(targetProgress)
   const lastTargetAtRef = useRef(performance.now())
   const initializedRef = useRef(false)
+  const wrapInProgressRef = useRef(false)
   const isCyclic = CYCLIC_PROGRESS_IDS.has(item.id)
 
   useLayoutEffect(() => {
@@ -125,18 +127,32 @@ function ProgressBar({ item }: { item: UpgradeProgressDefinition }) {
     animationRef.current?.cancel()
 
     const observedInterval = now - lastTargetAtRef.current
-    const baseDuration = Number.isFinite(observedInterval) && observedInterval > 0
-      ? observedInterval
-      : DEFAULT_UPDATE_MS
-    const duration = clamp(
-      baseDuration * OVERLAP_FACTOR,
-      MIN_ANIMATION_MS,
-      MAX_ANIMATION_MS,
-    )
-    const wraps =
+    const baseDuration =
+      Number.isFinite(observedInterval) && observedInterval > 0
+        ? observedInterval
+        : DEFAULT_UPDATE_MS
+
+    const startsWrap =
       isCyclic &&
       targetProgress + EPSILON < previousTarget &&
       currentProgress > EPSILON
+    const continuesInterruptedWrap =
+      isCyclic &&
+      wrapInProgressRef.current &&
+      currentProgress > targetProgress + EPSILON
+    const wraps = startsWrap || continuesInterruptedWrap
+
+    if (wraps) {
+      wrapInProgressRef.current = true
+    } else if (currentProgress <= targetProgress + EPSILON) {
+      wrapInProgressRef.current = false
+    }
+
+    const duration = clamp(
+      baseDuration * (wraps ? WRAP_DURATION_FACTOR : OVERLAP_FACTOR),
+      MIN_ANIMATION_MS,
+      MAX_ANIMATION_MS,
+    )
 
     const animation = fill.animate(
       buildKeyframes(currentProgress, targetProgress, wraps),
@@ -150,6 +166,7 @@ function ProgressBar({ item }: { item: UpgradeProgressDefinition }) {
     animationRef.current = animation
     animation.onfinish = () => {
       fill.style.transform = `scaleX(${targetProgress.toFixed(6)})`
+      if (wraps) wrapInProgressRef.current = false
       animation.cancel()
       if (animationRef.current === animation) {
         animationRef.current = null
@@ -164,6 +181,7 @@ function ProgressBar({ item }: { item: UpgradeProgressDefinition }) {
     () => () => {
       animationRef.current?.cancel()
       animationRef.current = null
+      wrapInProgressRef.current = false
     },
     [],
   )
