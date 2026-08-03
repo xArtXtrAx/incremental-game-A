@@ -1,4 +1,4 @@
-/* Órbita experimental del zafiro: anillo, chispa y estela sincronizados. */
+/* Órbita experimental del zafiro: anillo, chispas y estelas sincronizadas. */
 .sapphire-gem {
   --sapphire-orbit-x: 96%;
   --sapphire-orbit-y: 50%;
@@ -221,13 +221,15 @@
   }
 }
 
-.sapphire-gem.is-webgl-fallback .sapphire-orbit-spark {
+.sapphire-gem.is-orbit-fallback .sapphire-orbit-spark,
+.sapphire-gem.is-orbit-fallback .sapphire-orbit-trail {
   top: 0;
   left: 0;
   offset-path: ellipse(46% 42% at 50% 50%);
   offset-rotate: 0deg;
   animation: sapphire-orbit-fallback var(--sapphire-pulse-duration, 20s)
     linear infinite;
+  will-change: offset-distance;
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -236,8 +238,8 @@
     will-change: auto;
   }
 
-  .sapphire-gem.is-webgl-fallback .sapphire-orbit-spark {
+  .sapphire-gem.is-orbit-fallback .sapphire-orbit-spark,
+  .sapphire-gem.is-orbit-fallback .sapphire-orbit-trail {
     animation: none;
-    offset-distance: 0%;
   }
 }

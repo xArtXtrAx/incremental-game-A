@@ -10,13 +10,22 @@ import {
 type Props = {
   depth: 'back' | 'front'
   energized: boolean
+  particleCount: number
   onUnavailable: () => void
 }
 
+const MAX_ORBIT_PARTICLES = 5
 const RING_POINT_COUNT = 120
 const TRAIL_POINT_COUNT = 12
 const TRAIL_ARC_FRACTION = 0.18
 const FLOATS_PER_POINT = 7
+
+function normalizeParticleCount(particleCount: number) {
+  return Math.min(
+    MAX_ORBIT_PARTICLES,
+    Math.max(1, Math.floor(particleCount)),
+  )
+}
 
 function compileShader(
   gl: WebGLRenderingContext,
@@ -126,10 +135,12 @@ function buildOrbitVertices(
   pulse: number,
   energized: boolean,
   pixelRatio: number,
+  particleCount: number,
 ) {
   const values: number[] = []
   const depthBrightness = depth === 'front' ? 1 : 0.56
   const energyBoost = energized ? 1.2 : 1
+  const normalizedParticleCount = normalizeParticleCount(particleCount)
 
   const pushPoint = (
     point: SapphireOrbitPoint,
@@ -167,46 +178,61 @@ function buildOrbitVertices(
   }
 
   const trailArc = SAPPHIRE_ORBIT_TAU * TRAIL_ARC_FRACTION
-  const sparkAngle = phase * SAPPHIRE_ORBIT_TAU
 
-  for (let index = TRAIL_POINT_COUNT; index >= 1; index -= 1) {
-    const distance = index / TRAIL_POINT_COUNT
-    const trailPhase =
-      (sparkAngle - trailArc * distance + SAPPHIRE_ORBIT_TAU) /
-      SAPPHIRE_ORBIT_TAU
-    const point = getSapphireOrbitPoint(trailPhase)
-    const proximity = 1 - distance
-    const alpha = (0.08 + proximity * 0.5) * (0.76 + pulse * 0.24)
-    const size = 5.5 + proximity * 6.5
+  for (
+    let particleIndex = 0;
+    particleIndex < normalizedParticleCount;
+    particleIndex += 1
+  ) {
+    const particlePhase =
+      (phase + particleIndex / normalizedParticleCount) % 1
+    const sparkAngle = particlePhase * SAPPHIRE_ORBIT_TAU
 
-    pushPoint(point, size, 0.3, 0.84, 1, alpha * energyBoost)
+    for (let index = TRAIL_POINT_COUNT; index >= 1; index -= 1) {
+      const distance = index / TRAIL_POINT_COUNT
+      const trailPhase =
+        (sparkAngle - trailArc * distance + SAPPHIRE_ORBIT_TAU) /
+        SAPPHIRE_ORBIT_TAU
+      const point = getSapphireOrbitPoint(trailPhase)
+      const proximity = 1 - distance
+      const alpha = (0.08 + proximity * 0.5) * (0.76 + pulse * 0.24)
+      const size = 5.5 + proximity * 6.5
+
+      pushPoint(point, size, 0.3, 0.84, 1, alpha * energyBoost)
+    }
+
+    const spark = getSapphireOrbitPoint(particlePhase)
+    pushPoint(
+      spark,
+      energized ? 21 : 17,
+      0.22,
+      0.82,
+      1,
+      (energized ? 0.56 : 0.42) * (0.8 + pulse * 0.2),
+    )
+    pushPoint(
+      spark,
+      energized ? 8 : 6.5,
+      0.96,
+      1,
+      1,
+      1,
+    )
   }
-
-  const spark = getSapphireOrbitPoint(phase)
-  pushPoint(
-    spark,
-    energized ? 21 : 17,
-    0.22,
-    0.82,
-    1,
-    (energized ? 0.56 : 0.42) * (0.8 + pulse * 0.2),
-  )
-  pushPoint(
-    spark,
-    energized ? 8 : 6.5,
-    0.96,
-    1,
-    1,
-    1,
-  )
 
   return new Float32Array(values)
 }
 
-export function SapphireOrbit3D({ depth, energized, onUnavailable }: Props) {
+export function SapphireOrbit3D({
+  depth,
+  energized,
+  particleCount,
+  onUnavailable,
+}: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const energizedRef = useRef(energized)
   const unavailableRef = useRef(onUnavailable)
+  const normalizedParticleCount = normalizeParticleCount(particleCount)
 
   useEffect(() => {
     energizedRef.current = energized
@@ -320,6 +346,7 @@ export function SapphireOrbit3D({ depth, energized, onUnavailable }: Props) {
           pulse,
           energizedRef.current,
           ratio,
+          normalizedParticleCount,
         )
 
         gl.clear(gl.COLOR_BUFFER_BIT)
@@ -342,7 +369,7 @@ export function SapphireOrbit3D({ depth, energized, onUnavailable }: Props) {
       if (buffer) gl.deleteBuffer(buffer)
       if (program) gl.deleteProgram(program)
     }
-  }, [depth])
+  }, [depth, normalizedParticleCount])
 
   return (
     <canvas
