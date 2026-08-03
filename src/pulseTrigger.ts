@@ -1,3 +1,6 @@
+import { DEFAULT_BALANCE_CONFIG } from './balanceConfig'
+import { getActiveBalanceConfig } from './balanceRuntime'
+
 export const PULSE_TRIGGER_INPUT_EVENT =
   'incremental-game-a:pulse-trigger-input'
 export const PULSE_TRIGGER_PULSE_EVENT =
@@ -12,15 +15,24 @@ export const PULSE_TRIGGER_BUY_EVENT =
 export const PULSE_TRIGGER_STORAGE_KEY =
   'incremental-game-a:pulse-trigger:v1'
 
-export const PULSE_TRIGGER_CHARGE_CLICKS = 10
-export const PULSE_TRIGGER_RESERVE_GAIN_MS = 1000
-export const PULSE_TRIGGER_MAX_RESERVE_MS = 10_000
-export const PULSE_TRIGGER_BASE_RATE = 6
-export const PULSE_TRIGGER_RATE_PER_LEVEL = 0.5
-export const PULSE_TRIGGER_MAX_RATE = 9
-export const PULSE_TRIGGER_MAX_LEVEL = 6
-export const PULSE_TRIGGER_UPGRADE_BASE_COST = 6000
-export const PULSE_TRIGGER_UPGRADE_GROWTH = 2.25
+export const PULSE_TRIGGER_CHARGE_CLICKS =
+  DEFAULT_BALANCE_CONFIG.pulseTrigger.chargeClicks
+export const PULSE_TRIGGER_RESERVE_GAIN_MS =
+  DEFAULT_BALANCE_CONFIG.pulseTrigger.reserveGainMs
+export const PULSE_TRIGGER_MAX_RESERVE_MS =
+  DEFAULT_BALANCE_CONFIG.pulseTrigger.maximumReserveMs
+export const PULSE_TRIGGER_BASE_RATE =
+  DEFAULT_BALANCE_CONFIG.pulseTrigger.baseRate
+export const PULSE_TRIGGER_RATE_PER_LEVEL =
+  DEFAULT_BALANCE_CONFIG.pulseTrigger.ratePerLevel
+export const PULSE_TRIGGER_MAX_RATE =
+  DEFAULT_BALANCE_CONFIG.pulseTrigger.maximumRate
+export const PULSE_TRIGGER_MAX_LEVEL =
+  DEFAULT_BALANCE_CONFIG.pulseTrigger.maximumLevel
+export const PULSE_TRIGGER_UPGRADE_BASE_COST =
+  DEFAULT_BALANCE_CONFIG.costs.pulseTrigger.baseCost
+export const PULSE_TRIGGER_UPGRADE_GROWTH =
+  DEFAULT_BALANCE_CONFIG.costs.pulseTrigger.growth
 
 // Alias del nivel inicial para compatibilidad con módulos anteriores.
 export const PULSE_TRIGGER_RATE = PULSE_TRIGGER_BASE_RATE
@@ -67,14 +79,18 @@ function roundTriggerTime(value: number) {
 }
 
 export function getPulseTriggerRate(level: number) {
+  const {
+    baseRate,
+    ratePerLevel,
+    maximumRate,
+    maximumLevel,
+  } = getActiveBalanceConfig().pulseTrigger
   const safeLevel = Math.min(
-    PULSE_TRIGGER_MAX_LEVEL,
+    maximumLevel,
     Math.max(0, Math.floor(level)),
   )
-  return Math.min(
-    PULSE_TRIGGER_MAX_RATE,
-    PULSE_TRIGGER_BASE_RATE + safeLevel * PULSE_TRIGGER_RATE_PER_LEVEL,
-  )
+
+  return Math.min(maximumRate, baseRate + safeLevel * ratePerLevel)
 }
 
 export function getPulseTriggerIntervalMs(level: number) {
@@ -82,22 +98,24 @@ export function getPulseTriggerIntervalMs(level: number) {
 }
 
 export function getPulseTriggerUpgradeCost(level: number) {
+  const { baseCost, growth } =
+    getActiveBalanceConfig().costs.pulseTrigger
   const safeLevel = Math.max(0, Math.floor(level))
-  return Math.ceil(
-    PULSE_TRIGGER_UPGRADE_BASE_COST *
-      PULSE_TRIGGER_UPGRADE_GROWTH ** safeLevel,
-  )
+  return Math.ceil(baseCost * growth ** safeLevel)
 }
 
 export function chargePulseTriggerFromDirectClick(
   state: PulseTriggerStoredState,
 ): PulseTriggerChargeResult {
-  if (state.reserveMs >= PULSE_TRIGGER_MAX_RESERVE_MS) {
+  const { chargeClicks, maximumReserveMs, reserveGainMs } =
+    getActiveBalanceConfig().pulseTrigger
+
+  if (state.reserveMs >= maximumReserveMs) {
     return { state, charged: false }
   }
 
   const nextCharge = state.chargeClicks + 1
-  if (nextCharge < PULSE_TRIGGER_CHARGE_CLICKS) {
+  if (nextCharge < chargeClicks) {
     return {
       state: { ...state, chargeClicks: nextCharge },
       charged: false,
@@ -107,8 +125,8 @@ export function chargePulseTriggerFromDirectClick(
   return {
     state: {
       reserveMs: Math.min(
-        PULSE_TRIGGER_MAX_RESERVE_MS,
-        state.reserveMs + PULSE_TRIGGER_RESERVE_GAIN_MS,
+        maximumReserveMs,
+        state.reserveMs + reserveGainMs,
       ),
       chargeClicks: 0,
     },
@@ -139,26 +157,22 @@ export function loadPulseTriggerState(): PulseTriggerStoredState {
     const raw = window.localStorage.getItem(PULSE_TRIGGER_STORAGE_KEY)
     if (!raw) return EMPTY_PULSE_TRIGGER_STATE
 
+    const { chargeClicks: requiredClicks, maximumReserveMs } =
+      getActiveBalanceConfig().pulseTrigger
     const value = JSON.parse(raw) as Partial<PulseTriggerStoredState>
     const reserveMs = clampNumber(
       value.reserveMs,
       0,
-      PULSE_TRIGGER_MAX_RESERVE_MS,
+      maximumReserveMs,
       0,
     )
     const chargeClicks = Math.floor(
-      clampNumber(
-        value.chargeClicks,
-        0,
-        PULSE_TRIGGER_CHARGE_CLICKS - 1,
-        0,
-      ),
+      clampNumber(value.chargeClicks, 0, requiredClicks - 1, 0),
     )
 
     return {
       reserveMs,
-      chargeClicks:
-        reserveMs >= PULSE_TRIGGER_MAX_RESERVE_MS ? 0 : chargeClicks,
+      chargeClicks: reserveMs >= maximumReserveMs ? 0 : chargeClicks,
     }
   } catch {
     return EMPTY_PULSE_TRIGGER_STATE
