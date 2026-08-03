@@ -3,6 +3,7 @@ import {
   type BalanceConfig,
   type CostCurveConfig,
 } from './balanceConfig'
+import { runBalanceNormalizationParityChecks } from './balanceNormalizationParity'
 import { runOfficialBalanceParityChecks } from './balanceParity'
 
 export const BALANCE_COST_LEVEL_SAMPLES = [0, 1, 2, 5, 10] as const
@@ -157,6 +158,21 @@ export function createBalanceDiagnostics(
   config: Readonly<BalanceConfig>,
 ): BalanceDiagnostic[] {
   const diagnostics: BalanceDiagnostic[] = []
+  const normalizationParity = runBalanceNormalizationParityChecks(config)
+
+  diagnostics.push(
+    normalizationParity.passed
+      ? {
+          severity: 'info',
+          code: 'normalization-parity-passed',
+          message: `Normalización segura: ${normalizationParity.checks} comprobaciones superadas.`,
+        }
+      : {
+          severity: 'error',
+          code: 'normalization-parity-failed',
+          message: `Fallaron ${normalizationParity.failures.length} de ${normalizationParity.checks} comprobaciones de normalización.`,
+        },
+  )
 
   if (config === DEFAULT_BALANCE_CONFIG) {
     const parity = runOfficialBalanceParityChecks()
