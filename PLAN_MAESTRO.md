@@ -17,6 +17,7 @@
 
 Documentos relacionados:
 
+- [`MODELO_MATEMATICO.md`](MODELO_MATEMATICO.md): fórmulas, curvas, límites y dependencias de balance;
 - `HISTORIAL_GPT.MD`: estado técnico, integraciones y decisiones operativas;
 - `PERFORMANCE_AUDIT.md`: rendimiento y arquitectura;
 - `GAMEPAD_DEVICE_SELECTION.md`: selección robusta del mando;
@@ -88,6 +89,8 @@ Ninguna expansión debería obligar permanentemente a un único estilo de juego.
 ### 4.5 Las fórmulas deben poder explicarse
 
 Los efectos importantes deben ser visibles, predecibles y fáciles de presentar al jugador. Se deben evitar bonos ocultos o relaciones imposibles de entender desde la interfaz.
+
+Las fórmulas exactas, sus límites, ejemplos y archivos de implementación se mantienen en [`MODELO_MATEMATICO.md`](MODELO_MATEMATICO.md). Este plan conserva únicamente las decisiones matemáticas de alto nivel necesarias para orientar cada expansión.
 
 ### 4.6 Cada expansión debe incluir estabilidad desde el inicio
 
@@ -311,7 +314,7 @@ IDEA
   ↓
 DOCUMENTO DE DISEÑO
   ↓
-FÓRMULAS Y EJEMPLOS
+FÓRMULAS Y EJEMPLOS EN MODELO_MATEMATICO.md
   ↓
 SIMULACIÓN DE PROGRESIÓN
   ↓
