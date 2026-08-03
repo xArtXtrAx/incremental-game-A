@@ -5,10 +5,7 @@ import {
   loadGamepadSettings,
   STANDARD_BUTTON,
 } from './gamepad'
-import {
-  requestChromaticClose,
-  requestChromaticOpen,
-} from './chromatic'
+import { requestChromaticClose } from './chromatic'
 
 function isChamberOpen() {
   return Boolean(document.querySelector('.chromatic-overlay'))
@@ -35,14 +32,11 @@ function cycleGem(direction: -1 | 1) {
   const next = buttons[nextIndex]
   next.click()
 
-  // GamepadController también procesa L1/R1 para la vista histórica.
-  // Reenfocamos después de su callback para mantener la Cámara al frente.
   window.setTimeout(() => focusElement(next), 24)
 }
 
 export function ChromaticGamepadBridge() {
   const previousButtons = useRef<boolean[]>([])
-  const previousCombo = useRef(false)
   const animationFrame = useRef(0)
 
   useEffect(() => {
@@ -66,20 +60,14 @@ export function ChromaticGamepadBridge() {
         const previous = previousButtons.current
         const justPressed = (index: number) =>
           pressed[index] && !previous[index]
-        const combo = Boolean(
-          pressed[STANDARD_BUTTON.leftBumper] &&
-            pressed[STANDARD_BUTTON.rightBumper],
-        )
         const open = isChamberOpen()
 
-        if (combo && !previousCombo.current && !open) {
-          requestChromaticOpen()
-        } else if (open) {
+        if (open) {
           if (justPressed(STANDARD_BUTTON.back)) {
             requestChromaticClose()
-          } else if (!combo && justPressed(STANDARD_BUTTON.leftBumper)) {
+          } else if (justPressed(STANDARD_BUTTON.leftBumper)) {
             cycleGem(-1)
-          } else if (!combo && justPressed(STANDARD_BUTTON.rightBumper)) {
+          } else if (justPressed(STANDARD_BUTTON.rightBumper)) {
             cycleGem(1)
           } else if (justPressed(STANDARD_BUTTON.dpadLeft)) {
             cycleGem(-1)
@@ -98,11 +86,9 @@ export function ChromaticGamepadBridge() {
           }
         }
 
-        previousCombo.current = combo
         previousButtons.current = pressed
       } else {
         previousButtons.current = []
-        previousCombo.current = false
       }
 
       animationFrame.current = window.requestAnimationFrame(poll)
