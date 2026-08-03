@@ -1,6 +1,7 @@
 import type { BalanceConfig } from './balanceConfig'
 import type { BalanceNormalizationPreview } from './balanceStateNormalization'
 import type { BalanceRuntimeSnapshot } from './balanceRuntime'
+import { createBlockedBalanceSessionIssues } from './balanceSessionPolicy'
 import type { BalanceValidationIssue } from './balanceValidation'
 
 export const BALANCE_SESSION_REQUEST_EVENT =
@@ -56,6 +57,18 @@ function dispatchBalanceSessionRequest(
 export function requestBalanceSessionApply(
   config: Readonly<BalanceConfig>,
 ): BalanceSessionOutcome {
+  const blockedIssues = createBlockedBalanceSessionIssues(config)
+  if (blockedIssues.length > 0) {
+    return {
+      applied: false,
+      snapshot: null,
+      normalization: null,
+      issues: blockedIssues,
+      message:
+        'El perfil contiene parámetros que todavía están limitados a simulación.',
+    }
+  }
+
   return dispatchBalanceSessionRequest('apply', config)
 }
 
