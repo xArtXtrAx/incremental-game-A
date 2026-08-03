@@ -32,6 +32,7 @@ type GamepadWithHaptics = Gamepad & {
 }
 
 type Direction = 'up' | 'down' | 'left' | 'right'
+type GameSection = 'core' | 'upgrades'
 
 type ConnectionState = {
   connected: boolean
@@ -120,11 +121,8 @@ function focusUpgrades() {
   )
 }
 
-function focusActiveSection() {
-  const upgradesActive = document.querySelector<HTMLButtonElement>(
-    '.mobile-section-tabs button:nth-child(2)[aria-pressed="true"]',
-  )
-  if (upgradesActive) focusUpgrades()
+function focusSection(section: GameSection) {
+  if (section === 'upgrades') focusUpgrades()
   else focusCore()
 }
 
@@ -142,13 +140,13 @@ function isChromaticChamberOpen() {
   return Boolean(document.querySelector('.chromatic-overlay'))
 }
 
-function switchSection(section: 'core' | 'upgrades') {
+function switchSection(section: GameSection) {
   const tabs = Array.from(
     document.querySelectorAll<HTMLButtonElement>('.mobile-section-tabs button'),
   )
   const target = section === 'core' ? tabs[0] : tabs[1]
   target?.click()
-  window.setTimeout(section === 'core' ? focusCore : focusUpgrades, 0)
+  window.setTimeout(() => focusSection(section), 0)
 }
 
 function cyclePurchaseStrategy() {
@@ -338,6 +336,7 @@ export function GamepadController() {
   const animationFrame = useRef(0)
   const lastNavigationAt = useRef(0)
   const lastHapticAt = useRef(0)
+  const panelReturnSection = useRef<GameSection>('core')
 
   useEffect(() => {
     settingsRef.current = settings
@@ -361,7 +360,17 @@ export function GamepadController() {
   function togglePanelFromController() {
     setExpanded((current) => {
       const next = !current
-      window.setTimeout(next ? focusGamepadPanel : focusActiveSection, 0)
+      if (next) {
+        panelReturnSection.current = isUpgradeZoneFocused()
+          ? 'upgrades'
+          : 'core'
+      }
+      window.setTimeout(
+        next
+          ? focusGamepadPanel
+          : () => focusSection(panelReturnSection.current),
+        0,
+      )
       return next
     })
   }
