@@ -1,4 +1,9 @@
-import type { BalanceConfig, CostCurveConfig } from './balanceConfig'
+import {
+  DEFAULT_BALANCE_CONFIG,
+  type BalanceConfig,
+  type CostCurveConfig,
+} from './balanceConfig'
+import { runOfficialBalanceParityChecks } from './balanceParity'
 
 export const BALANCE_COST_LEVEL_SAMPLES = [0, 1, 2, 5, 10] as const
 export const BALANCE_RATE_LEVEL_SAMPLES = [1, 2, 3, 5, 10] as const
@@ -92,6 +97,30 @@ export function createBalanceDiagnostics(
 ): BalanceDiagnostic[] {
   const diagnostics: BalanceDiagnostic[] = []
 
+  if (config === DEFAULT_BALANCE_CONFIG) {
+    const parity = runOfficialBalanceParityChecks()
+    diagnostics.push(
+      parity.passed
+        ? {
+            severity: 'info',
+            code: 'official-parity-passed',
+            message: `Paridad oficial superada: ${parity.checks} comprobaciones coinciden con el balance anterior.`,
+          }
+        : {
+            severity: 'error',
+            code: 'official-parity-failed',
+            message: `Fallaron ${parity.failures.length} de ${parity.checks} comprobaciones de paridad oficial.`,
+          },
+    )
+  } else {
+    diagnostics.push({
+      severity: 'info',
+      code: 'experimental-profile-active',
+      message:
+        'La configuración activa es experimental; la paridad con el balance oficial no aplica.',
+    })
+  }
+
   if (
     config.autoclick.maximumRate >
     config.engineLimits.maximumAutomaticClicksPerTick * 0.75
@@ -140,15 +169,6 @@ export function createBalanceDiagnostics(
       code: 'fixed-refraction-orbit',
       message:
         'La órbita de Refracción mantendrá la misma duración durante todo el ciclo.',
-    })
-  }
-
-  if (diagnostics.length === 0) {
-    diagnostics.push({
-      severity: 'info',
-      code: 'no-obvious-risk',
-      message:
-        'No se detectaron riesgos estructurales evidentes en los parámetros actuales.',
     })
   }
 
