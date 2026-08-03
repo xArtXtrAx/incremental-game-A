@@ -124,7 +124,7 @@ export function isGamepadInputActive() {
 export function ensureInputModeTracking() {
   if (typeof window === 'undefined' || typeof document === 'undefined') return
 
-  const trackedWindow = window as Window & Record<string, unknown>
+  const trackedWindow = window as unknown as Record<string, unknown>
   if (trackedWindow[INPUT_MODE_TRACKING_FLAG]) return
   trackedWindow[INPUT_MODE_TRACKING_FLAG] = true
 
