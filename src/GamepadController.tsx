@@ -50,11 +50,10 @@ const EMPTY_CONNECTION: ConnectionState = {
 }
 
 const FOCUSABLE_SELECTOR = [
-  '.game-screen button:not(:disabled)',
-  '.game-screen [role="button"]:not([aria-disabled="true"])',
-  '.game-screen [role="tab"]:not([aria-disabled="true"])',
-  '.gamepad-panel button:not(:disabled)',
-  '.gamepad-panel input:not(:disabled)',
+  'button:not(:disabled)',
+  '[role="button"]:not([aria-disabled="true"])',
+  '[role="tab"]:not([aria-disabled="true"])',
+  'input:not(:disabled)',
 ].join(',')
 
 function isVisible(element: HTMLElement) {
@@ -68,15 +67,35 @@ function isVisible(element: HTMLElement) {
   )
 }
 
-function getFocusableElements() {
+function getFocusableElements(root: HTMLElement) {
   return Array.from(
-    document.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
+    root.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR),
   ).filter(isVisible)
 }
 
 function getFocusedControl() {
   const active = document.activeElement
   return active instanceof HTMLElement && isVisible(active) ? active : null
+}
+
+function getNavigationRoot(active: HTMLElement | null) {
+  const panel = active?.closest<HTMLElement>('.gamepad-panel')
+  if (panel) return panel
+
+  const core = active?.closest<HTMLElement>('.core-layout-section')
+  if (core) return core
+
+  const upgrades = active?.closest<HTMLElement>('.upgrades-layout-section')
+  if (upgrades) return upgrades
+
+  const tabs = Array.from(
+    document.querySelectorAll<HTMLButtonElement>('.mobile-section-tabs button'),
+  )
+  const activeSection = tabs[1]?.getAttribute('aria-pressed') === 'true'
+    ? '.upgrades-layout-section'
+    : '.core-layout-section'
+
+  return document.querySelector<HTMLElement>(activeSection)
 }
 
 function focusElement(element: HTMLElement | null) {
@@ -156,7 +175,7 @@ function pulseCore() {
 
 function activateFocusedControl() {
   const focused = getFocusedControl()
-  if (!focused) return false
+  if (!focused || focused.closest('.mobile-section-tabs')) return false
 
   if (focused instanceof HTMLButtonElement) {
     if (focused.disabled) return false
@@ -222,10 +241,13 @@ function adjustFocusedRange(direction: 'left' | 'right') {
 }
 
 function findDirectionalTarget(direction: Direction) {
-  const elements = getFocusableElements()
+  const active = getFocusedControl()
+  const root = getNavigationRoot(active)
+  if (!root) return null
+
+  const elements = getFocusableElements(root)
   if (elements.length === 0) return null
 
-  const active = getFocusedControl()
   if (!active || !elements.includes(active)) {
     return direction === 'left' || direction === 'up'
       ? elements[elements.length - 1]
@@ -409,6 +431,10 @@ export function GamepadController() {
           pressed[STANDARD_BUTTON.leftTrigger],
         )
         const chamberOpen = isChromaticChamberOpen()
+        const bothBumpersHeld = Boolean(
+          pressed[STANDARD_BUTTON.leftBumper] &&
+            pressed[STANDARD_BUTTON.rightBumper],
+        )
 
         if (
           !leftTriggerHeld &&
@@ -416,10 +442,6 @@ export function GamepadController() {
           justPressed(STANDARD_BUTTON.primary)
         ) {
           if (pulseCore()) rumble(gamepad, 45, 0.18, 0.08)
-        }
-        if (justPressed(STANDARD_BUTTON.back)) {
-          switchSection('core')
-          rumble(gamepad, 35, 0.12, 0.04)
         }
 
         if (!chamberOpen) {
@@ -441,11 +463,19 @@ export function GamepadController() {
           }
         }
 
-        if (!chamberOpen && justPressed(STANDARD_BUTTON.leftBumper)) {
+        if (
+          !chamberOpen &&
+          !bothBumpersHeld &&
+          justPressed(STANDARD_BUTTON.leftBumper)
+        ) {
           switchSection('core')
           rumble(gamepad, 35, 0.12, 0.04)
         }
-        if (!chamberOpen && justPressed(STANDARD_BUTTON.rightBumper)) {
+        if (
+          !chamberOpen &&
+          !bothBumpersHeld &&
+          justPressed(STANDARD_BUTTON.rightBumper)
+        ) {
           switchSection('upgrades')
           rumble(gamepad, 35, 0.12, 0.04)
         }
@@ -455,7 +485,7 @@ export function GamepadController() {
         }
 
         const navigationReady = now - lastNavigationAt.current >= 190
-        if (navigationReady) {
+        if (!chamberOpen && navigationReady) {
           const deadzone = settingsRef.current.deadzone
           let direction: Direction | null = null
           if (
@@ -629,13 +659,10 @@ export function GamepadController() {
               <kbd>
                 {labels.leftBumper}/{labels.rightBumper}
               </kbd>{' '}
-              cambiar sección
+              cambiar entre Núcleo y Evoluciones
             </span>
             <span>
-              <kbd>Cruceta / stick</kbd> navegar y ajustar
-            </span>
-            <span>
-              <kbd>{labels.back}</kbd> volver al núcleo
+              <kbd>Cruceta / stick</kbd> navegar solo dentro de la zona activa
             </span>
             <span>
               <kbd>{labels.options}</kbd> abrir este panel
