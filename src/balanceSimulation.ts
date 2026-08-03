@@ -92,6 +92,67 @@ export function getConfiguredSapphireMultiplier(
   )
 }
 
+function addCostCurveDiagnostics(
+  config: Readonly<BalanceConfig>,
+  diagnostics: BalanceDiagnostic[],
+) {
+  for (const [system, curve] of Object.entries(config.costs)) {
+    if (curve.growth <= 1.02) {
+      diagnostics.push({
+        severity: 'warning',
+        code: `flat-cost-${system}`,
+        message: `${system}: el crecimiento de costo es casi plano y puede eliminar decisiones de inversión.`,
+      })
+    }
+
+    const level25Cost = getConfiguredCost(curve, 25)
+    if (!Number.isFinite(level25Cost)) {
+      diagnostics.push({
+        severity: 'error',
+        code: `non-finite-cost-${system}`,
+        message: `${system}: el costo proyectado para nivel 25 deja de ser finito.`,
+      })
+    } else if (level25Cost > config.engineLimits.maximumFiniteValue) {
+      diagnostics.push({
+        severity: 'warning',
+        code: `finite-limit-cost-${system}`,
+        message: `${system}: el costo proyectado para nivel 25 supera el límite finito protegido por el motor.`,
+      })
+    }
+  }
+}
+
+function addUnlockDiagnostics(
+  config: Readonly<BalanceConfig>,
+  diagnostics: BalanceDiagnostic[],
+) {
+  const capacity = config.core.sphereClickCapacity
+  const clickUnlocks = [
+    ['Presión', config.unlocks.pressureRequiredClicks],
+    ['Cavitación', config.unlocks.cavitationRequiredClicks],
+    ['Autoclicker', config.unlocks.autoclickRequiredClicks],
+  ] as const
+
+  clickUnlocks.forEach(([label, requiredClicks]) => {
+    if (requiredClicks > capacity) {
+      diagnostics.push({
+        severity: 'warning',
+        code: `unlock-after-prestige-${label.toLowerCase()}`,
+        message: `${label}: el requisito queda después de llenar la esfera en la primera partida.`,
+      })
+    }
+  })
+
+  if (config.unlocks.refractionRequiredPrestige > 5) {
+    diagnostics.push({
+      severity: 'warning',
+      code: 'late-refraction-unlock',
+      message:
+        'Refracción se desbloquearía después del nivel visual máximo actual del Zafiro.',
+    })
+  }
+}
+
 export function createBalanceDiagnostics(
   config: Readonly<BalanceConfig>,
 ): BalanceDiagnostic[] {
@@ -117,7 +178,19 @@ export function createBalanceDiagnostics(
       severity: 'info',
       code: 'experimental-profile-active',
       message:
-        'La configuración activa es experimental; la paridad con el balance oficial no aplica.',
+        'La configuración previsualizada es experimental; la paridad con el balance oficial no aplica.',
+    })
+  }
+
+  addCostCurveDiagnostics(config, diagnostics)
+  addUnlockDiagnostics(config, diagnostics)
+
+  if (config.autoclick.baseRate === 0 || config.autoclick.maximumRate === 0) {
+    diagnostics.push({
+      severity: 'warning',
+      code: 'autoclick-stalled',
+      message:
+        'El Autoclicker no producirá clics con la tasa inicial o máxima establecida en cero.',
     })
   }
 
@@ -148,6 +221,15 @@ export function createBalanceDiagnostics(
       code: 'overload-cost-wall',
       message:
         'La curva de Sobrecarga puede crear un muro de costo muy pronunciado.',
+    })
+  }
+
+  if (config.sapphire.multipliers[5] >= 10) {
+    diagnostics.push({
+      severity: 'warning',
+      code: 'sapphire-p5-inflation',
+      message:
+        'El multiplicador de Zafiro P5 puede eclipsar la identidad de las gemas posteriores.',
     })
   }
 

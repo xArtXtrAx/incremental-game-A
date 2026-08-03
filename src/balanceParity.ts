@@ -1,3 +1,11 @@
+import { DEFAULT_BALANCE_CONFIG, cloneBalanceConfig } from './balanceConfig'
+import {
+  countBalanceDraftChanges,
+  getBalanceDraftNumber,
+  restoreBalanceDraftPath,
+  updateBalanceDraftNumber,
+} from './balanceDraft'
+import { validateBalanceConfig } from './balanceValidation'
 import {
   getAutoclickCost,
   getAutoclickRate,
@@ -47,6 +55,14 @@ type ParityCase = {
   expected: number
   calculate: () => number
   tolerance?: number
+}
+
+function createModifiedDraft() {
+  return updateBalanceDraftNumber(
+    DEFAULT_BALANCE_CONFIG,
+    'costs.click.baseCost',
+    20,
+  )
 }
 
 const parityCases: readonly ParityCase[] = [
@@ -160,6 +176,51 @@ const parityCases: readonly ParityCase[] = [
   },
   { id: 'pulse-trigger.l0', expected: 6, calculate: () => getPulseTriggerRate(0) },
   { id: 'pulse-trigger.l6', expected: 9, calculate: () => getPulseTriggerRate(6) },
+  {
+    id: 'draft.clone-does-not-mutate-official',
+    expected: 10,
+    calculate: () => {
+      const clone = cloneBalanceConfig(DEFAULT_BALANCE_CONFIG)
+      clone.costs.click.baseCost = 99
+      return DEFAULT_BALANCE_CONFIG.costs.click.baseCost
+    },
+  },
+  {
+    id: 'draft.update-path',
+    expected: 20,
+    calculate: () =>
+      getBalanceDraftNumber(createModifiedDraft(), 'costs.click.baseCost'),
+  },
+  {
+    id: 'draft.change-count',
+    expected: 1,
+    calculate: () =>
+      countBalanceDraftChanges(createModifiedDraft(), DEFAULT_BALANCE_CONFIG),
+  },
+  {
+    id: 'draft.restore-path',
+    expected: 0,
+    calculate: () => {
+      const restored = restoreBalanceDraftPath(
+        createModifiedDraft(),
+        DEFAULT_BALANCE_CONFIG,
+        'costs.click.baseCost',
+      )
+      return countBalanceDraftChanges(restored, DEFAULT_BALANCE_CONFIG)
+    },
+  },
+  {
+    id: 'draft.rejects-non-finite',
+    expected: 0,
+    calculate: () => {
+      const invalid = updateBalanceDraftNumber(
+        DEFAULT_BALANCE_CONFIG,
+        'autoclick.baseRate',
+        Number.NaN,
+      )
+      return validateBalanceConfig(invalid).valid ? 1 : 0
+    },
+  },
 ]
 
 export function runOfficialBalanceParityChecks(): BalanceParityResult {
