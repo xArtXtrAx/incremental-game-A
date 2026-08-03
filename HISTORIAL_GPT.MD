@@ -6,18 +6,19 @@
 ## 1. Estado actual del repositorio
 
 - Repositorio: `xArtXtrAx/incremental-game-A`.
-- Rama activa y estable: `main`.
-- Commit actual de integración: `8a6d628613d9dec47873a7a653e984a781ec2a04`.
-- PR integrado: **#1 — Integrar auditoría de rendimiento y selección robusta de gamepad**.
-- Rama integrada: `Dev-Performance-Audit`.
-- `Dev-Performance-Audit` se conserva como respaldo histórico; ya no es la rama activa.
-- La integración incorporó 8 commits y 6 archivos modificados.
-- No se modificaron gameplay, economía, balance ni presentación visual.
+- Rama estable: `main`.
+- Último commit estable antes del ajuste actual: `ef0dcf2cbd81457b346809e2046edb4a354016c6`.
+- Rama de trabajo activa: `Dev-Gamepad-Zone-Navigation`.
+- Base de la rama: `main` en `ef0dcf2cbd81457b346809e2046edb4a354016c6`.
+- La rama actual no está integrada en `main`.
+- Objetivo de la rama: confinar cruceta y joystick a la zona activa, reservar L1/R1 como única vía de cambio entre Núcleo y Evoluciones, y retirar temporalmente el acceso L1+R1 a la Cámara Cromática.
+- Los cambios afectan únicamente navegación y mapa de controles; no modifican gameplay, economía, balance, guardado ni presentación visual.
+- `Dev-Performance-Audit` ya fue integrada mediante el PR #1 y se conserva como respaldo histórico.
 - Entorno: React 19 + TypeScript 6 + Vite 8 + Motion.
 - Guardado principal: `incremental-game-a:save:v1`.
 - Ajustes de mando: `incremental-game-a:gamepad:v1`.
 - Reserva del Gatillo: `incremental-game-a:pulse-trigger:v1`.
-- Última actualización: **2 de agosto de 2026, 21:05 CDMX**.
+- Última actualización: **2 de agosto de 2026, 23:21 CDMX**.
 
 ### Repositorio transversal de estabilidad
 
@@ -130,21 +131,16 @@ El planificador simula compras mediante el reducer, calcula utilidad y aplica un
 
 ### Cámara Cromática
 
-- Nexo Prismático con cinco frecuencias previstas:
-  - Zafiro;
-  - Esmeralda;
-  - Amarilla;
-  - Naranja;
-  - Roja.
+- Nexo Prismático con cinco frecuencias previstas: Zafiro, Esmeralda, Amarilla, Naranja y Roja.
 - En P5 se activa la primera órbita azul y la Esmeralda queda señalada como siguiente frecuencia.
 - Las otras cuatro gemas todavía no tienen economía ni bonificaciones.
 - El Zafiro orbita por delante y por detrás del Nexo y produce un reflejo dinámico.
 - Existe acceso DEV y previsualización de los cinco colores sin alterar guardado, economía ni prestigio.
 - El reactor sigue funcionando mientras la Cámara está abierta.
 
-## 4. Controles finales DualSense / Gamepad
+## 4. Controles DualSense / Gamepad
 
-### Reactor
+### Controles estables conservados
 
 - X/A: pulsa la esfera.
 - X/A no pulsa la esfera mientras L2/LT está sostenido.
@@ -153,32 +149,42 @@ El planificador simula compras mediante el reducer, calcula utilidad y aplica un
 - L2 + Triángulo / LT + Y: cambia estrategia de Comprar todo.
 - L2 + Cuadrado / LT + X: Comprar todo lo posible.
 - Triángulo/Y sin L2 conserva el atajo anterior de compra global.
-- L1/LB: Núcleo.
-- R1/RB: Evoluciones.
-- Cruceta y stick: navegación espacial.
-- La cruceta no cambia directamente de ventana en el reactor.
 - Izquierda/derecha ajustan sliders cuando tienen foco.
-- Círculo/B: volver o cerrar según contexto.
-- Options/Menu: panel del mando.
+- Options/Menu: abre o cierra el panel del mando.
 
-### Cámara Cromática
+### Ajuste actual en `Dev-Gamepad-Zone-Navigation`
 
-- L1/R1 o cruceta izquierda/derecha recorren gemas.
+- L1/LB selecciona y enfoca exclusivamente el Núcleo.
+- R1/RB selecciona y enfoca exclusivamente Evoluciones.
+- **L1 y R1 son la única vía de cambio entre las dos zonas mediante el mando.**
+- Cruceta y joystick navegan solamente entre controles de la zona activa.
+- Desde el Núcleo, la navegación direccional no puede saltar a Evoluciones.
+- Desde Evoluciones, la navegación direccional no puede saltar al Núcleo.
+- Las pestañas principales quedan fuera del selector general de Cuadrado para impedir cambios indirectos de zona.
+- Círculo/B deja de regresar automáticamente al Núcleo desde el reactor; se reserva para acciones contextuales como cerrar la Cámara.
+- Abrir y cerrar el panel del mando conserva la zona que estaba activa.
+- Los atajos globales de estrategia y Comprar todo ejecutan su acción sin arrastrar el foco a Evoluciones cuando el jugador estaba en el Núcleo.
+- Presionar L1+R1 simultáneamente no cambia de zona y ya no abre la Cámara Cromática.
+- La navegación genérica del reactor se suspende mientras la Cámara está abierta para no mover controles detrás del overlay.
+
+### Cámara Cromática en esta rama
+
+- Se eliminó temporalmente el atajo L1+R1 para entrar.
+- La Cámara debe abrirse por su control visual o por herramientas DEV mientras se diseña el acceso definitivo.
+- Una vez abierta, L1/R1 y cruceta izquierda/derecha continúan recorriendo gemas.
 - Cruceta arriba enfoca regresar.
 - Cruceta abajo vuelve a la gema seleccionada.
 - X/A activa el control de la Cámara y no pulsa el núcleo por detrás.
-- Círculo/B regresa al reactor.
+- Círculo/B cierra la Cámara.
 
 ### Selección robusta del dispositivo
 
-- El juego ya no supone que el primer objeto enumerado por `navigator.getGamepads()` es el mando activo.
+- El juego no supone que el primer objeto enumerado por `navigator.getGamepads()` es el mando activo.
 - `src/gamepad.ts` detecta actividad real en botones, gatillos y ejes.
 - Conserva estable el índice activo mientras el dispositivo siga conectado.
 - Un mando neutral no bloquea a otro dispositivo físico o virtual que sí recibe entradas.
-- Se usa un umbral alto para seleccionar por ejes y evitar cambios por deriva leve.
-- Arturo reprodujo la condición problemática —DualSense neutral enumerado junto con un dispositivo Xbox virtual activo— y confirmó que el control volvió a funcionar.
-- La corrección del incidente original está **validada físicamente**.
-- La matriz amplia de regresión permanece en `GAMEPAD_DEVICE_SELECTION.md` y en el BUG-001.
+- Arturo reprodujo la condición DualSense neutral + dispositivo Xbox virtual activo y confirmó que el control volvió a funcionar.
+- La corrección está validada físicamente y documentada en `GAMEPAD_DEVICE_SELECTION.md` y en el BUG-001.
 
 ## 5. Arquitectura relevante
 
@@ -190,8 +196,8 @@ El planificador simula compras mediante el reducer, calcula utilidad y aplica un
 - `src/UpgradeProgressBar.tsx`: animación nativa de barras.
 - `src/UpgradeProgressSystem.tsx`: portales y snapshots de barras.
 - `src/gamepad.ts`: etiquetas, ajustes, detección y selección por actividad real.
-- `src/GamepadController.tsx`: navegación y hotkeys del reactor.
-- `src/ChromaticGamepadBridge.tsx`: navegación específica de la Cámara.
+- `src/GamepadController.tsx`: navegación, confinamiento por zona y hotkeys del reactor.
+- `src/ChromaticGamepadBridge.tsx`: navegación específica de la Cámara; el acceso L1+R1 fue retirado en la rama actual.
 - `src/GamepadEventHaptics.tsx`: vibraciones contextuales.
 - `src/pulseTrigger.ts`: reserva, fórmulas y eventos del Gatillo.
 - `src/PulseTriggerSystem.tsx`: entradas, disparos y portal del Gatillo.
@@ -199,7 +205,7 @@ El planificador simula compras mediante el reducer, calcula utilidad y aplica un
 - `src/SapphireGem3D.tsx` y `src/SapphireOrbit3D.tsx`: WebGL.
 - `src/DeveloperPanel.tsx`: herramientas DEV.
 - `SMOOTH_PROGRESS_FIX.md`: decisiones de barras.
-- `DUALSENSE_L2_HOTKEYS.md`: decisiones del mando.
+- `DUALSENSE_L2_HOTKEYS.md`: decisiones anteriores del mando.
 - `GAMEPAD_DEVICE_SELECTION.md`: bug crítico, causa raíz, parche y regla universal.
 - `PERFORMANCE_AUDIT.md`: línea base y recomendaciones de rendimiento.
 
@@ -207,7 +213,7 @@ El planificador simula compras mediante el reducer, calcula utilidad y aplica un
 
 La auditoría ya forma parte de `main`; no es una rama pendiente.
 
-### Archivos y herramientas incorporados
+### Herramientas incorporadas
 
 - `PERFORMANCE_AUDIT.md`.
 - `GAMEPAD_DEVICE_SELECTION.md`.
@@ -221,21 +227,6 @@ La auditoría ya forma parte de `main`; no es una rama pendiente.
 npm run audit:performance
 npm run audit:performance:json
 ```
-
-El auditor estático recorre `src/**/*.ts` y `src/**/*.tsx` y reporta:
-
-- archivos, líneas y bytes;
-- archivos más grandes;
-- `setInterval`;
-- bucles `requestAnimationFrame`;
-- lecturas y escrituras de `localStorage`;
-- `JSON.parse` y `JSON.stringify`;
-- `MutationObserver` global;
-- consultas DOM;
-- cantidad aproximada de hooks React;
-- patrones que requieren revisión humana.
-
-No se añadieron dependencias.
 
 ### Línea base local registrada
 
@@ -254,106 +245,40 @@ No se añadieron dependencias.
 - `useEffect`: 45.
 - `useState`: 37.
 
-Archivos más grandes en esa captura:
-
-- `game.ts`: 892 líneas.
-- `GameCore`: 776.
-- `UpgradesPanel`: 665.
-- `GamepadController`: 657.
-- `SapphireGem3D`: 579.
-- `App`: 498.
-- `UpgradeProgressSystem`: 486.
-- `DeveloperPanel`: 465.
-- `bulkPurchase`: 445.
-- `PulseTrigger`: 418.
+Archivos más grandes en esa captura: `game.ts` 892 líneas, `GameCore` 776, `UpgradesPanel` 665, `GamepadController` 657, `SapphireGem3D` 579, `App` 498, `UpgradeProgressSystem` 486, `DeveloperPanel` 465, `bulkPurchase` 445 y `PulseTrigger` 418.
 
 ## 7. Hallazgos confirmados
 
 ### P0 — Nunca seleccionar el mando solo por orden de enumeración
 
-Un cierre inesperado de Chrome reveló que podían coexistir:
-
-- `DualSense Wireless Controller`, enumerado primero pero neutral;
-- `Controller (XBOX 360 For Windows)`, que recibía las entradas reales.
-
-La corrección selecciona por actividad real y mantiene estable el dispositivo activo. El incidente original fue validado físicamente y se publicó como `BUG-001` en el repositorio universal.
+Un cierre inesperado de Chrome reveló un DualSense enumerado primero pero neutral y un dispositivo Xbox virtual que recibía las entradas. La corrección selecciona por actividad real, fue validada físicamente y se publicó como BUG-001.
 
 ### P1 — `localStorage` se usa como bus interno
 
-Además del guardado, varios sistemas releen y deserializan el estado periódicamente:
+`UpgradeProgressSystem`, `PulseTriggerSystem` y `ChromaticChamberSystem` releen y deserializan el guardado cada 100, 160 y 180 ms respectivamente.
 
-- `UpgradeProgressSystem`: cada 100 ms.
-- `PulseTriggerSystem`: cada 160 ms.
-- `ChromaticChamberSystem`: cada 180 ms.
-
-Primera recomendación estructural: crear una fuente ligera de snapshots en memoria con suscripciones selectivas y reservar `localStorage` para persistencia.
-
-Orden propuesto:
-
-1. barras;
-2. Cámara;
-3. Gatillo.
-
-El reducer debe seguir siendo la única autoridad del gameplay.
+Primera recomendación estructural: crear una fuente ligera de snapshots en memoria con suscripciones selectivas y reservar `localStorage` para persistencia. Orden propuesto: barras, Cámara y Gatillo. El reducer debe seguir siendo la única autoridad del gameplay.
 
 ### P1 — Sondeo duplicado del mando
 
-Existen bucles independientes en:
-
-- `GamepadController`;
-- `PulseTriggerSystem` para R2;
-- `ChromaticGamepadBridge`.
-
-A mediano plazo conviene un servicio único de entrada que produzca botones, flancos, ejes y conexión. Esta migración debe hacerse por separado y con prueba física completa.
+Existen bucles independientes en `GamepadController`, `PulseTriggerSystem` y `ChromaticGamepadBridge`. A mediano plazo conviene un servicio único de entrada, pero debe migrarse por separado y con prueba física completa.
 
 ### P1 — Guardado completo y síncrono por cada estado
 
-`App` ejecuta `saveGameState(game)` cada vez que cambia el estado principal.
-
-Recomendación futura:
-
-- marca `dirty`;
-- debounce de 250–500 ms;
-- guardado inmediato en cristalización y reset;
-- flush en `visibilitychange` y `pagehide`;
-- métricas de tamaño y duración;
-- conservar migración y sanitización.
-
-No cambiar sin medir y definir eventos críticos.
+`App` ejecuta `saveGameState(game)` cada vez que cambia el estado principal. La recomendación futura es coordinador `dirty`, debounce, guardados inmediatos en eventos críticos y flush en `visibilitychange`/`pagehide`.
 
 ### P1/P2 — Demasiados relojes independientes
 
 Conviven tick de 1 segundo, reloj de 100 ms, sondeos de 100/160/180 ms, varios bucles de mando, WebGL y Web Animations API.
 
-Recomendación: reloj visual compartido y selectivo; aislar temporizadores visibles de los renders globales.
+### P2 — Otros hallazgos
 
-### P2 — Barras integradas mediante DOM y persistencia
-
-`UpgradeProgressSystem` carga su propia copia del guardado, observa el `body`, busca tarjetas por texto y crea hosts imperativos.
-
-Debe conservarse `UpgradeProgressBar` y la animación nativa, migrando alimentación y montaje hacia estado en memoria e IDs declarativos.
-
-### P2 — Gatillo y Cámara mantienen snapshots parciales
-
-Ambos deben migrar gradualmente a la fuente compartida después de las barras.
-
-### P2 — Comprar todo escala por rondas y candidatos
-
-Con 320 rondas y nueve candidatos puede alcanzar hasta 2,880 intentos de compra.
-
-No reescribir aún. Primero medir duración por estrategia y estado.
-
-### P2 — Autoclicks individuales
-
-El límite actual de 20/s hace que el enfoque sea correcto y seguro. No optimizar todavía sin pruebas de equivalencia exacta.
-
-### P2 — Definiciones distribuidas
-
-Costos, requisitos, etiquetas, categorías, acciones, barras y pesos estratégicos aparecen en varios archivos. Antes de crecer mucho conviene un registro tipado de mejoras con IDs estables, sin quitar autoridad al reducer.
-
-### Estrategia numérica
-
-`number` es suficiente hoy. No introducir BigNumber ni librerías decimales hasta definir la escala real del juego.
+- Barras integradas mediante DOM y persistencia.
+- Gatillo y Cámara mantienen snapshots parciales.
+- Comprar todo puede alcanzar 2,880 intentos por ejecución.
+- Los autoclics se procesan individualmente; el límite actual de 20/s sigue siendo seguro.
+- Las definiciones de mejoras están distribuidas.
+- `number` es suficiente hoy; no introducir BigNumber todavía.
 
 ## 8. Presupuestos iniciales de rendimiento
 
@@ -368,134 +293,86 @@ Costos, requisitos, etiquetas, categorías, acciones, barras y pesos estratégic
 | Cuadro visual | p95 < 20 ms | tirones repetidos > 33 ms |
 | Memoria tras 30 min | estable | crecimiento continuo |
 
-Deben medirse en la PC principal y posteriormente en un equipo de gama media.
-
 ## 9. Escenarios de medición
 
-### A — Partida nueva
-
-- P0 y sin mejoras.
-- 30 segundos de clics.
-- Abrir tarjetas y cambiar categorías con mando.
-
-### B — Reactor cargado
-
-- Esfera llena.
-- Todas las evoluciones actuales.
-- Sobrecarga y PRISMA activos.
-- Gatillo, clic manual y Autoclicker simultáneos.
-
-### C — Comprar todo
-
-- Energía alta desde DEV.
-- Medir las tres estrategias.
-- Registrar duración, compras y estado final.
-
-### D — Cámara Cromática
-
-- P5 y modo DEV.
-- Mantenerla abierta al menos 60 segundos.
-- Navegar con mouse y DualSense.
-- Confirmar continuidad del reactor.
-
-### E — Sesión prolongada
-
-- 30–60 minutos.
-- Cambios repetidos entre reactor y Cámara.
-- Revisar memoria, listeners, timers y nodos desconectados.
+- **A — Partida nueva:** P0, 30 segundos de clics y navegación con mando.
+- **B — Reactor cargado:** esfera llena, evoluciones, Sobrecarga, PRISMA, Gatillo y Autoclicker.
+- **C — Comprar todo:** energía alta, tres estrategias y duración.
+- **D — Cámara Cromática:** P5/DEV, 60 segundos, navegación y continuidad del reactor.
+- **E — Sesión prolongada:** 30–60 minutos, cambios repetidos y revisión de memoria/listeners.
 
 ## 10. Orden recomendado para continuar
 
-### Fase A — Validación posterior a la integración
+### Fase inmediata — Validar `Dev-Gamepad-Zone-Navigation`
 
-1. Cambiar en GitHub Desktop a `main`.
+1. En GitHub Desktop, cambiar a `Dev-Gamepad-Zone-Navigation` y hacer Pull.
 2. Ejecutar:
 
 ```powershell
 npm run lint
 npm run build
-npm run audit:performance
 npm run dev
 ```
 
-3. Confirmar que el juego y el control siguen funcionando desde `main`.
-4. Registrar la nueva salida del auditor si cambia.
-5. Medir Chrome Performance en escenarios A–D.
-6. Medir renders con React Profiler.
-7. Registrar resultados en `PERFORMANCE_AUDIT.md`.
-8. Decidir el primer cambio estructural con datos reales.
+3. Probar con DualSense:
+   - L1 entra al Núcleo y R1 a Evoluciones;
+   - cruceta y joystick no cruzan de una zona a otra;
+   - navegación vertical y horizontal funciona dentro de cada zona;
+   - sliders siguen respondiendo a izquierda/derecha;
+   - Cuadrado activa únicamente controles de la zona enfocada;
+   - Círculo no cambia al Núcleo desde Evoluciones;
+   - abrir/cerrar el panel conserva la zona;
+   - Triángulo y L2+Cuadrado no cambian el foco de zona;
+   - L1+R1 no abre la Cámara ni produce un cambio de zona;
+   - la Cámara sigue cerrando con Círculo y navegando internamente una vez abierta.
+4. Reportar cualquier salto de foco o control inaccesible.
+5. Comparar la rama con `main`.
+6. Integrar solo después de aprobación explícita de Arturo.
 
-### Fase B — Comunicación interna
+### Trabajo estructural posterior
 
-Sujeta a medición:
+Después de cerrar esta rama y completar perfiles:
 
 - fuente de snapshots en memoria;
 - retirar sondeos de `localStorage` en barras, Cámara y Gatillo;
-- conservar guardado y migraciones;
-- comparar antes/después.
-
-### Fase C — Entrada del mando
-
-- unificar los bucles de mando;
-- separar dispositivo de entrada, dispositivo háptico e identidad visual;
-- migrar reactor, Gatillo y Cámara por etapas;
-- prueba física completa.
-
-### Fase D — Persistencia
-
-- coordinador `dirty` + debounce + flush;
-- pruebas de cierre, reset y cristalización.
-
-### Fase E — Preparación para Esmeralda
-
-- registro tipado de mejoras;
-- selectores y view models;
-- división de paneles grandes;
-- pruebas del reducer y Comprar todo;
-- nueva medición antes de añadir economía verde.
+- unificar bucles del mando por etapas;
+- coordinador de persistencia;
+- preparación para Esmeralda.
 
 ## 11. Optimizaciones que deben esperar
 
-No implementar todavía:
-
-- ECS;
-- Typed Arrays para niveles;
-- reemplazar objetos por `Map` indiscriminadamente;
-- min-heap para los pocos temporizadores actuales;
-- Web Workers para el tick normal;
-- IndexedDB para el guardado actual;
-- biblioteca de números enormes sin definir escala;
-- memoización indiscriminada;
-- reescritura completa del reducer;
-- cambios simultáneos de arquitectura y balance.
+No implementar todavía: ECS, Typed Arrays para niveles, `Map` indiscriminado, min-heap, Web Workers para el tick normal, IndexedDB, números enormes sin definir escala, memoización indiscriminada, reescritura completa del reducer ni cambios simultáneos de arquitectura y balance.
 
 ## 12. Validaciones realizadas y pendientes
 
-### Realizadas
+### Realizadas previamente
 
-- `npm run lint` antes del parche de gamepad: 0 errores y 3 advertencias no bloqueantes.
-- `npm run build` antes del parche: compilación de producción correcta.
-- `npm run audit:performance`: línea base de 28 archivos y 8,852 líneas.
-- `npm run audit:performance:json`: captura guardada en `%TEMP%`.
-- Diagnóstico directo de todos los objetos de `navigator.getGamepads()`.
-- Reproducción de DualSense neutral + dispositivo Xbox virtual activo.
-- Prueba física después del parche: el control volvió a funcionar.
-- Publicación y validación del `BUG-001`.
-- Integración autorizada a `main` mediante el PR #1.
+- `npm run lint` antes del parche de selección por actividad: 0 errores y 3 advertencias no bloqueantes.
+- `npm run build` antes de ese parche: compilación correcta.
+- Línea base del auditor: 28 archivos y 8,852 líneas.
+- Diagnóstico y validación física del BUG-001.
+- Integración autorizada de la auditoría a `main` mediante el PR #1.
 
-### Pendientes
+### Pendientes de la rama actual
 
-- Repetir `npm run lint` después del parche y desde `main`.
-- Repetir `npm run build` después del parche y desde `main`.
-- Repetir el auditor desde `main` y comparar la línea base.
-- Perfil de Chrome Performance.
+- `npm run lint`.
+- `npm run build`.
+- Prueba física completa del confinamiento por zonas.
+- Verificar que L1/R1 sean la única vía de cambio con el mando.
+- Verificar que L1+R1 no abra la Cámara.
+- Revisar navegación del panel del mando y conservación de la zona.
+- Revisar Cámara abierta por UI/DEV.
+- Comparación final contra `main`.
+- Autorización explícita antes de integrar.
+
+### Pendientes generales de rendimiento
+
+- Repetir el auditor desde la versión estable correspondiente.
+- Chrome Performance.
 - React Profiler.
 - Benchmarks de duración.
 - Sesión prolongada de 30–60 minutos.
-- Matriz amplia de regresión de gamepad antes de una futura refactorización del sistema de entrada.
-
-La integración actual fue autorizada por Arturo después de validar físicamente el incidente original. Las comprobaciones pendientes deben completarse antes de comenzar una refactorización estructural nueva.
 
 ## 13. Prompt recomendado para el siguiente chat
 
-> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. La rama activa y estable es `main`, actualmente en la integración `8a6d628613d9dec47873a7a653e984a781ec2a04`. `Dev-Performance-Audit` ya fue integrada mediante el PR #1 y se conserva solo como respaldo histórico. Lee primero `HISTORIAL_GPT.MD`, `PERFORMANCE_AUDIT.md` y `GAMEPAD_DEVICE_SELECTION.md`. Existe un repositorio transversal de importancia mayúscula, `xArtXtrAx/bugs-universales-corregidos`, donde cada bug crítico resuelto y validado debe documentarse como ejemplo reutilizable. El `BUG-001`, sobre seleccionar el gamepad por actividad real en vez del primer índice enumerado, ya fue publicado y validado físicamente: Arturo confirmó que el control volvió a funcionar con un DualSense neutral enumerado junto con un dispositivo Xbox virtual activo. No integres ramas ni elimines respaldos sin autorización explícita. Antes de refactorizar, actualiza `main` localmente y ejecuta `npm run lint`, `npm run build`, `npm run audit:performance` y `npm run dev`; lint y build posteriores al parche todavía están pendientes. Después completa perfiles de Chrome Performance y React Profiler. Los hallazgos principales son: `localStorage` usado como canal interno por barras, Gatillo y Cámara; varios relojes y bucles de mando independientes; guardado completo tras cada estado; posibles renders globales cada 100 ms; Comprar todo con hasta 320 rondas por nueve candidatos; autoclics individuales; y definiciones de mejoras distribuidas. La primera refactorización recomendada, sujeta a medición, es una fuente ligera de snapshots en memoria para retirar el sondeo de `localStorage`, empezando por barras, luego Cámara y Gatillo. Mantén reducer, fórmulas, balance, visuales, barras fluidas y controles exactamente iguales. Trabaja de forma directa, evita comprobaciones redundantes y usa GitHub Desktop para el flujo local normal.
+> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. La rama estable es `main`, pero el trabajo activo está en `Dev-Gamepad-Zone-Navigation`, creada desde `main` en `ef0dcf2cbd81457b346809e2046edb4a354016c6`. Lee primero `HISTORIAL_GPT.MD`, `PERFORMANCE_AUDIT.md` y `GAMEPAD_DEVICE_SELECTION.md`. No integres ni elimines ramas sin autorización explícita. La rama actual cambia únicamente la navegación del mando: cruceta y joystick quedan confinados a la zona activa; L1 selecciona Núcleo y R1 Evoluciones y son la única vía de cambio de zona mediante el mando; Círculo ya no regresa automáticamente al Núcleo; Cuadrado no puede activar las pestañas principales; abrir/cerrar el panel y usar atajos globales conserva la zona; L1+R1 ya no abre la Cámara Cromática ni cambia de zona. La Cámara conserva navegación interna cuando se abre por UI o DEV. Primero actualiza la rama local, ejecuta `npm run lint`, `npm run build` y `npm run dev`, y realiza la matriz física descrita en la sección 10. Mantén gameplay, economía, fórmulas, guardado y visuales sin cambios. Existe el repositorio transversal `xArtXtrAx/bugs-universales-corregidos`; el BUG-001 de selección del gamepad por actividad real ya está validado. Trabaja de forma directa, evita comprobaciones redundantes y usa GitHub Desktop para el flujo local normal.
