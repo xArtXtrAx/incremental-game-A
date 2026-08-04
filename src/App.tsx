@@ -84,9 +84,7 @@ function appReducer(state: GameState, action: AppAction): GameState {
     const balance = getActiveBalanceConfig()
     const sphereBelowCapacity =
       values.manualClicks < balance.core.sphereClickCapacity
-    const refractionAllowed =
-      values.prestigeCount >= balance.unlocks.refractionRequiredPrestige &&
-      state.refractionLevel > 0
+    const refractionOwned = state.refractionLevel > 0
     const refractionFacetCount = getRefractionFacetCount(values.prestigeCount)
 
     return {
@@ -96,21 +94,21 @@ function appReducer(state: GameState, action: AppAction): GameState {
       prestigeCount: values.prestigeCount,
       overloadCharge: sphereBelowCapacity ? 0 : state.overloadCharge,
       overloadUntil: sphereBelowCapacity ? 0 : state.overloadUntil,
-      refractionLevel: refractionAllowed ? state.refractionLevel : 0,
-      refractionOrbitProgress: refractionAllowed
+      refractionLevel: state.refractionLevel,
+      refractionOrbitProgress: refractionOwned
         ? state.refractionOrbitProgress
         : 0,
-      refractionFacetsCharged: refractionAllowed
+      refractionFacetsCharged: refractionOwned
         ? Math.min(
             state.refractionFacetsCharged,
             Math.max(0, refractionFacetCount - 1),
           )
         : 0,
-      refractionUntil: refractionAllowed ? state.refractionUntil : 0,
-      refractionDischargeCount: refractionAllowed
+      refractionUntil: refractionOwned ? state.refractionUntil : 0,
+      refractionDischargeCount: refractionOwned
         ? state.refractionDischargeCount
         : 0,
-      refractionLastReward: refractionAllowed
+      refractionLastReward: refractionOwned
         ? state.refractionLastReward
         : 0,
     }
