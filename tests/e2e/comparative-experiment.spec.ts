@@ -82,6 +82,9 @@ test.describe('Comparador de Experimentos A/B', () => {
     await dialog
       .getByLabel('Clics manuales por segundo')
       .selectOption({ label: '5/s' })
+    await dialog
+      .getByLabel('Comprar automáticamente la evolución disponible más barata')
+      .uncheck()
     await dialog.getByTestId('comparative-run').click()
 
     const results = dialog.getByTestId('comparative-results')
