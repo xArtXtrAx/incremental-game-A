@@ -244,6 +244,17 @@ function App() {
         now,
       )
 
+      if (request.mode === 'preview') {
+        request.respond({
+          applied: false,
+          snapshot: getBalanceRuntimeSnapshot(),
+          normalization,
+          issues: [],
+          message: 'Impacto calculado sin modificar la partida.',
+        })
+        return
+      }
+
       if (request.mode === 'restore-official') {
         const snapshot = resetOfficialBalanceConfig()
         previousClicks.current = normalization.state.manualClicks
