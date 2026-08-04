@@ -1,9 +1,8 @@
 import { useState, type ReactNode } from 'react'
+import { getActiveBalanceConfig } from './balanceRuntime'
 import {
   type GameAction,
   type GameState,
-  AUTOCLICK_REQUIRED_CLICKS,
-  CAVITATION_REQUIRED_CLICKS,
   getAutoclickCost,
   getAutoclickRate,
   getCavitationClicksRequired,
@@ -25,10 +24,9 @@ import {
   getResonanceCost,
   getResonanceMultiplier,
   getSapphireMultiplier,
+  getUpgradeUnlockRequirement,
   hasUnlockedBlueprints,
   isOverloadActive,
-  PRESSURE_REQUIRED_CLICKS,
-  SPHERE_CLICK_CAPACITY,
 } from './game'
 import {
   getRefractionBonusMultiplier,
@@ -41,7 +39,6 @@ import {
   getRefractionReward,
   getRefractionRewardSeconds,
   isRefractionActive,
-  REFRACTION_REQUIRED_PRESTIGE,
 } from './refraction'
 
 type UpgradeCategory = 'production' | 'core' | 'advanced'
@@ -60,7 +57,7 @@ type CardProps = {
   title: string
   level: number
   summary: ReactNode
-  description: string
+  description: ReactNode
   effect: ReactNode
   label: string
   detail: ReactNode
@@ -180,6 +177,7 @@ export function UpgradesPanel({
     useState<UpgradeCategory>('production')
   const [expandedCard, setExpandedCard] = useState<string | null>(null)
 
+  const balance = getActiveBalanceConfig()
   const overloadActive = isOverloadActive(game.overloadUntil, clockNow)
   const overloadActiveMultiplier = overloadActive
     ? getOverloadMultiplier(game.overloadLevel)
@@ -303,16 +301,18 @@ export function UpgradesPanel({
   const autoclickCost = getAutoclickCost(game.autoclickLevel)
   const overloadCost = getOverloadCost(game.overloadLevel)
   const refractionCost = getRefractionCost(game.refractionLevel)
-  const sphereFull = game.manualClicks >= SPHERE_CLICK_CAPACITY
-  const pressureDiscoveryMissing =
-    !blueprintsUnlocked && game.manualClicks < PRESSURE_REQUIRED_CLICKS
-  const cavitationDiscoveryMissing =
-    !blueprintsUnlocked && game.manualClicks < CAVITATION_REQUIRED_CLICKS
-  const autoclickDiscoveryMissing =
-    !blueprintsUnlocked && game.manualClicks < AUTOCLICK_REQUIRED_CLICKS
-  const overloadDiscoveryMissing = !blueprintsUnlocked && !sphereFull
-  const refractionPrestigeMissing =
-    game.prestigeCount < REFRACTION_REQUIRED_PRESTIGE
+
+  const pressureRequirement = getUpgradeUnlockRequirement(game, 'pressure')
+  const cavitationRequirement = getUpgradeUnlockRequirement(game, 'cavitation')
+  const autoclickRequirement = getUpgradeUnlockRequirement(game, 'autoclick')
+  const overloadRequirement = getUpgradeUnlockRequirement(game, 'overload')
+  const refractionRequirement = getUpgradeUnlockRequirement(game, 'refraction')
+
+  const pressureDiscoveryMissing = pressureRequirement.locked
+  const cavitationDiscoveryMissing = cavitationRequirement.locked
+  const autoclickDiscoveryMissing = autoclickRequirement.locked
+  const overloadDiscoveryMissing = overloadRequirement.locked
+  const refractionPrestigeMissing = refractionRequirement.locked
   const category =
     categories.find((item) => item.id === activeCategory) ?? categories[0]
 
@@ -437,7 +437,7 @@ export function UpgradesPanel({
               label="Automatizar"
               detail={
                 autoclickDiscoveryMissing
-                  ? `Requiere ${AUTOCLICK_REQUIRED_CLICKS} clics`
+                  ? `Requiere ${format.format(autoclickRequirement.required)} clics`
                   : game.generatorLevel === 0
                     ? 'Requiere microgenerador'
                     : `${format.format(autoclickCost)} energía`
@@ -462,7 +462,7 @@ export function UpgradesPanel({
               title="Condensador de presión"
               level={game.pressureLevel}
               summary={<>+{format.format(pressureBonus)}% global · {pressureTier}/10 tramos</>}
-              description="Cada nivel concede +2% global por cada tramo completo del 10% de llenado."
+              description={`Cada nivel concede +${format.format(balance.core.pressureBonusPerTier)}% global por cada tramo completo del 10% de llenado.`}
               effect={
                 <>
                   <span>Bono siguiente: +{format.format(nextPressureBonus)}%</span>
@@ -475,7 +475,7 @@ export function UpgradesPanel({
               label="Presurizar"
               detail={
                 pressureDiscoveryMissing
-                  ? `Requiere ${PRESSURE_REQUIRED_CLICKS} clics`
+                  ? `Requiere ${format.format(pressureRequirement.required)} clics`
                   : `${format.format(pressureCost)} energía`
               }
               disabled={pressureDiscoveryMissing || game.energy < pressureCost}
@@ -510,7 +510,7 @@ export function UpgradesPanel({
               label="Estabilizar"
               detail={
                 cavitationDiscoveryMissing
-                  ? `Requiere ${CAVITATION_REQUIRED_CLICKS} clics`
+                  ? `Requiere ${format.format(cavitationRequirement.required)} clics`
                   : game.generatorLevel === 0
                     ? 'Requiere microgenerador'
                     : `${format.format(cavitationCost)} energía`
@@ -557,7 +557,7 @@ export function UpgradesPanel({
               label="Instalar válvula"
               detail={
                 overloadDiscoveryMissing
-                  ? `Requiere esfera llena (${SPHERE_CLICK_CAPACITY} clics)`
+                  ? `Requiere esfera llena (${format.format(overloadRequirement.required)} clics)`
                   : game.cavitationLevel === 0
                     ? 'Requiere cavitación nivel 1'
                     : `${format.format(overloadCost)} energía`
@@ -616,7 +616,7 @@ export function UpgradesPanel({
               label="Calibrar matriz"
               detail={
                 refractionPrestigeMissing
-                  ? `Requiere prestigio ${REFRACTION_REQUIRED_PRESTIGE}`
+                  ? `Requiere prestigio ${format.format(refractionRequirement.required)}`
                   : game.generatorLevel === 0
                     ? 'Requiere microgenerador'
                     : `${format.format(refractionCost)} energía`
