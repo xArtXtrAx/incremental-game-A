@@ -31,6 +31,11 @@
   pointer-events: auto;
 }
 
+.developer-workspace-overlay.chromatic-developer-docked {
+  animation: none !important;
+  transform: none !important;
+}
+
 .developer-workspace-overlay > [role='dialog'] {
   width: 100% !important;
   max-width: none !important;
