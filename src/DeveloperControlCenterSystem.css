@@ -1,0 +1,577 @@
+.developer-balance-access,
+.developer-balance-profiles-access {
+  display: none !important;
+}
+
+.developer-control-access {
+  display: grid;
+  gap: 0.45rem;
+  padding: 0.95rem 1rem;
+  border-top: 1px solid rgba(125, 211, 252, 0.16);
+}
+
+.developer-control-access > span {
+  color: rgba(186, 230, 253, 0.72);
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.developer-control-access > button {
+  display: grid;
+  grid-template-columns: 2.35rem 1fr auto;
+  align-items: center;
+  gap: 0.75rem;
+  width: 100%;
+  padding: 0.78rem;
+  border: 1px solid rgba(56, 189, 248, 0.34);
+  border-radius: 0.9rem;
+  background:
+    linear-gradient(135deg, rgba(8, 47, 73, 0.82), rgba(15, 23, 42, 0.95)),
+    rgba(2, 6, 23, 0.9);
+  color: #e0f2fe;
+  text-align: left;
+  cursor: pointer;
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.developer-control-access > button:hover {
+  border-color: rgba(125, 211, 252, 0.68);
+  transform: translateY(-1px);
+}
+
+.developer-control-access > button > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 2.35rem;
+  height: 2.35rem;
+  border-radius: 0.72rem;
+  background: rgba(14, 165, 233, 0.16);
+  color: #7dd3fc;
+  font-size: 1.35rem;
+}
+
+.developer-control-access > button > span:nth-child(2) {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.developer-control-access strong {
+  font-size: 0.86rem;
+}
+
+.developer-control-access small {
+  color: rgba(224, 242, 254, 0.62);
+  font-size: 0.7rem;
+}
+
+.developer-control-access b {
+  color: #38bdf8;
+  font-size: 0.62rem;
+  letter-spacing: 0.1em;
+}
+
+.developer-control-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1600;
+  display: grid;
+  place-items: center;
+  padding: 1.25rem;
+  background: rgba(2, 6, 23, 0.82);
+  backdrop-filter: blur(16px);
+}
+
+.developer-control-window {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  width: min(1180px, 96vw);
+  height: min(820px, 94vh);
+  overflow: hidden;
+  border: 1px solid rgba(125, 211, 252, 0.34);
+  border-radius: 1.25rem;
+  background:
+    radial-gradient(circle at top right, rgba(14, 165, 233, 0.12), transparent 34%),
+    linear-gradient(155deg, #07111f, #020617 58%, #07101d);
+  color: #e2e8f0;
+  box-shadow: 0 32px 90px rgba(0, 0, 0, 0.58);
+}
+
+.developer-control-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 1.5rem;
+  padding: 1.25rem 1.4rem 1.05rem;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.14);
+}
+
+.developer-control-header > div:first-child {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.developer-control-header span,
+.developer-control-card-heading span,
+.developer-capture-card > div > span {
+  color: #7dd3fc;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+.developer-control-header h2 {
+  margin: 0;
+  font-size: clamp(1.35rem, 2vw, 2rem);
+}
+
+.developer-control-header p,
+.developer-control-card p,
+.developer-scenario-card p {
+  margin: 0;
+  color: rgba(226, 232, 240, 0.68);
+  line-height: 1.5;
+}
+
+.developer-control-status {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+
+.developer-control-status b {
+  padding: 0.45rem 0.58rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 999px;
+  color: rgba(226, 232, 240, 0.66);
+  font-size: 0.61rem;
+  letter-spacing: 0.08em;
+}
+
+.developer-control-status b[data-active],
+.developer-control-status b[data-paused] {
+  border-color: rgba(250, 204, 21, 0.45);
+  color: #fde68a;
+  background: rgba(161, 98, 7, 0.15);
+}
+
+.developer-control-status > button {
+  display: grid;
+  place-items: center;
+  width: 2rem;
+  height: 2rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.8);
+  color: #f8fafc;
+  font-size: 1.25rem;
+  cursor: pointer;
+}
+
+.developer-control-tabs {
+  display: flex;
+  gap: 0.35rem;
+  padding: 0.7rem 1.4rem;
+  overflow-x: auto;
+  border-bottom: 1px solid rgba(148, 163, 184, 0.12);
+  background: rgba(2, 6, 23, 0.38);
+}
+
+.developer-control-tabs button,
+.developer-control-window button,
+.developer-control-window input {
+  font: inherit;
+}
+
+.developer-control-tabs button {
+  padding: 0.5rem 0.82rem;
+  border: 1px solid transparent;
+  border-radius: 0.68rem;
+  background: transparent;
+  color: rgba(226, 232, 240, 0.62);
+  cursor: pointer;
+}
+
+.developer-control-tabs button:hover,
+.developer-control-tabs button.is-active {
+  border-color: rgba(56, 189, 248, 0.28);
+  background: rgba(14, 165, 233, 0.12);
+  color: #e0f2fe;
+}
+
+.developer-control-content {
+  min-height: 0;
+  overflow: auto;
+  padding: 1.25rem 1.4rem 1.5rem;
+}
+
+.developer-control-grid-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.65fr) minmax(260px, 0.75fr);
+  gap: 1rem;
+}
+
+.developer-control-stack {
+  display: grid;
+  gap: 1rem;
+}
+
+.developer-control-card,
+.developer-scenario-card,
+.developer-metrics-grid article {
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 1rem;
+  background: rgba(15, 23, 42, 0.64);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.035);
+}
+
+.developer-control-card {
+  display: grid;
+  align-content: start;
+  gap: 1rem;
+  padding: 1rem;
+}
+
+.developer-control-card-heading,
+.developer-scenario-heading {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.developer-control-card-heading > div,
+.developer-scenario-heading > div {
+  display: grid;
+  gap: 0.18rem;
+}
+
+.developer-control-card h3,
+.developer-scenario-card h3,
+.developer-capture-card h3 {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.developer-control-card-heading > button,
+.developer-control-card button,
+.developer-scenario-card button,
+.developer-tools-grid button {
+  padding: 0.55rem 0.72rem;
+  border: 1px solid rgba(148, 163, 184, 0.22);
+  border-radius: 0.68rem;
+  background: rgba(15, 23, 42, 0.82);
+  color: #e2e8f0;
+  cursor: pointer;
+}
+
+.developer-control-window button:hover:not(:disabled) {
+  border-color: rgba(125, 211, 252, 0.6);
+}
+
+.developer-control-window button:disabled {
+  opacity: 0.42;
+  cursor: not-allowed;
+}
+
+.developer-control-window button.is-primary {
+  border-color: rgba(14, 165, 233, 0.55);
+  background: linear-gradient(135deg, #0369a1, #075985);
+  color: #f0f9ff;
+}
+
+.developer-control-window button.is-danger {
+  border-color: rgba(248, 113, 113, 0.36);
+  color: #fecaca;
+}
+
+.developer-control-window button.is-restore {
+  border-color: rgba(250, 204, 21, 0.4);
+  color: #fde68a;
+}
+
+.developer-state-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.6rem;
+}
+
+.developer-state-grid > div,
+.developer-control-summary > div {
+  display: grid;
+  gap: 0.18rem;
+  padding: 0.65rem;
+  border-radius: 0.72rem;
+  background: rgba(2, 6, 23, 0.48);
+}
+
+.developer-state-grid span,
+.developer-control-summary dt,
+.developer-scenario-card dt,
+.developer-metrics-grid span {
+  color: rgba(148, 163, 184, 0.78);
+  font-size: 0.67rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.developer-state-grid strong {
+  overflow: hidden;
+  color: #f8fafc;
+  font-size: 0.82rem;
+  text-overflow: ellipsis;
+}
+
+.developer-control-summary,
+.developer-scenario-card dl {
+  display: grid;
+  gap: 0.55rem;
+  margin: 0;
+}
+
+.developer-control-summary dd,
+.developer-scenario-card dd {
+  margin: 0;
+  color: #f8fafc;
+  font-weight: 700;
+}
+
+.developer-capture-card {
+  grid-template-columns: 1fr minmax(280px, 0.7fr);
+  align-items: end;
+}
+
+.developer-capture-card > div:first-child {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.developer-capture-actions {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.55rem;
+}
+
+.developer-capture-actions input {
+  min-width: 0;
+  padding: 0.65rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  border-radius: 0.68rem;
+  outline: none;
+  background: rgba(2, 6, 23, 0.75);
+  color: #f8fafc;
+}
+
+.developer-capture-actions input:focus {
+  border-color: rgba(56, 189, 248, 0.72);
+}
+
+.developer-scenario-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.8rem;
+}
+
+.developer-scenario-card {
+  display: grid;
+  align-content: start;
+  gap: 0.8rem;
+  padding: 0.9rem;
+}
+
+.developer-scenario-card[data-kind='custom'] {
+  border-color: rgba(192, 132, 252, 0.28);
+}
+
+.developer-scenario-heading span {
+  color: #7dd3fc;
+  font-size: 0.61rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+}
+
+.developer-scenario-heading b {
+  color: rgba(226, 232, 240, 0.48);
+  font-size: 0.57rem;
+  letter-spacing: 0.08em;
+}
+
+.developer-scenario-card dl {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.developer-scenario-actions,
+.developer-control-button-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.developer-scenario-actions button {
+  flex: 1 1 auto;
+}
+
+.developer-change-list {
+  display: grid;
+  gap: 0.35rem;
+  max-height: 240px;
+  overflow: auto;
+}
+
+.developer-change-list > div {
+  display: grid;
+  grid-template-columns: minmax(120px, 1fr) 0.75fr auto 0.75fr;
+  align-items: center;
+  gap: 0.55rem;
+  padding: 0.48rem 0.58rem;
+  border-radius: 0.55rem;
+  background: rgba(2, 6, 23, 0.48);
+  font-size: 0.76rem;
+}
+
+.developer-change-list code {
+  color: #7dd3fc;
+}
+
+.developer-change-list strong {
+  color: #fef08a;
+}
+
+.developer-step-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.55rem;
+}
+
+.developer-metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.developer-metrics-grid article {
+  display: grid;
+  gap: 0.35rem;
+  min-height: 125px;
+  padding: 1rem;
+}
+
+.developer-metrics-grid strong {
+  color: #e0f2fe;
+  font-size: clamp(1.35rem, 3vw, 2.15rem);
+}
+
+.developer-metrics-grid small {
+  color: rgba(226, 232, 240, 0.58);
+  line-height: 1.4;
+}
+
+.developer-tools-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.85rem;
+}
+
+.developer-tools-grid button {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.35rem 0.7rem;
+  min-height: 130px;
+  padding: 1rem;
+  text-align: left;
+}
+
+.developer-tools-grid button > span {
+  grid-row: 1 / span 2;
+  display: grid;
+  place-items: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 0.75rem;
+  background: rgba(14, 165, 233, 0.13);
+  color: #7dd3fc;
+  font-size: 1.35rem;
+}
+
+.developer-tools-grid button strong {
+  align-self: end;
+}
+
+.developer-tools-grid button small {
+  color: rgba(226, 232, 240, 0.6);
+  line-height: 1.45;
+}
+
+.developer-control-footer {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.8rem 1.4rem;
+  border-top: 1px solid rgba(148, 163, 184, 0.12);
+  color: rgba(226, 232, 240, 0.55);
+  font-size: 0.7rem;
+}
+
+.developer-control-message[data-error] {
+  color: #fecaca;
+}
+
+@media (max-width: 900px) {
+  .developer-control-window {
+    width: 98vw;
+    height: 96vh;
+  }
+
+  .developer-control-grid-layout,
+  .developer-capture-card {
+    grid-template-columns: 1fr;
+  }
+
+  .developer-scenario-grid,
+  .developer-metrics-grid,
+  .developer-tools-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 620px) {
+  .developer-control-overlay {
+    padding: 0;
+  }
+
+  .developer-control-window {
+    width: 100vw;
+    height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .developer-control-header {
+    align-items: flex-start;
+    padding: 1rem;
+  }
+
+  .developer-control-status {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .developer-control-tabs,
+  .developer-control-content,
+  .developer-control-footer {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .developer-state-grid,
+  .developer-scenario-grid,
+  .developer-metrics-grid,
+  .developer-tools-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .developer-control-footer {
+    flex-direction: column;
+  }
+}
