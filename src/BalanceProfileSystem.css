@@ -1,0 +1,304 @@
+.developer-balance-profiles-access {
+  display: grid;
+  gap: 8px;
+  margin-top: 10px;
+}
+
+.developer-balance-profiles-access > button {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid rgba(121, 255, 201, 0.3);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgba(12, 78, 68, 0.72), rgba(5, 32, 38, 0.92));
+  color: #ecfff9;
+  text-align: left;
+  cursor: pointer;
+}
+
+.developer-balance-profiles-access > button:hover {
+  border-color: rgba(139, 255, 218, 0.68);
+  box-shadow: 0 0 20px rgba(33, 207, 157, 0.14);
+}
+
+.developer-balance-profiles-access > button > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: rgba(64, 229, 176, 0.14);
+  color: #aaffdf;
+  font-size: 1rem;
+}
+
+.developer-balance-profiles-access > button > span:nth-child(2) {
+  display: grid;
+  gap: 2px;
+}
+
+.developer-balance-profiles-access strong {
+  font-size: 0.9rem;
+}
+
+.developer-balance-profiles-access small {
+  color: rgba(209, 255, 241, 0.66);
+  font-size: 0.72rem;
+}
+
+.developer-balance-profiles-access b {
+  color: #9dffda;
+  font-size: 0.68rem;
+  letter-spacing: 0.08em;
+}
+
+.balance-profile-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10020;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(1, 10, 14, 0.86);
+  backdrop-filter: blur(10px);
+}
+
+.balance-profile-window {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  gap: 14px;
+  width: min(1000px, 96vw);
+  max-height: min(820px, 93vh);
+  padding: 20px;
+  overflow: hidden;
+  border: 1px solid rgba(100, 245, 197, 0.36);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at top right, rgba(21, 143, 113, 0.18), transparent 38%),
+    linear-gradient(160deg, rgba(7, 31, 35, 0.99), rgba(3, 15, 22, 0.99));
+  color: #effff9;
+  box-shadow: 0 30px 90px rgba(0, 0, 0, 0.62);
+}
+
+.balance-profile-header,
+.balance-profile-footer,
+.balance-profile-row,
+.balance-profile-actions,
+.balance-profile-confirm-actions {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.balance-profile-header,
+.balance-profile-footer,
+.balance-profile-row {
+  justify-content: space-between;
+}
+
+.balance-profile-header h2,
+.balance-profile-header p,
+.balance-profile-card h3,
+.balance-profile-card p {
+  margin: 0;
+}
+
+.balance-profile-header > div {
+  display: grid;
+  gap: 4px;
+}
+
+.balance-profile-header span,
+.balance-profile-card > span {
+  color: rgba(152, 255, 220, 0.76);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.balance-profile-header p,
+.balance-profile-card p,
+.balance-profile-card small,
+.balance-profile-footer span {
+  color: rgba(215, 250, 240, 0.68);
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.balance-profile-header > button {
+  width: 40px;
+  height: 40px;
+  border: 1px solid rgba(126, 242, 205, 0.24);
+  border-radius: 12px;
+  background: rgba(18, 72, 67, 0.48);
+  color: #ecfff9;
+  font-size: 1.4rem;
+  cursor: pointer;
+}
+
+.balance-profile-notice {
+  padding: 11px 13px;
+  border: 1px solid rgba(255, 210, 111, 0.24);
+  border-radius: 12px;
+  background: rgba(111, 75, 13, 0.16);
+  color: rgba(255, 238, 201, 0.9);
+  font-size: 0.8rem;
+  line-height: 1.45;
+}
+
+.balance-profile-content {
+  min-height: 0;
+  overflow: auto;
+}
+
+.balance-profile-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(300px, 0.8fr);
+  gap: 14px;
+}
+
+.balance-profile-column,
+.balance-profile-list {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+}
+
+.balance-profile-card {
+  display: grid;
+  gap: 10px;
+  padding: 15px;
+  border: 1px solid rgba(107, 230, 193, 0.16);
+  border-radius: 15px;
+  background: rgba(8, 38, 42, 0.66);
+}
+
+.balance-profile-card input,
+.balance-profile-card textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 9px 10px;
+  border: 1px solid rgba(113, 224, 192, 0.25);
+  border-radius: 9px;
+  outline: none;
+  background: rgba(3, 20, 27, 0.92);
+  color: #effff9;
+  font: inherit;
+}
+
+.balance-profile-card textarea {
+  min-height: 150px;
+  resize: vertical;
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.74rem;
+}
+
+.balance-profile-card input:focus,
+.balance-profile-card textarea:focus {
+  border-color: rgba(122, 255, 211, 0.68);
+  box-shadow: 0 0 0 2px rgba(64, 212, 164, 0.12);
+}
+
+.balance-profile-window button {
+  padding: 8px 11px;
+  border: 1px solid rgba(119, 231, 198, 0.25);
+  border-radius: 9px;
+  background: rgba(13, 62, 63, 0.72);
+  color: #ecfff9;
+  font: inherit;
+  font-size: 0.74rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.balance-profile-window button:hover:not(:disabled) {
+  border-color: rgba(133, 255, 217, 0.62);
+  background: rgba(20, 91, 82, 0.78);
+}
+
+.balance-profile-window button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.balance-profile-window button.is-primary {
+  border-color: rgba(96, 255, 199, 0.46);
+  background: linear-gradient(135deg, rgba(24, 133, 102, 0.9), rgba(16, 83, 83, 0.9));
+}
+
+.balance-profile-window button.is-danger {
+  border-color: rgba(255, 126, 126, 0.38);
+  background: rgba(111, 31, 38, 0.55);
+  color: #ffd6d6;
+}
+
+.balance-profile-row {
+  align-items: flex-start;
+  padding: 13px;
+  border: 1px solid rgba(107, 230, 193, 0.14);
+  border-radius: 13px;
+  background: rgba(5, 28, 34, 0.72);
+}
+
+.balance-profile-row > div:first-child {
+  display: grid;
+  gap: 4px;
+  min-width: 0;
+}
+
+.balance-profile-row strong {
+  overflow-wrap: anywhere;
+}
+
+.balance-profile-actions {
+  justify-content: flex-end;
+  flex-wrap: wrap;
+}
+
+.balance-profile-confirm {
+  display: grid;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid rgba(255, 180, 101, 0.28);
+  border-radius: 10px;
+  background: rgba(105, 61, 13, 0.18);
+}
+
+.balance-profile-message {
+  padding: 10px 12px;
+  border: 1px solid rgba(112, 229, 193, 0.2);
+  border-radius: 10px;
+  background: rgba(12, 67, 60, 0.25);
+  color: rgba(225, 255, 246, 0.9);
+  font-size: 0.78rem;
+}
+
+.balance-profile-message[data-error='true'] {
+  border-color: rgba(255, 116, 116, 0.34);
+  background: rgba(112, 26, 33, 0.25);
+  color: #ffcaca;
+}
+
+.balance-profile-footer {
+  flex-wrap: wrap;
+  padding-top: 12px;
+  border-top: 1px solid rgba(107, 230, 193, 0.14);
+}
+
+@media (max-width: 820px) {
+  .balance-profile-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .balance-profile-row {
+    display: grid;
+  }
+
+  .balance-profile-actions {
+    justify-content: flex-start;
+  }
+}
