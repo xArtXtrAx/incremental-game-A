@@ -31,28 +31,10 @@ export type MathematicalTemplateKind =
   | 'diminishing-returns'
 
 export type MathematicalTemplate =
-  | {
-      kind: 'linear'
-      intercept: number
-      slope: number
-    }
-  | {
-      kind: 'exponential'
-      initial: number
-      growth: number
-    }
-  | {
-      kind: 'power'
-      offset: number
-      scale: number
-      exponent: number
-    }
-  | {
-      kind: 'root'
-      offset: number
-      scale: number
-      degree: number
-    }
+  | { kind: 'linear'; intercept: number; slope: number }
+  | { kind: 'exponential'; initial: number; growth: number }
+  | { kind: 'power'; offset: number; scale: number; exponent: number }
+  | { kind: 'root'; offset: number; scale: number; degree: number }
   | {
       kind: 'logarithmic'
       offset: number
@@ -83,20 +65,14 @@ export type MathematicalTemplateSpecification = {
   name: string
   target: MathematicalTemplateTargetId
   template: MathematicalTemplate
-  domain: {
-    start: number
-    step: number
-  }
+  domain: { start: number; step: number }
   output: {
     rounding: MathematicalTemplateRounding
     decimalPlaces: number
   }
 }
 
-export type MathematicalTemplateIssue = {
-  path: string
-  message: string
-}
+export type MathematicalTemplateIssue = { path: string; message: string }
 
 export type MathematicalTemplateSample = {
   index: number
@@ -107,16 +83,8 @@ export type MathematicalTemplateSample = {
 }
 
 export type MathematicalTemplateEvaluationResult =
-  | {
-      ok: true
-      value: MathematicalTemplateSample[]
-      issues: []
-    }
-  | {
-      ok: false
-      value: null
-      issues: MathematicalTemplateIssue[]
-    }
+  | { ok: true; value: MathematicalTemplateSample[]; issues: [] }
+  | { ok: false; value: null; issues: MathematicalTemplateIssue[] }
 
 export type MathematicalTemplateGenerationResult =
   | {
@@ -128,11 +96,7 @@ export type MathematicalTemplateGenerationResult =
       }
       issues: BalanceValidationIssue[]
     }
-  | {
-      ok: false
-      value: null
-      issues: MathematicalTemplateIssue[]
-    }
+  | { ok: false; value: null; issues: MathematicalTemplateIssue[] }
 
 export type MathematicalTemplateExport = {
   exportVersion: typeof MATHEMATICAL_TEMPLATE_EXPORT_VERSION
@@ -214,13 +178,10 @@ function isFiniteParameter(value: unknown) {
 function normalizeName(value: unknown) {
   if (typeof value !== 'string') return null
   const normalized = value.trim().replace(/\s+/g, ' ')
-  if (
-    normalized.length === 0 ||
-    normalized.length > MATHEMATICAL_TEMPLATE_NAME_MAX_LENGTH
-  ) {
-    return null
-  }
-  return normalized
+  return normalized.length > 0 &&
+    normalized.length <= MATHEMATICAL_TEMPLATE_NAME_MAX_LENGTH
+    ? normalized
+    : null
 }
 
 function cloneSpecification(
@@ -259,19 +220,9 @@ function createTemplateDefaults(
         growth: target === 'cost-base-series' ? 1.8 : 1.08,
       }
     case 'power':
-      return {
-        kind,
-        offset: scale.low,
-        scale: scale.step,
-        exponent: 1.6,
-      }
+      return { kind, offset: scale.low, scale: scale.step, exponent: 1.6 }
     case 'root':
-      return {
-        kind,
-        offset: scale.low,
-        scale: scale.step * 2,
-        degree: 2,
-      }
+      return { kind, offset: scale.low, scale: scale.step * 2, degree: 2 }
     case 'logarithmic':
       return {
         kind,
@@ -299,23 +250,15 @@ export function createDefaultMathematicalTemplateSpecification(
     name: 'Plantilla matemática DEV',
     target,
     template: createTemplateDefaults(target, kind),
-    domain: {
-      start: target === 'sapphire-multipliers' ? 1 : 0,
-      step: 1,
-    },
+    domain: { start: target === 'sapphire-multipliers' ? 1 : 0, step: 1 },
     output: {
-      rounding:
-        target === 'cost-base-series'
-          ? 'ceil'
-          : target === 'cost-growth-series'
-            ? 'fixed'
-            : 'fixed',
+      rounding: target === 'cost-base-series' ? 'ceil' : 'fixed',
       decimalPlaces: target === 'cost-base-series' ? 0 : 4,
     },
   }
 }
 
-function validateCommonParameter(
+function validateParameter(
   value: unknown,
   path: string,
   issues: MathematicalTemplateIssue[],
@@ -341,12 +284,12 @@ function validateTemplate(
 
   switch (template.kind) {
     case 'linear':
-      validateCommonParameter(template.intercept, 'template.intercept', issues)
-      validateCommonParameter(template.slope, 'template.slope', issues)
+      validateParameter(template.intercept, 'template.intercept', issues)
+      validateParameter(template.slope, 'template.slope', issues)
       return true
     case 'exponential':
-      validateCommonParameter(template.initial, 'template.initial', issues)
-      validateCommonParameter(template.growth, 'template.growth', issues)
+      validateParameter(template.initial, 'template.initial', issues)
+      validateParameter(template.growth, 'template.growth', issues)
       if (
         typeof template.growth === 'number' &&
         Number.isFinite(template.growth) &&
@@ -358,9 +301,9 @@ function validateTemplate(
       }
       return true
     case 'power':
-      validateCommonParameter(template.offset, 'template.offset', issues)
-      validateCommonParameter(template.scale, 'template.scale', issues)
-      validateCommonParameter(template.exponent, 'template.exponent', issues)
+      validateParameter(template.offset, 'template.offset', issues)
+      validateParameter(template.scale, 'template.scale', issues)
+      validateParameter(template.exponent, 'template.exponent', issues)
       if (
         typeof template.exponent === 'number' &&
         Number.isFinite(template.exponent) &&
@@ -370,9 +313,9 @@ function validateTemplate(
       }
       return true
     case 'root':
-      validateCommonParameter(template.offset, 'template.offset', issues)
-      validateCommonParameter(template.scale, 'template.scale', issues)
-      validateCommonParameter(template.degree, 'template.degree', issues)
+      validateParameter(template.offset, 'template.offset', issues)
+      validateParameter(template.scale, 'template.scale', issues)
+      validateParameter(template.degree, 'template.degree', issues)
       if (
         typeof template.degree === 'number' &&
         (!Number.isInteger(template.degree) ||
@@ -385,28 +328,27 @@ function validateTemplate(
       }
       return true
     case 'logarithmic':
-      validateCommonParameter(template.offset, 'template.offset', issues)
-      validateCommonParameter(template.scale, 'template.scale', issues)
-      validateCommonParameter(template.base, 'template.base', issues)
-      validateCommonParameter(
-        template.inputOffset,
-        'template.inputOffset',
-        issues,
-      )
+      validateParameter(template.offset, 'template.offset', issues)
+      validateParameter(template.scale, 'template.scale', issues)
+      validateParameter(template.base, 'template.base', issues)
+      validateParameter(template.inputOffset, 'template.inputOffset', issues)
       if (
         typeof template.base === 'number' &&
         Number.isFinite(template.base) &&
         (template.base <= 1 || template.base > 100)
       ) {
         issues.push(
-          issue('template.base', 'La base logarítmica debe ser mayor que 1 y no superar 100.'),
+          issue(
+            'template.base',
+            'La base logarítmica debe ser mayor que 1 y no superar 100.',
+          ),
         )
       }
       return true
     case 'diminishing-returns':
-      validateCommonParameter(template.minimum, 'template.minimum', issues)
-      validateCommonParameter(template.maximum, 'template.maximum', issues)
-      validateCommonParameter(
+      validateParameter(template.minimum, 'template.minimum', issues)
+      validateParameter(template.maximum, 'template.maximum', issues)
+      validateParameter(
         template.halfSaturation,
         'template.halfSaturation',
         issues,
@@ -428,7 +370,10 @@ function validateTemplate(
         template.halfSaturation <= 0
       ) {
         issues.push(
-          issue('template.halfSaturation', 'La semisaturación debe ser mayor que cero.'),
+          issue(
+            'template.halfSaturation',
+            'La semisaturación debe ser mayor que cero.',
+          ),
         )
       }
       return true
@@ -452,7 +397,6 @@ export function validateMathematicalTemplateSpecification(
       issues: MathematicalTemplateIssue[]
     } {
   const issues: MathematicalTemplateIssue[] = []
-
   if (!isRecord(candidate)) {
     return {
       valid: false,
@@ -498,12 +442,11 @@ export function validateMathematicalTemplateSpecification(
   }
 
   const templateValid = validateTemplate(candidate.template, issues)
-
   if (!isRecord(candidate.domain)) {
     issues.push(issue('domain', 'El dominio debe ser un objeto.'))
   } else {
-    validateCommonParameter(candidate.domain.start, 'domain.start', issues)
-    validateCommonParameter(candidate.domain.step, 'domain.step', issues)
+    validateParameter(candidate.domain.start, 'domain.start', issues)
+    validateParameter(candidate.domain.step, 'domain.step', issues)
     if (
       typeof candidate.domain.step === 'number' &&
       Number.isFinite(candidate.domain.step) &&
@@ -543,6 +486,8 @@ export function validateMathematicalTemplateSpecification(
     return { valid: false, specification: null, issues }
   }
 
+  const domain = candidate.domain as Record<string, number>
+  const output = candidate.output as Record<string, unknown>
   return {
     valid: true,
     specification: {
@@ -550,21 +495,17 @@ export function validateMathematicalTemplateSpecification(
       name,
       target: target.id,
       template: structuredClone(candidate.template as MathematicalTemplate),
-      domain: {
-        start: (candidate.domain as Record<string, number>).start,
-        step: (candidate.domain as Record<string, number>).step,
-      },
+      domain: { start: domain.start, step: domain.step },
       output: {
-        rounding: (candidate.output as Record<string, unknown>)
-          .rounding as MathematicalTemplateRounding,
-        decimalPlaces: (candidate.output as Record<string, number>).decimalPlaces,
+        rounding: output.rounding as MathematicalTemplateRounding,
+        decimalPlaces: output.decimalPlaces as number,
       },
     },
     issues: [],
   }
 }
 
-function evaluateRawTemplate(template: MathematicalTemplate, x: number) {
+function evaluateRaw(template: MathematicalTemplate, x: number) {
   switch (template.kind) {
     case 'linear':
       return template.intercept + template.slope * x
@@ -575,26 +516,27 @@ function evaluateRawTemplate(template: MathematicalTemplate, x: number) {
       if (x < 0 && !Number.isInteger(template.exponent)) return Number.NaN
       return template.offset + template.scale * x ** template.exponent
     case 'root':
-      if (x < 0) return Number.NaN
-      return template.offset + template.scale * x ** (1 / template.degree)
+      return x < 0
+        ? Number.NaN
+        : template.offset + template.scale * x ** (1 / template.degree)
     case 'logarithmic': {
       const argument = x + template.inputOffset
-      if (argument <= 0) return Number.NaN
-      return template.offset + template.scale * (Math.log(argument) / Math.log(template.base))
+      return argument <= 0
+        ? Number.NaN
+        : template.offset +
+            template.scale * (Math.log(argument) / Math.log(template.base))
     }
     case 'diminishing-returns': {
-      if (x < 0) return Number.NaN
       const denominator = template.halfSaturation + x
-      if (denominator <= 0) return Number.NaN
-      return (
-        template.minimum +
-        (template.maximum - template.minimum) * (x / denominator)
-      )
+      return x < 0 || denominator <= 0
+        ? Number.NaN
+        : template.minimum +
+            (template.maximum - template.minimum) * (x / denominator)
     }
   }
 }
 
-function applyRounding(
+function roundOutput(
   value: number,
   output: MathematicalTemplateSpecification['output'],
 ) {
@@ -625,34 +567,20 @@ export function evaluateMathematicalTemplate(
 
   for (let index = 0; index < target.sampleCount; index += 1) {
     const x = specification.domain.start + specification.domain.step * index
-    if (!Number.isFinite(x)) {
-      issues.push(issue(`samples.${index}.x`, 'El dominio produjo un valor no finito.'))
-      continue
-    }
+    const rawValue = evaluateRaw(specification.template, x)
+    const value = Number.isFinite(rawValue)
+      ? roundOutput(rawValue, specification.output)
+      : Number.NaN
 
-    const rawValue = evaluateRawTemplate(specification.template, x)
     if (
-      !Number.isFinite(rawValue) ||
-      Math.abs(rawValue) > MATHEMATICAL_TEMPLATE_MAX_OUTPUT_ABSOLUTE
-    ) {
-      issues.push(
-        issue(
-          `samples.${index}.value`,
-          'La plantilla produjo NaN, Infinity o un valor fuera del límite seguro.',
-        ),
-      )
-      continue
-    }
-
-    const value = applyRounding(rawValue, specification.output)
-    if (
+      !Number.isFinite(x) ||
       !Number.isFinite(value) ||
       Math.abs(value) > MATHEMATICAL_TEMPLATE_MAX_OUTPUT_ABSOLUTE
     ) {
       issues.push(
         issue(
           `samples.${index}.value`,
-          'El redondeo produjo un valor no finito o fuera del límite seguro.',
+          'La plantilla produjo NaN, Infinity o un valor fuera del límite seguro.',
         ),
       )
       continue
@@ -667,11 +595,9 @@ export function evaluateMathematicalTemplate(
     })
   }
 
-  if (issues.length > 0) {
-    return { ok: false, value: null, issues }
-  }
-
-  return { ok: true, value: samples, issues: [] }
+  return issues.length > 0
+    ? { ok: false, value: null, issues }
+    : { ok: true, value: samples, issues: [] }
 }
 
 function applySamplesToBalance(
@@ -680,9 +606,14 @@ function applySamplesToBalance(
   samples: readonly MathematicalTemplateSample[],
 ) {
   if (targetId === 'sapphire-multipliers') {
-    samples.forEach((sample, index) => {
-      config.sapphire.multipliers[index + 1] = sample.value
-    })
+    config.sapphire.multipliers = [
+      config.sapphire.multipliers[0],
+      samples[0]?.value ?? Number.NaN,
+      samples[1]?.value ?? Number.NaN,
+      samples[2]?.value ?? Number.NaN,
+      samples[3]?.value ?? Number.NaN,
+      samples[4]?.value ?? Number.NaN,
+    ]
     return
   }
 
@@ -711,14 +642,13 @@ export function generateBalanceConfigFromMathematicalTemplate(
   const next = cloneBalanceConfig(baseConfig)
   applySamplesToBalance(next, validation.specification.target, evaluation.value)
   const balanceValidation = validateBalanceConfig(next)
-
   if (!balanceValidation.valid) {
     return {
       ok: false,
       value: null,
-      issues: balanceValidation.issues.map((entry) => ({
-        path: entry.path,
-        message: entry.message,
+      issues: balanceValidation.issues.map(({ path, message }) => ({
+        path,
+        message,
       })),
     }
   }
@@ -750,7 +680,6 @@ export function exportMathematicalTemplateSpecification(
     exportedAt,
     specification: cloneSpecification(validation.specification),
   }
-
   return {
     ok: true as const,
     value: JSON.stringify(payload, null, 2),
@@ -777,7 +706,6 @@ export function importMathematicalTemplateSpecification(json: string) {
       issues: [issue('import', 'La exportación debe ser un objeto.')],
     }
   }
-
   if (candidate.exportVersion !== MATHEMATICAL_TEMPLATE_EXPORT_VERSION) {
     return {
       ok: false as const,
@@ -785,7 +713,6 @@ export function importMathematicalTemplateSpecification(json: string) {
       issues: [issue('exportVersion', 'La versión de exportación es incompatible.')],
     }
   }
-
   if (
     candidate.specificationVersion !==
     MATHEMATICAL_TEMPLATE_SPECIFICATION_VERSION
@@ -794,11 +721,13 @@ export function importMathematicalTemplateSpecification(json: string) {
       ok: false as const,
       value: null,
       issues: [
-        issue('specificationVersion', 'La versión de especificación es incompatible.'),
+        issue(
+          'specificationVersion',
+          'La versión de especificación es incompatible.',
+        ),
       ],
     }
   }
-
   if (candidate.balanceConfigSchemaVersion !== BALANCE_CONFIG_SCHEMA_VERSION) {
     return {
       ok: false as const,
@@ -815,13 +744,11 @@ export function importMathematicalTemplateSpecification(json: string) {
   const validation = validateMathematicalTemplateSpecification(
     candidate.specification,
   )
-  if (!validation.valid) {
-    return { ok: false as const, value: null, issues: validation.issues }
-  }
-
-  return {
-    ok: true as const,
-    value: cloneSpecification(validation.specification),
-    issues: [] as MathematicalTemplateIssue[],
-  }
+  return validation.valid
+    ? {
+        ok: true as const,
+        value: cloneSpecification(validation.specification),
+        issues: [] as MathematicalTemplateIssue[],
+      }
+    : { ok: false as const, value: null, issues: validation.issues }
 }
