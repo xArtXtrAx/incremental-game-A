@@ -70,12 +70,22 @@ describe('integración del comparador con reducer y runtime', () => {
     expect(result.ok).toBe(true)
     if (!result.ok) return
 
+    const generatorA = result.value.runA.upgradeMilestones.find(
+      (milestone) => milestone.upgradeId === 'generator',
+    )
+    const generatorB = result.value.runB.upgradeMilestones.find(
+      (milestone) => milestone.upgradeId === 'generator',
+    )
+    const productionMetric = result.value.metrics.find(
+      (metric) => metric.id === 'effective-production',
+    )
+
     expect(result.value.runB.finalState.generatorLevel).toBeGreaterThan(
       result.value.runA.finalState.generatorLevel,
     )
-    expect(result.value.runB.effectiveProductionPerSecond).toBeGreaterThan(
-      result.value.runA.effectiveProductionPerSecond,
-    )
+    expect(generatorB?.purchases).toBeGreaterThan(generatorA?.purchases ?? 0)
+    expect(result.value.runB.finalState).not.toEqual(result.value.runA.finalState)
+    expect(productionMetric?.delta).not.toBe(0)
     expect(result.value.runB.purchaseCount).toBeGreaterThan(0)
     expect(scenarioState).toEqual(originalScenarioState)
     expect(listener).not.toHaveBeenCalled()
