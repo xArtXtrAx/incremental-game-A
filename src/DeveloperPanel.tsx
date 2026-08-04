@@ -87,6 +87,7 @@ export function DeveloperPanel({
 }: DeveloperPanelProps) {
   const panelRef = useRef<HTMLElement | null>(null)
   const [workspaceHeight, setWorkspaceHeight] = useState<number | null>(null)
+  const [workspaceOpen, setWorkspaceOpen] = useState(false)
   const mouseFocusAllowedUntil = useRef(0)
   const [energyInput, setEnergyInput] = useState(() =>
     formatInputValue(energy),
@@ -130,6 +131,23 @@ export function DeveloperPanel({
       observer.disconnect()
       window.removeEventListener('resize', updateHeight)
     }
+  }, [])
+
+  useEffect(() => {
+    const panel = panelRef.current
+    const workspace = panel?.querySelector<HTMLElement>(
+      '.developer-panel-workspace-host',
+    )
+    if (!workspace) return
+
+    const updateWorkspaceState = () => {
+      setWorkspaceOpen(workspace.childElementCount > 0)
+    }
+
+    updateWorkspaceState()
+    const observer = new MutationObserver(updateWorkspaceState)
+    observer.observe(workspace, { childList: true })
+    return () => observer.disconnect()
   }, [])
 
   useEffect(() => {
@@ -331,7 +349,7 @@ export function DeveloperPanel({
   return (
     <aside
       ref={panelRef}
-      className="developer-panel"
+      className={`developer-panel${workspaceOpen ? ' is-workspace-open' : ''}`}
       data-gamepad-ignore="true"
       data-height-synced={workspaceHeight !== null || undefined}
       style={

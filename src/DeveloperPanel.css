@@ -53,6 +53,10 @@
   backdrop-filter: blur(14px);
 }
 
+.developer-panel.is-workspace-open {
+  z-index: 120;
+}
+
 .developer-panel-scroll {
   height: 100%;
   min-height: 0;

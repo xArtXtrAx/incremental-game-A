@@ -149,6 +149,14 @@ function isBlockingModalOpen() {
   )
 }
 
+function isDeveloperWorkspaceFocused() {
+  const active = document.activeElement
+  return (
+    active instanceof HTMLElement &&
+    Boolean(active.closest('.developer-panel-workspace-host'))
+  )
+}
+
 function switchSection(section: GameSection) {
   const tabs = Array.from(
     document.querySelectorAll<HTMLButtonElement>('.mobile-section-tabs button'),
@@ -474,6 +482,9 @@ export function GamepadController() {
           pressed[STANDARD_BUTTON.leftTrigger],
         )
         const blockingModalOpen = isBlockingModalOpen()
+        const developerWorkspaceFocused = isDeveloperWorkspaceFocused()
+        const gamepadNavigationPaused =
+          blockingModalOpen || developerWorkspaceFocused
         const bothBumpersHeld = Boolean(
           pressed[STANDARD_BUTTON.leftBumper] &&
             pressed[STANDARD_BUTTON.rightBumper],
@@ -487,7 +498,7 @@ export function GamepadController() {
           if (pulseCore()) rumble(gamepad, 45, 0.18, 0.08)
         }
 
-        if (!blockingModalOpen) {
+        if (!gamepadNavigationPaused) {
           if (leftTriggerHeld) {
             if (justPressed(STANDARD_BUTTON.action)) {
               if (cyclePurchaseStrategy()) rumble(gamepad, 55, 0.2, 0.08)
@@ -507,7 +518,7 @@ export function GamepadController() {
         }
 
         if (
-          !blockingModalOpen &&
+          !gamepadNavigationPaused &&
           !bothBumpersHeld &&
           justPressed(STANDARD_BUTTON.leftBumper)
         ) {
@@ -516,7 +527,7 @@ export function GamepadController() {
           rumble(gamepad, 35, 0.12, 0.04)
         }
         if (
-          !blockingModalOpen &&
+          !gamepadNavigationPaused &&
           !bothBumpersHeld &&
           justPressed(STANDARD_BUTTON.rightBumper)
         ) {
@@ -525,7 +536,7 @@ export function GamepadController() {
           rumble(gamepad, 35, 0.12, 0.04)
         }
         if (
-          !blockingModalOpen &&
+          !gamepadNavigationPaused &&
           justPressed(STANDARD_BUTTON.options)
         ) {
           togglePanel()
@@ -533,7 +544,7 @@ export function GamepadController() {
         }
 
         const navigationReady = now - lastNavigationAt.current >= 190
-        if (!blockingModalOpen && navigationReady) {
+        if (!gamepadNavigationPaused && navigationReady) {
           const deadzone = settingsRef.current.deadzone
           let direction: Direction | null = null
           if (
