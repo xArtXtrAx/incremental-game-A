@@ -11,6 +11,7 @@ import { ChromaticChamberSystem } from './ChromaticChamberSystem'
 import { ChromaticGamepadBridge } from './ChromaticGamepadBridge'
 import { DeveloperControlCenterSystem } from './DeveloperControlCenterSystem'
 import './DeveloperControlCompatibility.css'
+import { DeveloperToolLaunchBridge } from './DeveloperToolLaunchBridge'
 import { GamepadController } from './GamepadController'
 import { GamepadEventHaptics } from './GamepadEventHaptics'
 import { PulseTriggerSystem } from './PulseTriggerSystem'
@@ -42,6 +43,7 @@ createRoot(document.getElementById('root')!).render(
     <BalanceLaboratorySystem />
     <BalanceProfileSystem />
     <DeveloperControlCenterSystem />
+    <DeveloperToolLaunchBridge />
     <GamepadController />
     <ChromaticGamepadBridge />
     <GamepadEventHaptics />
