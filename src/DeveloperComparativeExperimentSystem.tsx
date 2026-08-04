@@ -21,13 +21,11 @@ import {
   createBuiltInDeveloperScenarios,
   type DeveloperScenario,
 } from './developerScenarios'
-import { getSphereClickCapacity } from './game'
 import './DeveloperComparativeExperimentSystem.css'
 
 const numberFormat = new Intl.NumberFormat('es-MX', {
   maximumFractionDigits: 2,
 })
-
 const durationOptions = [300, 900, 1_800, 3_600, 7_200] as const
 const clickRateOptions = [0, 1, 2, 5, 10, 20] as const
 
@@ -69,7 +67,9 @@ function downloadText(filename: string, content: string, type: string) {
   URL.revokeObjectURL(url)
 }
 
-function profileToCandidate(profile: BalanceDevProfile): ComparativeBalanceCandidate {
+function profileToCandidate(
+  profile: BalanceDevProfile,
+): ComparativeBalanceCandidate {
   return {
     id: `profile:${profile.id}`,
     name: profile.name,
@@ -89,7 +89,7 @@ function ComparisonResults({
     <div className="comparative-results" data-testid="comparative-results">
       <section className="comparative-summary-grid">
         {[runA, runB].map((run, index) => (
-          <article key={run.candidate.id} data-side={index === 0 ? 'A' : 'B'}>
+          <article key={`${run.candidate.id}-${index}`} data-side={index === 0 ? 'A' : 'B'}>
             <span>PERFIL {index === 0 ? 'A' : 'B'}</span>
             <h3>{run.candidate.name}</h3>
             <dl>
@@ -178,9 +178,7 @@ function ComparisonResults({
             <span>HITOS</span>
             <h3>Evoluciones y retorno estimado</h3>
           </div>
-          <small>
-            El retorno usa producción automática + clics configurados.
-          </small>
+          <small>Producción automática + clics configurados.</small>
         </div>
         <div className="comparative-table-scroll">
           <table>
@@ -285,21 +283,18 @@ function ComparativeWindow({ onClose }: { onClose: () => void }) {
     const builtIns = createBuiltInDeveloperScenarios(
       DEFAULT_BALANCE_CONFIG.core.sphereClickCapacity,
     )
-    setProfiles(profileResult.value)
+    const nextProfiles = profileResult.value
+    const candidateIds = nextProfiles.map((profile) => `profile:${profile.id}`)
+
+    setProfiles(nextProfiles)
     setScenarios([...builtIns, ...scenarioResult.value])
     setCandidateBId((current) => {
-      const exists = [
-        'official',
-        ...profileResult.value.map((profile) => `profile:${profile.id}`),
-      ].includes(current)
-      if (exists && current !== 'official') return current
-      return profileResult.value[0]
-        ? `profile:${profileResult.value[0].id}`
-        : 'official'
+      if (current !== 'official' && candidateIds.includes(current)) return current
+      return candidateIds[0] ?? 'official'
     })
     setHasError(false)
     setMessage(
-      profileResult.value.length > 0
+      nextProfiles.length > 0
         ? 'Perfiles y escenarios actualizados.'
         : 'No hay perfiles guardados; puedes comparar Oficial contra Oficial.',
     )
@@ -397,7 +392,7 @@ function ComparativeWindow({ onClose }: { onClose: () => void }) {
             <span>FASE 5.6 · SIMULACIÓN AISLADA</span>
             <h2 id="comparative-title">Comparador de Experimentos A/B</h2>
             <p>
-              Dos balances, un mismo escenario y una secuencia determinista sin
+              Dos balances, un escenario y una secuencia determinista sin
               modificar la partida ni el runtime visible.
             </p>
           </div>
@@ -608,8 +603,8 @@ function ComparativeWindow({ onClose }: { onClose: () => void }) {
               <span>A/B</span>
               <h3>Configura y ejecuta el primer experimento</h3>
               <p>
-                El resultado mostrará diferencias, hitos de compra, tiempos sin
-                decisiones y retorno estimado por evolución.
+                El resultado mostrará diferencias, hitos, tiempos sin decisiones
+                y retorno estimado por evolución.
               </p>
             </section>
           )}
