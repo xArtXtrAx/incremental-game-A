@@ -7,7 +7,7 @@ on:
     branches: [main, 'Dev-**']
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   logic-and-build:
@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event_name == 'push' && github.ref_name || github.event.pull_request.head.ref }}
 
       - name: Setup Node
         uses: actions/setup-node@v4
@@ -28,13 +30,18 @@ jobs:
       - name: Install dependencies
         run: npm install --no-audit --no-fund
 
-      - name: Upload regenerated package lock
-        uses: actions/upload-artifact@v4
-        with:
-          name: regenerated-package-lock
-          path: package-lock.json
-          if-no-files-found: error
-          retention-days: 2
+      - name: Commit regenerated package lock
+        if: github.event_name == 'push' && github.ref_name == 'Dev-Balance-Laboratory-Phase-4'
+        run: |
+          if git diff --quiet -- package-lock.json; then
+            echo "package-lock.json already synchronized"
+            exit 0
+          fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add package-lock.json
+          git commit -m "Actualiza lockfile para Vitest y Playwright"
+          git push origin HEAD:${GITHUB_REF_NAME}
 
       - name: Lint
         run: npm run lint
