@@ -332,6 +332,13 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
     )
   }
 
+  function launchExistingTool(button: HTMLButtonElement) {
+    onClose()
+    window.requestAnimationFrame(() => {
+      if (button.isConnected) button.click()
+    })
+  }
+
   function openProfiles() {
     const button = findToolButton('Perfiles DEV')
     if (!button) {
@@ -339,8 +346,7 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
       setMessage('No se encontró el acceso a Perfiles DEV.')
       return
     }
-    onClose()
-    button.click()
+    launchExistingTool(button)
   }
 
   function openComparator() {
@@ -350,8 +356,7 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
       setMessage('No se encontró el Comparador de Experimentos.')
       return
     }
-    onClose()
-    button.click()
+    launchExistingTool(button)
   }
 
   return createPortal(
