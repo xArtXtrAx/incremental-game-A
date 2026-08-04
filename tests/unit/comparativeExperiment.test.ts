@@ -50,9 +50,13 @@ describe('motor de comparación experimental', () => {
     expect(result.value.runA.purchaseTimeline).toEqual(
       result.value.runB.purchaseTimeline,
     )
-    expect(result.value.metrics.every((metric) => metric.delta === 0)).toBe(
-      true,
-    )
+    expect(
+      result.value.metrics.every(
+        (metric) =>
+          metric.delta === 0 ||
+          (metric.valueA === null && metric.valueB === null),
+      ),
+    ).toBe(true)
   })
 
   it('detecta que una capacidad menor alcanza antes el núcleo', () => {
