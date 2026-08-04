@@ -458,9 +458,9 @@ export function DeveloperPanel({
       <footer>
         Reducir los clics por debajo de{' '}
         {sphereClickCapacity.toLocaleString('es-MX')} cancela la sobrecarga
-        activa. Establecer 0 cristalizaciones también limpia la Matriz de
-        refracción para conservar un estado válido. La vista cromática siempre
-        vuelve a Zafiro al recargar.
+        activa. Cambiar las cristalizaciones no elimina niveles comprados; los
+        requisitos activos únicamente controlan compras nuevas. La vista
+        cromática siempre vuelve a Zafiro al recargar.
       </footer>
     </aside>
   )
