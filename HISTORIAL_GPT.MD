@@ -33,14 +33,15 @@ La política completa, comandos y criterios se encuentran en `TESTING_POLICY.md`
 - Rama estable: `main`.
 - HEAD estable conocido de `main`: `1a7b327c7061e42a34a7cb9f248d39a881a4d5ee`.
 - Rama de desarrollo activa: `Dev-Balance-Laboratory-Phase-4`.
-- La rama de Fase 4 no está integrada y no tiene PR abierto todavía.
+- PR en borrador: **#7 — Automatiza la Fase 4 y establece la política de pruebas**.
+- El PR #7 no está integrado y no debe fusionarse sin autorización explícita de Arturo.
 - Las ramas DEV integradas se conservan como respaldos históricos y no deben eliminarse sin autorización explícita.
 - Entorno: React 19 + TypeScript 6 + Vite 8 + Motion.
 - Guardado principal: `incremental-game-a:save:v1`.
 - Ajustes de mando: `incremental-game-a:gamepad:v1`.
 - Reserva del Gatillo: `incremental-game-a:pulse-trigger:v1`.
 - Perfil experimental de balance: `incremental-game-a:balance-dev:v1`.
-- Última actualización: **3 de agosto de 2026, 22:45 CDMX**.
+- Última actualización: **3 de agosto de 2026, 23:16 CDMX**.
 
 ### Integraciones realizadas
 
@@ -55,15 +56,17 @@ La política completa, comandos y criterios se encuentran en `TESTING_POLICY.md`
 
 ## 2. Infraestructura de pruebas automatizadas
 
-### Estado implementado en `Dev-Balance-Laboratory-Phase-4`
+### Componentes incorporados en `Dev-Balance-Laboratory-Phase-4`
 
 - `vitest.config.ts`: ejecución en Node de pruebas unitarias e integración.
 - `playwright.config.ts`: Chromium aislado, servidor Vite, trazas, capturas y video al fallar.
-- `.github/workflows/quality-gate.yml`: lint, Vitest, build y Playwright en ramas DEV, PR y `main`.
+- `.github/workflows/quality-gate.yml`: `npm ci`, lint, Vitest, build y Playwright en ramas DEV, PR y `main`.
 - `TESTING_POLICY.md`: política rectora de pruebas.
+- `TESTING_SETUP.md`: instalación y comandos operativos.
 - `.gitignore`: excluye reportes, trazas y cobertura locales.
+- `package-lock.json`: actualizado automáticamente para Vitest y Playwright en el commit `fc6ec47845be85ffa458794f835779916fc0eeee`.
 
-### Comandos añadidos
+### Comandos oficiales
 
 ```powershell
 npm run test
@@ -74,7 +77,14 @@ npm run test:phase4
 npm run test:all
 ```
 
-### Cobertura creada para Fase 4
+La instalación reproducible usa:
+
+```powershell
+npm ci
+npx playwright install chromium
+```
+
+### Cobertura automatizada de Fase 4
 
 Vitest:
 
@@ -90,33 +100,39 @@ Playwright:
   3. Autoclicker comprado continúa activo mientras su siguiente compra queda bloqueada;
   4. Refracción comprada continúa avanzando mientras su siguiente compra queda bloqueada.
 
-Total escrito hasta ahora:
+Total vigente:
 
 ```text
 41 pruebas Vitest
 4 pruebas Playwright
+45 comprobaciones automatizadas ejecutables
 ```
 
-### Estado de ejecución
+### Resultado real de GitHub Actions
 
-- Las pruebas están escritas, pero aún **no se afirma que pasen**.
-- No hay resultados de GitHub Actions todavía porque la infraestructura acaba de añadirse y no existe PR de esta rama.
-- `package.json` ya contiene Vitest y Playwright.
-- `package-lock.json` todavía debe regenerarse con `npm install` y posteriormente incorporarse al repositorio.
-- Antes de integrar, deben ejecutarse y corregirse lint, Vitest, build y Playwright.
+Ejecución definitiva sobre el commit `9bf587e05f074ca87641cfe7c7bb4f19310e9c84`, con dependencias instaladas mediante `npm ci`:
+
+```text
+Instalación bloqueada       APROBADA
+Lint                        APROBADO
+Vitest                      41/41 APROBADAS
+Build de producción         APROBADO
+Playwright Chromium          4/4 APROBADAS
+```
+
+La primera ejecución de Playwright detectó tres defectos en los propios selectores de prueba:
+
+- un campo modificado podía resolver el botón `Restaurar` en vez del `input`;
+- una expectativa no contemplaba el separador de miles;
+- la pestaña Avanzadas se buscaba como botón en lugar de `tab`.
+
+Los tres se corrigieron en `9a8e335a307d8840f01595ff52314dab4f223b5e`. La segunda ejecución y la ejecución definitiva con `npm ci` terminaron completamente en verde.
 
 ## 3. Documentación rectora
 
 ### `TESTING_POLICY.md`
 
-Define:
-
-- qué debe automatizarse;
-- cantidades orientativas;
-- cobertura conceptual mínima;
-- obligación de crear regresiones permanentes;
-- responsabilidades de GitHub Actions;
-- qué validación manual sigue siendo valiosa.
+Define qué debe automatizarse, cantidades orientativas, cobertura conceptual mínima, regresiones permanentes, responsabilidades de CI y qué validación manual sigue siendo valiosa.
 
 ### `PLAN_MAESTRO.md`
 
@@ -153,7 +169,7 @@ Nexo Prismático completo
 
 - Describe la arquitectura e invariantes del Laboratorio.
 - Registra las fases #4, #5 y #6.
-- La Fase 4 está implementada en rama y pendiente de validación automatizada e integración.
+- La Fase 4 está implementada y automatizada en rama, pendiente únicamente de revisión final e integración autorizada.
 
 ### División de responsabilidades
 
@@ -200,11 +216,11 @@ PERFORMANCE_AUDIT.md  → riesgos y presupuestos de rendimiento
 - Después de P5: +0.50 provisional por prestigio.
 - Una a cinco partículas orbitales equidistantes según el nivel visual.
 
-## 6. Laboratorio de Balance — Fase 4 en desarrollo
+## 6. Laboratorio de Balance — Fase 4
 
-### Objetivo
+### Objetivo cumplido
 
-Eliminar la diferencia entre parámetros aplicables y parámetros de solo simulación.
+Se eliminó la diferencia entre parámetros aplicables y parámetros de solo simulación.
 
 ### Implementado
 
@@ -228,7 +244,7 @@ Sobrecarga conserva su nivel, pero no puede cargar mientras la esfera esté inco
 
 ### Validación manual realizada
 
-Arturo completó la primera comprobación visual de Fase 4:
+Arturo completó la comprobación visual focalizada:
 
 ```text
 3,000 clics
@@ -236,7 +252,7 @@ Capacidad experimental: 2,000
 Resultado observado: NÚCLEO LLENO
 ```
 
-Esta prueba manual es favorable, pero el resto de la matriz se trasladó a Vitest y Playwright para evitar trabajo repetitivo.
+Las cinco pruebas manuales restantes fueron sustituidas por la suite automatizada aprobada. No es necesario que Arturo las repita en su PC salvo que aparezca una anomalía visual o de entorno.
 
 ## 7. Controles DualSense / Gamepad integrados
 
@@ -301,39 +317,29 @@ No mezclar estas refactorizaciones con la primera implementación de Esmeralda s
 - Partículas orbitales validadas localmente por Arturo.
 - Fases 2 y 3 del Laboratorio validadas localmente por Arturo.
 - Fase 4: transición visual a Núcleo lleno validada por Arturo.
-- Revisión estática de la rama y comparación contra `main`.
-- 41 pruebas Vitest y 4 pruebas Playwright escritas.
+- `npm ci` aprobado en GitHub Actions.
+- `npm run lint` aprobado en GitHub Actions.
+- 41/41 pruebas Vitest aprobadas.
+- `npm run build` aprobado.
+- 4/4 recorridos Playwright aprobados en Chromium.
+- `package-lock.json` actualizado y versionado.
 
-### Pendientes obligatorios
+### Pendientes antes de integrar
 
-1. Regenerar dependencias y `package-lock.json`.
-2. Ejecutar `npm run lint`.
-3. Ejecutar `npm run test`.
-4. Ejecutar `npm run build`.
-5. Instalar Chromium de Playwright.
-6. Ejecutar `npm run test:e2e`.
-7. Corregir cualquier fallo real.
-8. Confirmar GitHub Actions en verde.
-9. Realizar una revisión visual humana breve.
-10. Abrir PR e integrar solo con autorización explícita.
+1. Confirmar que el último commit documental conserve GitHub Actions en verde.
+2. Comparar la rama final contra `main`.
+3. Actualizar el cuerpo del PR #7 con resultados definitivos.
+4. Solicitar autorización explícita de Arturo.
+5. Marcar el PR listo y fusionar únicamente después de esa autorización.
 
 ## 11. Orden recomendado para continuar
 
-### Inmediato — estabilizar la suite
+### Inmediato — cerrar Fase 4
 
-```powershell
-npm install
-npx playwright install chromium
-npm run test:all
-```
-
-Después:
-
-- incorporar el `package-lock.json` regenerado;
-- corregir pruebas o implementación según los resultados;
-- reducir selectores E2E frágiles si aparece inestabilidad;
-- abrir PR cuando la suite esté verde;
-- pedir a Arturo únicamente una comprobación visual breve.
+- confirmar CI del último commit;
+- revisar la comparación final;
+- integrar PR #7 cuando Arturo lo autorice;
+- actualizar esta bitácora en `main` con el merge definitivo.
 
 ### Fase 5 — perfiles DEV persistentes
 
@@ -344,7 +350,8 @@ Después de integrar Fase 4:
 - reemplazarlos o eliminarlos;
 - exportar/importar JSON validado;
 - mantener desactivada la carga automática;
-- restaurar siempre el balance oficial.
+- restaurar siempre el balance oficial;
+- diseñar las pruebas junto con la implementación.
 
 ### Etapa de contenido — Esmeralda
 
@@ -367,4 +374,4 @@ No implementar todavía: ECS, Typed Arrays para niveles, min-heap, Web Workers p
 
 ## 13. Prompt recomendado para el siguiente chat
 
-> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. Lee primero `HISTORIAL_GPT.MD` y `TESTING_POLICY.md`, después los demás documentos rectores. La rama estable es `main` en `1a7b327...`; la rama activa de desarrollo es `Dev-Balance-Laboratory-Phase-4` y no debe integrarse sin autorización explícita. La Fase 4 habilita capacidad de esfera, Presión y desbloqueos dinámicos, conserva niveles comprados y añade previsualización. Arturo validó visualmente el caso 3,000 clics con capacidad 2,000 mostrando NÚCLEO LLENO. Se creó infraestructura Vitest + Playwright + GitHub Actions con 41 pruebas Vitest y 4 E2E, pero todavía no se afirma que pasen: falta ejecutar dependencias, lint, test, build y Playwright, corregir fallos y confirmar CI. La automatización es prioridad central; no pedir a Arturo matrices manuales extensas cuando puedan automatizarse. No elimines ramas, no hagas merge sin permiso y registra cada bug con una prueba permanente.
+> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. Lee primero `HISTORIAL_GPT.MD` y `TESTING_POLICY.md`, después los demás documentos rectores. La rama estable es `main` en `1a7b327...`; la rama activa es `Dev-Balance-Laboratory-Phase-4` y el PR #7 permanece en borrador sin autorización de merge. La Fase 4 habilita capacidad de esfera, Presión y desbloqueos dinámicos, conserva niveles comprados y añade previsualización. Arturo validó visualmente el caso 3,000 clics con capacidad 2,000 mostrando NÚCLEO LLENO. La infraestructura Vitest + Playwright + GitHub Actions está operativa: `npm ci`, lint, 41/41 Vitest, build y 4/4 E2E pasaron en GitHub Actions; el lockfile quedó versionado. La automatización es prioridad central: no pedir a Arturo matrices manuales extensas cuando puedan automatizarse. Antes de fusionar, confirma el último CI, compara con `main` y solicita autorización explícita. No elimines ramas ni hagas merge sin permiso.
