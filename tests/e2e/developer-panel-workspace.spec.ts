@@ -185,8 +185,10 @@ test.describe('Panel DEV acoplado', () => {
     }
 
     await page.locator('.developer-chromatic-button').click()
-    const chamber = page.getByRole('dialog', { name: 'Cámara Cromática' })
-    await expect(chamber).toHaveClass(/chromatic-developer-docked/)
+    const chamber = developerPanel.locator(
+      '.chromatic-developer-docked[role="dialog"]',
+    )
+    await expect(chamber).toBeVisible()
     await expectInsidePanel(developerPanel, chamber)
     expect(
       await page.evaluate(() =>
