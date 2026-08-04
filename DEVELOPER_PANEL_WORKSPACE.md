@@ -48,7 +48,10 @@ Las superficies acopladas conservan `role="dialog"`, pero usan `aria-modal="fals
 
 - Escape y los botones Cerrar siguen funcionando;
 - el foco de teclado dentro del workspace no es expulsado por el filtro del Panel DEV;
-- el área sigue excluida de la navegación principal del gamepad mediante el contrato existente `data-gamepad-ignore`;
+- mientras una herramienta está abierta, el Panel DEV eleva únicamente su propia columna por encima del panel flotante del control;
+- el panel flotante del control permanece disponible, pero nunca intercepta botones del workspace;
+- la navegación direccional del gamepad se pausa cuando el foco está dentro del workspace, evitando que la deriva robe campos o desplegables;
+- el pulso primario del núcleo y toda la interacción por mouse permanecen disponibles;
 - en pantallas angostas el panel vuelve a una sola columna sin cubrir la partida.
 
 ## 6. Pruebas de regresión
@@ -61,7 +64,9 @@ Las superficies acopladas conservan `role="dialog"`, pero usan `aria-modal="fals
 4. clics reales del núcleo mientras el Laboratorio permanece abierto;
 5. acoplamiento de las cinco herramientas principales;
 6. vista cromática DEV sin bloqueo de `body`;
-7. juego operable durante la inspección cromática.
+7. juego operable durante la inspección cromática;
+8. prioridad de capa sobre el panel flotante del control y cierre real sin `force`;
+9. foco estable ante deriva de DualSense mediante la regresión existente de Plantillas Matemáticas.
 
 Comando dedicado:
 
