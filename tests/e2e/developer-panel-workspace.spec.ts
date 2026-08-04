@@ -108,6 +108,20 @@ test.describe('Panel DEV acoplado', () => {
     await expect(surface).toHaveCount(1)
     await expectInsidePanel(developerPanel, surface)
 
+    const layerOrder = await page.evaluate(() => ({
+      developerPanel: Number(
+        getComputedStyle(
+          document.querySelector<HTMLElement>('.developer-panel')!,
+        ).zIndex,
+      ),
+      gamepadPanel: Number(
+        getComputedStyle(
+          document.querySelector<HTMLElement>('.gamepad-panel')!,
+        ).zIndex,
+      ),
+    }))
+    expect(layerOrder.developerPanel).toBeGreaterThan(layerOrder.gamepadPanel)
+
     const energy = page
       .locator('.summary-item')
       .filter({ hasText: 'Energía' })
@@ -122,6 +136,9 @@ test.describe('Panel DEV acoplado', () => {
         document.body.classList.contains('is-chromatic-open'),
       ),
     ).toBe(false)
+
+    await dialog.getByRole('button', { name: 'Cerrar', exact: true }).click()
+    await expect(dialog).toBeHidden()
   })
 
   test('acopla las herramientas principales y la vista cromática sin cubrir el juego', async ({
