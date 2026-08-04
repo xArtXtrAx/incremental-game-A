@@ -26,6 +26,17 @@ import {
   type DeveloperValues,
 } from './DeveloperPanel'
 import {
+  DEVELOPER_EXPERIMENT_REQUEST_EVENT,
+  type DeveloperExperimentRequest,
+  type DeveloperExperimentSnapshot,
+} from './developerExperimentBridge'
+import {
+  diffDeveloperScenarioState,
+  materializeDeveloperScenarioState,
+  validateDeveloperScenarioState,
+} from './developerScenarios'
+import { advanceGameStateBySeconds } from './developerSimulation'
+import {
   GameCore,
   type ClickBurst,
   type EnergyBurst,
@@ -67,6 +78,11 @@ type AppAction =
   | { type: 'developer-set-values'; values: DeveloperValues }
   | { type: 'apply-bulk-purchase'; strategy: BulkPurchaseStrategy }
   | { type: 'replace-normalized-state'; state: GameState }
+
+type DeveloperBaseline = {
+  state: GameState
+  capturedAt: number
+}
 
 const format = new Intl.NumberFormat('es-MX', { maximumFractionDigits: 2 })
 
@@ -125,6 +141,9 @@ function App() {
   const [refractionBurst, setRefractionBurst] =
     useState<RefractionBurst | null>(null)
   const [clockNow, setClockNow] = useState(() => Date.now())
+  const [simulationPaused, setSimulationPaused] = useState(false)
+  const [developerExperimentActive, setDeveloperExperimentActive] =
+    useState(false)
   const [resetArmed, setResetArmed] = useState(false)
   const [mobileView, setMobileView] = useState<MobileView>('core')
   const [sapphireBirthId, setSapphireBirthId] = useState(0)
@@ -141,6 +160,7 @@ function App() {
   )
   const refractionBurstTimer = useRef<number | null>(null)
   const crystallizeTimers = useRef<number[]>([])
+  const developerBaseline = useRef<DeveloperBaseline | null>(null)
   const sphereClickCapacity = getSphereClickCapacity()
 
   const overloadActive = isOverloadActive(game.overloadUntil, clockNow)
@@ -179,6 +199,10 @@ function App() {
   )
 
   useEffect(() => {
+    if (simulationPaused) {
+      return
+    }
+
     const id = window.setInterval(() => {
       const now = Date.now()
       setClockNow(now)
@@ -186,7 +210,7 @@ function App() {
     }, 1000)
 
     return () => window.clearInterval(id)
-  }, [])
+  }, [simulationPaused])
 
   useEffect(() => {
     const handlePulseTriggerBuy = () => {
@@ -235,7 +259,7 @@ function App() {
         return
       }
 
-      const now = Date.now()
+      const now = simulationPaused ? clockNow : Date.now()
       const normalization = normalizeGameStateForBalance(
         game,
         targetConfig,
@@ -315,9 +339,254 @@ function App() {
         BALANCE_SESSION_REQUEST_EVENT,
         handleBalanceSessionRequest,
       )
-  }, [game, isCrystallizing])
+  }, [clockNow, game, isCrystallizing, simulationPaused])
 
   useEffect(() => {
+    const createSnapshot = (
+      state: GameState = game,
+      now: number = clockNow,
+      paused: boolean = simulationPaused,
+      experimental: boolean = developerExperimentActive,
+    ): DeveloperExperimentSnapshot => ({
+      state: { ...state },
+      clockNow: now,
+      paused,
+      experimental,
+      baselineAvailable: developerBaseline.current !== null,
+    })
+
+    const clearTransientVisuals = () => {
+      setBursts([])
+      setCavitationBurst(null)
+      setOverloadBurst(null)
+      setRefractionBurst(null)
+      setPrestigeAnnouncement(null)
+    }
+
+    const handleDeveloperExperimentRequest = (event: Event) => {
+      const request = (event as CustomEvent<DeveloperExperimentRequest>).detail
+      if (!request || typeof request.respond !== 'function') return
+
+      if (request.mode === 'read') {
+        request.respond({
+          accepted: true,
+          snapshot: createSnapshot(),
+          changes: [],
+          message: 'Estado experimental actualizado.',
+        })
+        return
+      }
+
+      if (isCrystallizing) {
+        request.respond({
+          accepted: false,
+          snapshot: createSnapshot(),
+          changes: [],
+          message: 'Espera a que termine la cristalización.',
+        })
+        return
+      }
+
+      if (request.mode === 'set-paused') {
+        const paused = request.paused === true
+        const nextNow = paused && !simulationPaused ? Date.now() : clockNow
+        setClockNow(paused ? nextNow : Date.now())
+        setSimulationPaused(paused)
+        request.respond({
+          accepted: true,
+          snapshot: createSnapshot(
+            game,
+            paused ? nextNow : Date.now(),
+            paused,
+          ),
+          changes: [],
+          message: paused
+            ? 'Reloj principal pausado.'
+            : 'Reloj principal reanudado.',
+        })
+        return
+      }
+
+      if (request.mode === 'step') {
+        if (!simulationPaused) {
+          request.respond({
+            accepted: false,
+            snapshot: createSnapshot(),
+            changes: [],
+            message: 'Pausa el reloj antes de avanzar por pasos.',
+          })
+          return
+        }
+
+        const result = advanceGameStateBySeconds(
+          game,
+          clockNow,
+          request.seconds ?? 0,
+        )
+        if (result.seconds === 0) {
+          request.respond({
+            accepted: false,
+            snapshot: createSnapshot(),
+            changes: [],
+            message: 'El paso solicitado no es válido.',
+          })
+          return
+        }
+
+        previousClicks.current = result.state.manualClicks
+        previousRefractionDischargeCount.current =
+          result.state.refractionDischargeCount
+        dispatch({ type: 'replace-normalized-state', state: result.state })
+        setClockNow(result.now)
+        request.respond({
+          accepted: true,
+          snapshot: createSnapshot(result.state, result.now, true),
+          changes: diffDeveloperScenarioState(game, result.state),
+          message: `Simulación avanzada ${result.seconds} s.`,
+        })
+        return
+      }
+
+      if (request.mode === 'restore-baseline') {
+        const baseline = developerBaseline.current
+        if (!baseline) {
+          request.respond({
+            accepted: false,
+            snapshot: createSnapshot(),
+            changes: [],
+            message: 'No existe una sesión original por restaurar.',
+          })
+          return
+        }
+
+        const restoreNow = Date.now()
+        const restoredState = materializeDeveloperScenarioState(
+          baseline,
+          restoreNow,
+        )
+        const changes = diffDeveloperScenarioState(game, restoredState)
+        developerBaseline.current = null
+        previousClicks.current = restoredState.manualClicks
+        previousRefractionDischargeCount.current =
+          restoredState.refractionDischargeCount
+        saveGameState(restoredState)
+        dispatch({ type: 'replace-normalized-state', state: restoredState })
+        setClockNow(restoreNow)
+        setDeveloperExperimentActive(false)
+        setSimulationPaused(false)
+        clearTransientVisuals()
+        request.respond({
+          accepted: true,
+          snapshot: {
+            state: { ...restoredState },
+            clockNow: restoreNow,
+            paused: false,
+            experimental: false,
+            baselineAvailable: false,
+          },
+          changes,
+          message: 'Sesión original restaurada y guardado normal preservado.',
+        })
+        return
+      }
+
+      if (!request.state) {
+        request.respond({
+          accepted: false,
+          snapshot: createSnapshot(),
+          changes: [],
+          message: 'La solicitud no contiene un estado de escenario.',
+        })
+        return
+      }
+
+      const issues = validateDeveloperScenarioState(request.state)
+      if (issues.length > 0) {
+        request.respond({
+          accepted: false,
+          snapshot: createSnapshot(),
+          changes: [],
+          message: `Escenario rechazado: ${issues[0].message}`,
+        })
+        return
+      }
+
+      const applyNow = simulationPaused ? clockNow : Date.now()
+      const targetState = materializeDeveloperScenarioState(
+        {
+          state: request.state,
+          capturedAt: request.capturedAt ?? 0,
+        },
+        applyNow,
+      )
+      const changes = diffDeveloperScenarioState(game, targetState)
+
+      if (request.mode === 'preview-scenario') {
+        request.respond({
+          accepted: true,
+          snapshot: createSnapshot(),
+          changes,
+          message:
+            changes.length === 0
+              ? 'El escenario coincide con la sesión actual.'
+              : `${changes.length} campos cambiarían al aplicar el escenario.`,
+        })
+        return
+      }
+
+      if (request.mode === 'apply-scenario') {
+        if (!developerBaseline.current) {
+          developerBaseline.current = {
+            state: { ...game },
+            capturedAt: clockNow,
+          }
+        }
+
+        previousClicks.current = targetState.manualClicks
+        previousRefractionDischargeCount.current =
+          targetState.refractionDischargeCount
+        dispatch({ type: 'replace-normalized-state', state: targetState })
+        setClockNow(applyNow)
+        setDeveloperExperimentActive(true)
+        setSimulationPaused(true)
+        clearTransientVisuals()
+        request.respond({
+          accepted: true,
+          snapshot: {
+            state: { ...targetState },
+            clockNow: applyNow,
+            paused: true,
+            experimental: true,
+            baselineAvailable: true,
+          },
+          changes,
+          message: `Escenario “${request.scenarioName ?? 'sin nombre'}” aplicado en sesión aislada.`,
+        })
+      }
+    }
+
+    document.addEventListener(
+      DEVELOPER_EXPERIMENT_REQUEST_EVENT,
+      handleDeveloperExperimentRequest,
+    )
+    return () =>
+      document.removeEventListener(
+        DEVELOPER_EXPERIMENT_REQUEST_EVENT,
+        handleDeveloperExperimentRequest,
+      )
+  }, [
+    clockNow,
+    developerExperimentActive,
+    game,
+    isCrystallizing,
+    simulationPaused,
+  ])
+
+  useEffect(() => {
+    if (simulationPaused) {
+      return
+    }
+
     const now = Date.now()
 
     if (game.overloadUntil <= now && game.refractionUntil <= now) {
@@ -327,9 +596,13 @@ function App() {
     setClockNow(now)
     const id = window.setInterval(() => setClockNow(Date.now()), 100)
     return () => window.clearInterval(id)
-  }, [game.overloadUntil, game.refractionUntil])
+  }, [game.overloadUntil, game.refractionUntil, simulationPaused])
 
-  useEffect(() => saveGameState(game), [game])
+  useEffect(() => {
+    if (!developerExperimentActive) {
+      saveGameState(game)
+    }
+  }, [developerExperimentActive, game])
 
   useEffect(() => {
     if (
@@ -395,7 +668,7 @@ function App() {
       return
     }
 
-    const now = Date.now()
+    const now = simulationPaused ? clockNow : Date.now()
     const outcome = getClickOutcome(game, now)
     const burstId = nextBurstId.current++
 
@@ -464,7 +737,9 @@ function App() {
 
     crystallizeTimers.current.forEach((timer) => window.clearTimeout(timer))
     crystallizeTimers.current = []
-    clearSavedGame()
+    if (!developerExperimentActive) {
+      clearSavedGame()
+    }
     if (refractionBurstTimer.current !== null) {
       window.clearTimeout(refractionBurstTimer.current)
       refractionBurstTimer.current = null
@@ -484,7 +759,9 @@ function App() {
       return
     }
 
-    setClockNow(Date.now())
+    if (!simulationPaused) {
+      setClockNow(Date.now())
+    }
     dispatch({ type: 'developer-set-values', values })
   }
 
