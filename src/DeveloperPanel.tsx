@@ -1,11 +1,13 @@
 import {
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type FocusEvent,
   type FormEvent,
   type KeyboardEvent,
   type PointerEvent,
+  type CSSProperties,
 } from 'react'
 import './DeveloperPanel.css'
 import './DeveloperChromaticThemePreview.css'
@@ -84,6 +86,7 @@ export function DeveloperPanel({
   onApply,
 }: DeveloperPanelProps) {
   const panelRef = useRef<HTMLElement | null>(null)
+  const [workspaceHeight, setWorkspaceHeight] = useState<number | null>(null)
   const mouseFocusAllowedUntil = useRef(0)
   const [energyInput, setEnergyInput] = useState(() =>
     formatInputValue(energy),
@@ -102,6 +105,32 @@ export function DeveloperPanel({
     'Los cambios se guardan en la partida actual.',
   )
   const sphereClickCapacity = getSphereClickCapacity()
+
+  useLayoutEffect(() => {
+    const panel = panelRef.current
+    const gamePanel = panel
+      ?.closest('.game-workspace')
+      ?.querySelector<HTMLElement>(':scope > .game-panel')
+
+    if (!gamePanel) return
+
+    const updateHeight = () => {
+      const nextHeight = Math.ceil(gamePanel.getBoundingClientRect().height)
+      setWorkspaceHeight((current) =>
+        current === nextHeight ? current : nextHeight,
+      )
+    }
+
+    updateHeight()
+    const observer = new ResizeObserver(updateHeight)
+    observer.observe(gamePanel)
+    window.addEventListener('resize', updateHeight)
+
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updateHeight)
+    }
+  }, [])
 
   useEffect(() => {
     if (dirty) {
@@ -150,7 +179,10 @@ export function DeveloperPanel({
     if (performance.now() <= mouseFocusAllowedUntil.current) return
 
     const target = event.target
-    if (target instanceof HTMLElement) {
+    if (
+      target instanceof HTMLElement &&
+      !target.closest('.developer-panel-workspace-host')
+    ) {
       target.blur()
     }
   }
@@ -301,10 +333,19 @@ export function DeveloperPanel({
       ref={panelRef}
       className="developer-panel"
       data-gamepad-ignore="true"
+      data-height-synced={workspaceHeight !== null || undefined}
+      style={
+        workspaceHeight === null
+          ? undefined
+          : ({
+              '--developer-panel-height': `${workspaceHeight}px`,
+            } as CSSProperties)
+      }
       aria-label="Panel de desarrollador"
       onPointerDownCapture={handlePanelPointerDown}
       onFocusCapture={handlePanelFocus}
     >
+      <div className="developer-panel-scroll" data-testid="developer-panel-scroll">
       <header className="developer-panel-header">
         <div>
           <span>Herramientas de prueba</span>
@@ -462,6 +503,18 @@ export function DeveloperPanel({
         requisitos activos únicamente controlan compras nuevas. La vista
         cromática siempre vuelve a Zafiro al recargar.
       </footer>
+
+      <div
+        className="developer-panel-launcher-host"
+        data-testid="developer-panel-launcher-host"
+      />
+      </div>
+
+      <div
+        className="developer-panel-workspace-host"
+        data-testid="developer-panel-workspace-host"
+        aria-live="polite"
+      />
     </aside>
   )
 }

@@ -5,6 +5,10 @@ import {
   useSyncExternalStore,
 } from 'react'
 import { createPortal } from 'react-dom'
+import {
+  useDeveloperPanelLauncherHost,
+  useDeveloperPanelWorkspaceHost,
+} from './developerPanelWorkspace'
 import './BalanceLaboratorySystem.css'
 import {
   DEFAULT_BALANCE_CONFIG,
@@ -79,27 +83,6 @@ const SAPPHIRE_PREVIEW_LEVELS = [0, 1, 2, 3, 4, 5, 6, 7, 8] as const
 const numberFormat = new Intl.NumberFormat('es-MX', {
   maximumFractionDigits: 4,
 })
-
-function findDeveloperPanel() {
-  return document.querySelector<HTMLElement>('.developer-panel')
-}
-
-function useDeveloperPanelHost() {
-  const [host, setHost] = useState<HTMLElement | null>(() =>
-    findDeveloperPanel(),
-  )
-
-  useEffect(() => {
-    const updateHost = () => setHost(findDeveloperPanel())
-    updateHost()
-
-    const observer = new MutationObserver(updateHost)
-    observer.observe(document.body, { childList: true, subtree: true })
-    return () => observer.disconnect()
-  }, [])
-
-  return host
-}
 
 function formatDifference(official: number, draft: number) {
   if (!Number.isFinite(official) || !Number.isFinite(draft)) return '—'
@@ -287,7 +270,13 @@ function NormalizationList({
   )
 }
 
-function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
+function BalanceLaboratoryWindow({
+  onClose,
+  portalHost,
+}: {
+  onClose: () => void
+  portalHost: HTMLElement
+}) {
   const snapshot = useSyncExternalStore(
     subscribeBalanceRuntime,
     getBalanceRuntimeSnapshot,
@@ -454,7 +443,7 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
 
   return createPortal(
     <div
-      className="balance-laboratory-backdrop"
+      className="balance-laboratory-backdrop developer-workspace-overlay"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose()
@@ -463,7 +452,7 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
       <section
         className="balance-laboratory-window"
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-labelledby="balance-laboratory-title"
       >
         <header className="balance-laboratory-header">
@@ -907,12 +896,13 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
         </footer>
       </section>
     </div>,
-    document.body,
+    portalHost,
   )
 }
 
 export function BalanceLaboratorySystem() {
-  const host = useDeveloperPanelHost()
+  const host = useDeveloperPanelLauncherHost()
+  const workspaceHost = useDeveloperPanelWorkspaceHost()
   const [open, setOpen] = useState(false)
 
   return (
@@ -932,7 +922,12 @@ export function BalanceLaboratorySystem() {
           </section>,
           host,
         )}
-      {open && <BalanceLaboratoryWindow onClose={() => setOpen(false)} />}
+      {open && workspaceHost && (
+        <BalanceLaboratoryWindow
+          portalHost={workspaceHost}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </>
   )
 }

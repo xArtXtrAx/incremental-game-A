@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
+import { useDeveloperPanelWorkspaceHost } from './developerPanelWorkspace'
 import './ChromaticChamberSystem.css'
 import { ChromaticSapphireOrbit } from './ChromaticSapphireOrbit'
 import { GAME_STORAGE_KEY } from './game'
@@ -55,6 +56,7 @@ function getGemSummary(
 }
 
 export function ChromaticChamberSystem() {
+  const workspaceHost = useDeveloperPanelWorkspaceHost()
   const [headerHost, setHeaderHost] = useState<HTMLElement | null>(null)
   const [prestigeCount, setPrestigeCount] = useState(readPrestigeCount)
   const [isOpen, setIsOpen] = useState(false)
@@ -154,7 +156,9 @@ export function ChromaticChamberSystem() {
   useEffect(() => {
     if (!isOpen) return
 
-    document.body.classList.add('is-chromatic-open')
+    if (!developerPreview) {
+      document.body.classList.add('is-chromatic-open')
+    }
     const focusTimer = window.setTimeout(() => {
       document
         .querySelector<HTMLElement>('.chromatic-back-button')
@@ -174,7 +178,7 @@ export function ChromaticChamberSystem() {
       window.removeEventListener('keydown', handleKeyDown)
       document.body.classList.remove('is-chromatic-open')
     }
-  }, [closeChamber, isOpen])
+  }, [closeChamber, developerPreview, isOpen])
 
   useEffect(
     () => () => {
@@ -235,7 +239,15 @@ export function ChromaticChamberSystem() {
 
   const chamberPortal = isOpen
     ? createPortal(
-        <div className="chromatic-overlay" role="dialog" aria-modal="true">
+        <div
+          className={`chromatic-overlay${
+            developerPreview
+              ? ' developer-workspace-overlay chromatic-developer-docked'
+              : ''
+          }`}
+          role="dialog"
+          aria-modal={developerPreview ? 'false' : 'true'}
+        >
           <div className="chromatic-space" aria-hidden="true">
             <span className="chromatic-star star-one" />
             <span className="chromatic-star star-two" />
@@ -386,7 +398,7 @@ export function ChromaticChamberSystem() {
             </footer>
           </section>
         </div>,
-        document.body,
+        developerPreview && workspaceHost ? workspaceHost : document.body,
       )
     : null
 

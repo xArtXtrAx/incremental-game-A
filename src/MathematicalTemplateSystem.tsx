@@ -1,5 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import {
+  useDeveloperPanelLauncherHost,
+  useDeveloperPanelWorkspaceHost,
+  usePortalHost,
+} from './developerPanelWorkspace'
 import { DEFAULT_BALANCE_CONFIG } from './balanceConfig'
 import { createBrowserBalanceProfileRepository } from './balanceProfiles'
 import {
@@ -168,24 +173,6 @@ const PARAMETER_DEFINITIONS: Record<
   ],
 }
 
-function usePortalHost(selector: string) {
-  const find = useCallback(
-    () => document.querySelector<HTMLElement>(selector),
-    [selector],
-  )
-  const [host, setHost] = useState<HTMLElement | null>(() => find())
-
-  useEffect(() => {
-    const update = () => setHost(find())
-    update()
-    const observer = new MutationObserver(update)
-    observer.observe(document.body, { childList: true, subtree: true })
-    return () => observer.disconnect()
-  }, [find])
-
-  return host
-}
-
 function safeFileName(name: string) {
   return (
     name
@@ -231,7 +218,13 @@ function findToolButton(text: string) {
   )
 }
 
-function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
+function MathematicalTemplateWindow({
+  onClose,
+  portalHost,
+}: {
+  onClose: () => void
+  portalHost: HTMLElement
+}) {
   const repository = useMemo(() => createBrowserBalanceProfileRepository(), [])
   const [specification, setSpecification] =
     useState<MathematicalTemplateSpecification>(() =>
@@ -419,11 +412,11 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
   }
 
   return createPortal(
-    <div className="mathematical-template-overlay" role="presentation">
+    <div className="mathematical-template-overlay developer-workspace-overlay" role="presentation">
       <section
         className="mathematical-template-window"
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-labelledby="mathematical-template-title"
       >
         <header className="mathematical-template-header">
@@ -807,12 +800,13 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
         </footer>
       </section>
     </div>,
-    document.body,
+    portalHost,
   )
 }
 
 export function MathematicalTemplateSystem() {
-  const developerPanelHost = usePortalHost('.developer-panel')
+  const developerPanelHost = useDeveloperPanelLauncherHost()
+  const workspaceHost = useDeveloperPanelWorkspaceHost()
   const toolsHost = usePortalHost('.developer-tools-grid')
   const [open, setOpen] = useState(false)
 
@@ -848,7 +842,12 @@ export function MathematicalTemplateSystem() {
           toolsHost,
         )}
 
-      {open && <MathematicalTemplateWindow onClose={() => setOpen(false)} />}
+      {open && workspaceHost && (
+        <MathematicalTemplateWindow
+          portalHost={workspaceHost}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </>
   )
 }
