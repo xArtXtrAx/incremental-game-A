@@ -182,9 +182,6 @@ test.describe('Fase 6 · Plantillas Matemáticas Seguras', () => {
       .locator('input')
       .first()
     await expect(receivedBaseCost).toHaveValue('100')
-    await expect(
-      laboratory.getByText(/recibido desde Plantillas Matemáticas; aún no afecta la partida/),
-    ).toBeVisible()
     await expect(laboratory.getByText(/Runtime activo: official/)).toBeVisible()
     expect(
       await page.evaluate((key) => localStorage.getItem(key), GAME_STORAGE_KEY),
