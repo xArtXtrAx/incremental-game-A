@@ -3,6 +3,30 @@ import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const GAME_STORAGE_KEY = 'incremental-game-a:save:v1'
 
+async function installDriftingGamepad(page: Page) {
+  await page.addInitScript(() => {
+    const buttons = Array.from({ length: 18 }, () => ({
+      pressed: false,
+      touched: false,
+      value: 0,
+    }))
+    const gamepad = {
+      axes: [0.8, 0, 0, 0],
+      buttons,
+      connected: true,
+      id: 'DualSense mock con deriva',
+      index: 0,
+      mapping: 'standard',
+      timestamp: 1,
+    } as unknown as Gamepad
+
+    Object.defineProperty(navigator, 'getGamepads', {
+      configurable: true,
+      value: () => [gamepad],
+    })
+  })
+}
+
 async function openCleanGame(page: Page) {
   await page.goto('/')
   await page.evaluate(() => window.localStorage.clear())
@@ -102,5 +126,27 @@ test.describe('Fase 6 · Plantillas Matemáticas Seguras', () => {
       name: 'Laboratorio de Balance',
     })
     await expect(laboratory.getByText(/Runtime activo: official/)).toBeVisible()
+  })
+
+  test('un DualSense con deriva no roba el foco de desplegables ni campos del modal', async ({
+    page,
+  }) => {
+    await installDriftingGamepad(page)
+    await openCleanGame(page)
+
+    const dialog = await openTemplates(page)
+    const destination = dialog.getByLabel('Destino matemático')
+    await destination.focus()
+    await page.waitForTimeout(650)
+    await expect(destination).toBeFocused()
+
+    await destination.selectOption('cost-growth-series')
+    await expect(destination).toHaveValue('cost-growth-series')
+
+    const name = dialog.getByLabel('Nombre de la plantilla')
+    await name.fill('Plantilla editable con DualSense')
+    await page.waitForTimeout(650)
+    await expect(name).toBeFocused()
+    await expect(name).toHaveValue('Plantilla editable con DualSense')
   })
 })
