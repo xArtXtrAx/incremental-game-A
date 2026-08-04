@@ -7,7 +7,10 @@ import type { BalanceValidationIssue } from './balanceValidation'
 export const BALANCE_SESSION_REQUEST_EVENT =
   'incremental-game-a:balance-session-request'
 
-export type BalanceSessionRequestMode = 'apply' | 'restore-official'
+export type BalanceSessionRequestMode =
+  | 'preview'
+  | 'apply'
+  | 'restore-official'
 
 export type BalanceSessionOutcome = {
   applied: boolean
@@ -54,6 +57,12 @@ function dispatchBalanceSessionRequest(
   return outcome
 }
 
+export function requestBalanceSessionPreview(
+  config: Readonly<BalanceConfig>,
+): BalanceSessionOutcome {
+  return dispatchBalanceSessionRequest('preview', config)
+}
+
 export function requestBalanceSessionApply(
   config: Readonly<BalanceConfig>,
 ): BalanceSessionOutcome {
@@ -65,7 +74,7 @@ export function requestBalanceSessionApply(
       normalization: null,
       issues: blockedIssues,
       message:
-        'El perfil contiene parámetros que todavía están limitados a simulación.',
+        'El perfil contiene parámetros que no están habilitados para esta sesión.',
     }
   }
 

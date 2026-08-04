@@ -1,10 +1,18 @@
 import { DEFAULT_BALANCE_CONFIG } from './balanceConfig'
-import { getActiveBalanceConfig } from './balanceRuntime'
+import {
+  getActiveBalanceConfig,
+  subscribeBalanceRuntime,
+} from './balanceRuntime'
 
 export const REFRACTION_BASE_COST =
   DEFAULT_BALANCE_CONFIG.costs.refraction.baseCost
-export const REFRACTION_REQUIRED_PRESTIGE =
+export let REFRACTION_REQUIRED_PRESTIGE =
   DEFAULT_BALANCE_CONFIG.unlocks.refractionRequiredPrestige
+
+subscribeBalanceRuntime(() => {
+  REFRACTION_REQUIRED_PRESTIGE =
+    getActiveBalanceConfig().unlocks.refractionRequiredPrestige
+})
 
 function roundEnergy(value: number) {
   return Math.round((value + Number.EPSILON) * 100) / 100
@@ -120,10 +128,7 @@ export function advanceRefractionMatrix(
   baseProduction: number,
   now: number,
 ): RefractionAdvance {
-  const requiredPrestige =
-    getActiveBalanceConfig().unlocks.refractionRequiredPrestige
-
-  if (input.level <= 0 || input.prestigeCount < requiredPrestige) {
+  if (input.level <= 0) {
     return {
       orbitProgress: 0,
       facetsCharged: 0,

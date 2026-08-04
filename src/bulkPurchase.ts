@@ -1,5 +1,9 @@
 import { getActiveBalanceConfig } from './balanceRuntime'
 import {
+  getBalanceUnlockRequirement,
+  type BalanceUnlockId,
+} from './balanceUnlockPolicy'
+import {
   gameReducer,
   getAutoclickRate,
   getCavitationClicksRequired,
@@ -158,6 +162,16 @@ const DIVERSITY_PENALTY: Record<BulkPurchaseStrategy, number> = {
   balanced: 0.14,
   active: 0.08,
   automatic: 0.08,
+}
+
+const UNLOCK_KIND_BY_PURCHASE: Partial<
+  Record<BulkPurchaseKind, BalanceUnlockId>
+> = {
+  pressure: 'pressure',
+  cavitation: 'cavitation',
+  autoclick: 'autoclick',
+  overload: 'overload',
+  refraction: 'refraction',
 }
 
 function createEmptyCounts(): Record<BulkPurchaseKind, number> {
@@ -340,27 +354,11 @@ function getDiscoveryBoost(
   strategy: BulkPurchaseStrategy,
 ) {
   const balance = getActiveBalanceConfig()
+  const unlockKind = UNLOCK_KIND_BY_PURCHASE[kind]
 
   if (
-    kind === 'cavitation' &&
-    state.prestigeCount === 0 &&
-    state.manualClicks < balance.unlocks.cavitationRequiredClicks
-  ) {
-    return 0
-  }
-
-  if (
-    kind === 'autoclick' &&
-    state.prestigeCount === 0 &&
-    state.manualClicks < balance.unlocks.autoclickRequiredClicks
-  ) {
-    return 0
-  }
-
-  if (
-    kind === 'overload' &&
-    state.prestigeCount === 0 &&
-    state.manualClicks < balance.core.sphereClickCapacity
+    unlockKind &&
+    getBalanceUnlockRequirement(state, unlockKind, balance).locked
   ) {
     return 0
   }
