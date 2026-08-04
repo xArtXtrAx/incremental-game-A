@@ -63,6 +63,16 @@ test.describe('Panel DEV acoplado', () => {
       Math.abs((gameBox?.height ?? 0) - (developerBox?.height ?? 0)),
     ).toBeLessThanOrEqual(1)
 
+    const gamepadBox = await page
+      .getByLabel('Configuración del control')
+      .boundingBox()
+    expect(gamepadBox).not.toBeNull()
+    if (developerBox && gamepadBox) {
+      expect(gamepadBox.x + gamepadBox.width).toBeLessThanOrEqual(
+        developerBox.x - 1,
+      )
+    }
+
     const layout = await scrollArea.evaluate((element) => {
       const style = getComputedStyle(element)
       return {
