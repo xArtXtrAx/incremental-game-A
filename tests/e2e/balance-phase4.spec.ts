@@ -79,7 +79,8 @@ async function setLaboratoryField(
   label: RegExp,
   value: number,
 ) {
-  await dialog.getByLabel(label).fill(String(value))
+  const field = dialog.locator('label').filter({ hasText: label })
+  await field.locator('input').fill(String(value))
 }
 
 async function closeLaboratory(dialog: Locator) {
@@ -198,7 +199,7 @@ test.describe('Laboratorio de Balance · Fase 4', () => {
     })
 
     await expect(autoclickCard).toContainText('Nivel 1')
-    await expect(autoclickCard).toContainText('Requiere 8000 clics')
+    await expect(autoclickCard).toContainText('Requiere 8,000 clics')
     await expect(purchaseButton).toBeDisabled()
     await expect
       .poll(async () => Number(await page.getByLabel('Clics del núcleo').inputValue()))
@@ -226,7 +227,7 @@ test.describe('Laboratorio de Balance · Fase 4', () => {
     await dialog.getByRole('button', { name: 'Aplicar a sesión' }).click()
     await closeLaboratory(dialog)
 
-    await page.getByRole('button', { name: /^Avanzadas/ }).click()
+    await page.getByRole('tab', { name: /^Avanzadas/ }).click()
     const refractionCard = page
       .locator('article')
       .filter({ hasText: 'Matriz de refracción' })
