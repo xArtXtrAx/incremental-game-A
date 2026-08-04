@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
 import './DeveloperControlCenterSystem.css'
 import {
@@ -182,7 +182,7 @@ function ControlCenterWindow({ onClose }: { onClose: () => void }) {
     ? getDeveloperSimulationMetrics(snapshot.state, snapshot.clockNow)
     : null
 
-  function refreshCustomScenarios() {
+  const refreshCustomScenarios = useCallback(() => {
     const result = repository.list()
     if (!result.ok) {
       setHasError(true)
@@ -190,23 +190,23 @@ function ControlCenterWindow({ onClose }: { onClose: () => void }) {
       return
     }
     setCustomScenarios(result.value)
-  }
+  }, [repository])
 
-  async function refreshSnapshot(silent = false) {
+  const refreshSnapshot = useCallback(async (silent = false) => {
     const response = await requestDeveloperExperiment({ mode: 'read' })
     setSnapshot(response.snapshot)
     if (!silent) {
       setHasError(!response.accepted)
       setMessage(response.message)
     }
-  }
+  }, [])
 
   useEffect(() => {
     refreshCustomScenarios()
     void refreshSnapshot()
     const id = window.setInterval(() => void refreshSnapshot(true), 1_000)
     return () => window.clearInterval(id)
-  }, [])
+  }, [refreshCustomScenarios, refreshSnapshot])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
@@ -496,8 +496,8 @@ function ControlCenterWindow({ onClose }: { onClose: () => void }) {
                   </div>
                 </div>
                 <p>
-                  Al pausar, los ticks automáticos de `App` se detienen. Los
-                  pasos vuelven a ejecutar el reducer segundo por segundo.
+                  Al pausar, los ticks automáticos de App se detienen. Los pasos
+                  vuelven a ejecutar el reducer segundo por segundo.
                 </p>
                 <div className="developer-control-button-row">
                   <button
@@ -551,7 +551,9 @@ function ControlCenterWindow({ onClose }: { onClose: () => void }) {
               <article>
                 <span>Potencia por clic</span>
                 <strong>{numberFormat.format(metrics.clickPower)}</strong>
-                <small>Multiplicador activo ×{numberFormat.format(metrics.activeMultiplier)}</small>
+                <small>
+                  Multiplicador activo ×{numberFormat.format(metrics.activeMultiplier)}
+                </small>
               </article>
               <article>
                 <span>Autoclicker</span>
@@ -561,7 +563,9 @@ function ControlCenterWindow({ onClose }: { onClose: () => void }) {
               <article>
                 <span>Llenado del núcleo</span>
                 <strong>{metrics.sphereFillPercent.toFixed(2)}%</strong>
-                <small>{numberFormat.format(metrics.clicksRemainingToCore)} clics restantes</small>
+                <small>
+                  {numberFormat.format(metrics.clicksRemainingToCore)} clics restantes
+                </small>
               </article>
               <article>
                 <span>Tiempo estimado al núcleo</span>
@@ -571,7 +575,9 @@ function ControlCenterWindow({ onClose }: { onClose: () => void }) {
               <article>
                 <span>Zafiro</span>
                 <strong>×{numberFormat.format(metrics.sapphireMultiplier)}</strong>
-                <small>Capacidad actual: {numberFormat.format(metrics.sphereCapacity)}</small>
+                <small>
+                  Capacidad actual: {numberFormat.format(metrics.sphereCapacity)}
+                </small>
               </article>
             </div>
           )}
@@ -589,7 +595,9 @@ function ControlCenterWindow({ onClose }: { onClose: () => void }) {
               >
                 <span>∑</span>
                 <strong>Laboratorio de Balance</strong>
-                <small>Editar, comparar, diagnosticar y aplicar configuraciones.</small>
+                <small>
+                  Editar, comparar, diagnosticar y aplicar configuraciones.
+                </small>
               </button>
               <button
                 type="button"
@@ -615,7 +623,9 @@ function ControlCenterWindow({ onClose }: { onClose: () => void }) {
               >
                 <span>◇</span>
                 <strong>Cámara Cromática</strong>
-                <small>Inspeccionar la metaprogresión visual sin desbloquear gemas.</small>
+                <small>
+                  Inspeccionar la metaprogresión visual sin desbloquear gemas.
+                </small>
               </button>
             </div>
           )}
