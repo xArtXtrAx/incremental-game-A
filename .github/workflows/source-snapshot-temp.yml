@@ -1,27 +1,32 @@
-name: Source Snapshot Temp
+name: Apply Mathematical Template Bridges Temp
 
 on:
   pull_request:
     branches: [main]
 
+permissions:
+  contents: write
+
 jobs:
-  snapshot:
+  apply:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout
+      - name: Checkout source branch
         uses: actions/checkout@v4
-      - name: Upload editable sources
-        uses: actions/upload-artifact@v4
         with:
-          name: source-snapshot-temp
-          path: |
-            src/BalanceLaboratorySystem.tsx
-            src/DeveloperComparativeExperimentSystem.tsx
-            src/MathematicalTemplateSystem.tsx
-            src/MathematicalTemplateSystem.css
-            src/main.tsx
-            src/comparativeExperiment.ts
-            tests/e2e/mathematical-templates.spec.ts
-            tests/integration/mathematicalTemplates.integration.test.ts
-            tests/unit/mathematicalTemplates.test.ts
-          retention-days: 1
+          ref: ${{ github.event.pull_request.head.ref }}
+          fetch-depth: 0
+      - name: Apply validated patch and remove temporary files
+        shell: bash
+        run: |
+          cat .github/patch-part-0* | base64 --decode > /tmp/mathematical-template-bridges.patch
+          git apply --check /tmp/mathematical-template-bridges.patch
+          git apply /tmp/mathematical-template-bridges.patch
+          rm .github/patch-part-0*
+          rm .github/workflows/source-snapshot-temp.yml
+          git add -A
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "Conecta plantillas con Laboratorio y Comparador"
+          git push origin "HEAD:${{ github.event.pull_request.head.ref }}"
