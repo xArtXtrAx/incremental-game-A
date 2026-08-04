@@ -176,7 +176,12 @@ test.describe('Fase 6 · Plantillas Matemáticas Seguras', () => {
 
     await transfer.getByTestId('use-template-in-laboratory').click()
     await expect(transfer).toBeHidden()
-    await expect(laboratory.getByLabel('Costo base')).toHaveValue('100')
+    const receivedBaseCost = laboratory
+      .locator('.balance-laboratory-field')
+      .filter({ hasText: 'Costo base' })
+      .locator('input')
+      .first()
+    await expect(receivedBaseCost).toHaveValue('100')
     await expect(
       laboratory.getByText(/recibido desde Plantillas Matemáticas; aún no afecta la partida/),
     ).toBeVisible()
@@ -219,5 +224,4 @@ test.describe('Fase 6 · Plantillas Matemáticas Seguras', () => {
       await page.evaluate((key) => localStorage.getItem(key), PROFILE_STORAGE_KEY),
     ).toBe(profileStorageBefore)
   })
-
 })
