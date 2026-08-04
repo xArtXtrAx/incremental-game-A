@@ -1,4 +1,5 @@
 import {
+  useCallback,
   useEffect,
   useMemo,
   useState,
@@ -95,7 +96,7 @@ function BalanceProfileWindow({ onClose }: { onClose: () => void }) {
   const [pendingConfirmation, setPendingConfirmation] =
     useState<PendingConfirmation>(null)
 
-  function refreshProfiles() {
+  const refreshProfiles = useCallback(() => {
     const result = repository.list()
     if (!result.ok) {
       setProfiles([])
@@ -112,11 +113,11 @@ function BalanceProfileWindow({ onClose }: { onClose: () => void }) {
       setHasError(false)
     }
     return true
-  }
+  }, [repository])
 
   useEffect(() => {
     refreshProfiles()
-  }, [])
+  }, [refreshProfiles])
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
