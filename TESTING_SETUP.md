@@ -3,11 +3,11 @@
 ## Primera instalación local
 
 ```powershell
-npm install
+npm ci
 npx playwright install chromium
 ```
 
-`npm install` debe regenerar `package-lock.json` para incluir Vitest y Playwright. El archivo actualizado debe incorporarse a la rama antes de integrar en `main`.
+`npm ci` instala exactamente las versiones registradas en `package-lock.json`. Si se añade o actualiza una dependencia deliberadamente, se usa `npm install` una sola vez para regenerar el lockfile y después se vuelve a `npm ci`.
 
 ## Ejecución rápida
 
