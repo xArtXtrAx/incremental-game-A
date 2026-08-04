@@ -1,0 +1,37 @@
+name: Apply Developer Panel Interaction Fix Temp
+
+on:
+  push:
+    branches: [Dev-Developer-Panel-Viewport]
+    paths:
+      - .github/workflows/apply-dev-panel-interaction-fix-temp.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout visual branch
+        uses: actions/checkout@v4
+        with:
+          ref: Dev-Developer-Panel-Viewport
+          fetch-depth: 0
+
+      - name: Apply interaction regression fix
+        shell: bash
+        run: |
+          echo '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' | base64 -d | gzip -d > /tmp/developer-panel-gamepad-fix.patch
+          git apply --check /tmp/developer-panel-gamepad-fix.patch
+          git apply /tmp/developer-panel-gamepad-fix.patch
+
+      - name: Commit fix and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/apply-dev-panel-interaction-fix-temp.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Corrige interacción entre Panel DEV y gamepad"
+          git push origin HEAD:Dev-Developer-Panel-Viewport
