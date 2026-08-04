@@ -18,6 +18,7 @@
     "test:phase5": "vitest run tests/unit/balanceProfiles.test.ts tests/integration/balanceProfiles.integration.test.ts && playwright test tests/e2e/balance-phase5.spec.ts",
     "test:control-center": "vitest run tests/unit/developerScenarios.test.ts tests/integration/developerSimulation.integration.test.ts && playwright test tests/e2e/developer-control-center.spec.ts",
     "test:comparative": "vitest run tests/unit/balanceRuntimeOverride.test.ts tests/unit/comparativeExperiment.test.ts tests/integration/comparativeExperiment.integration.test.ts && playwright test tests/e2e/comparative-experiment.spec.ts",
+    "test:templates": "vitest run tests/unit/mathematicalTemplates.test.ts tests/integration/mathematicalTemplates.integration.test.ts && playwright test tests/e2e/mathematical-templates.spec.ts",
     "test:all": "npm run lint && npm run test && npm run build && npm run test:e2e",
     "audit:performance": "node scripts/performance-audit.mjs",
     "audit:performance:json": "node scripts/performance-audit.mjs --json"
