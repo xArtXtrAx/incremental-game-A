@@ -7,11 +7,7 @@ import {
 import type { BalanceValidationIssue } from './balanceValidation'
 
 export function isBalancePathApplicableToSession(path: BalanceEditablePath) {
-  return (
-    path.startsWith('costs.') ||
-    path.startsWith('autoclick.') ||
-    path.startsWith('sapphire.')
-  )
+  return BALANCE_EDITABLE_PATHS.includes(path)
 }
 
 export function getBlockedBalanceSessionPaths(
@@ -35,6 +31,6 @@ export function createBlockedBalanceSessionIssues(
     path,
     severity: 'error',
     message:
-      'Este parámetro permanece limitado a simulación durante la Fase 3.',
+      'Este parámetro no está habilitado para aplicación en la sesión actual.',
   }))
 }
