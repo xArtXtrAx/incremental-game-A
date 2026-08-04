@@ -21,17 +21,17 @@ La política completa está en `TESTING_POLICY.md`.
 
 ## 1. Estado real del repositorio
 
-Estado comprobado el **4 de agosto de 2026, después del merge del PR #10**:
+Estado comprobado el **4 de agosto de 2026, después del merge del PR #11**:
 
 - Repositorio privado: `xArtXtrAx/incremental-game-A`.
 - Rama estable: `main`.
-- Último merge funcional: `217d94c2daa03c137351b651f78e8c5812b9c296`.
-- Integración funcional más reciente: **PR #10 — Fase 5.6: Comparador de Experimentos A/B**.
-- Estado del PR #10: **fusionado**.
-- Rama integrada: `Dev-Comparative-Experiment-Runner`.
-- HEAD validado de la rama: `4a380dcf8e12c584195766275b69975d3707a7b0`.
+- Último merge funcional: `1449d2284d3fdcfec46fdc7c0ed80b28ab88cce1`.
+- Integración funcional más reciente: **PR #11 — Fase 6: Plantillas Matemáticas Seguras**.
+- Estado del PR #11: **fusionado**.
+- Rama integrada: `Dev-Balance-Mathematical-Templates`.
+- HEAD validado de la rama: `fe8230bb27179e7395e2ea8d49eaaed73759eab2`.
 - La rama se conserva como respaldo y no debe eliminarse sin autorización explícita de Arturo.
-- No hay pull requests abiertos.
+- No hay pull requests abiertos al cerrar la integración; el siguiente cambio visual se trabajará en una rama nueva.
 - Entorno: React 19 + TypeScript 6 + Vite 8 + Motion.
 
 ### Integraciones realizadas
@@ -48,6 +48,7 @@ Estado comprobado el **4 de agosto de 2026, después del merge del PR #10**:
 | #8 | `Dev-Balance-Laboratory-Phase-5` | `b376f1310f2081749fc1d18991955c2c51a8148f` | Perfiles DEV persistentes, versionados, migrables, importables y exportables |
 | #9 | `Dev-Experimental-Control-Center` | `046b8b3532e92b3f6dbb7000c7c5abe62c7253fa` | Escenarios reproducibles, sesión aislada, simulación determinista, métricas y navegación DEV unificada |
 | #10 | `Dev-Comparative-Experiment-Runner` | `217d94c2daa03c137351b651f78e8c5812b9c296` | Comparador A/B determinista, métricas reproducibles y exportación JSON/CSV |
+| #11 | `Dev-Balance-Mathematical-Templates` | `1449d2284d3fdcfec46fdc7c0ed80b28ab88cce1` | Plantillas matemáticas seguras, perfiles DEV, transferencia al Laboratorio y comparación A/B transitoria |
 
 ## 2. Estado jugable integrado en `main`
 
@@ -63,6 +64,7 @@ Estado comprobado el **4 de agosto de 2026, después del merge del PR #10**:
 - Perfiles DEV persistentes.
 - Centro de Control Experimental DEV.
 - Comparador de Experimentos A/B.
+- Plantillas Matemáticas Seguras.
 - Navegación por mouse, teclado y gamepad.
 
 ### Prestigio y Zafiro oficiales
@@ -276,7 +278,43 @@ Compras registradas:    2,000 como máximo
 
 El límite efectivo también respeta `engineLimits.maximumBulkPurchaseIterations` del perfil evaluado.
 
-## 6. Persistencia separada
+## 6. Fase 6 integrada — Plantillas Matemáticas Seguras
+
+Documentación técnica:
+
+```text
+MATHEMATICAL_TEMPLATES.md
+```
+
+### Alcance integrado
+
+- familias lineal, exponencial, potencia, raíz, logarítmica y rendimientos decrecientes;
+- parámetros, dominios, redondeos y límites validados;
+- prevención de `NaN`, `Infinity` y desbordamientos;
+- destinos para costos base, crecimiento de costos y Zafiro P1–P5;
+- conversión obligatoria a un `BalanceConfig` aceptado por `validateBalanceConfig()`;
+- previsualización Oficial/Borrador;
+- importación y exportación JSON versionada;
+- guardado opcional como perfil DEV con confirmación explícita;
+- envío transitorio al borrador del Laboratorio sin aplicar la sesión;
+- comparación A/B transitoria sin crear perfil DEV;
+- transferencia únicamente en memoria, sin escribir la partida ni `localStorage`.
+
+### Quality Gate final de Fase 6
+
+Ejecución **Quality Gate #149**, run `30952073709`, sobre el HEAD validado `fe8230bb27179e7395e2ea8d49eaaed73759eab2`:
+
+```text
+npm ci                     APROBADO
+Lint                       APROBADO — 0 errores
+Vitest                     120/120
+Build de producción        APROBADO
+Playwright Chromium         17/17
+```
+
+El merge autorizado se realizó mediante PR #11 y produjo `1449d2284d3fdcfec46fdc7c0ed80b28ab88cce1`.
+
+## 7. Persistencia separada
 
 | Sistema | Clave |
 |---|---|
@@ -289,7 +327,7 @@ El límite efectivo también respeta `engineLimits.maximumBulkPurchaseIterations
 
 El comparador solo lee perfiles y escenarios. No escribe en estas colecciones ni en la partida normal.
 
-## 7. Infraestructura y resultados de pruebas
+## 8. Infraestructura y resultados de pruebas
 
 Componentes integrados:
 
@@ -301,12 +339,12 @@ Componentes integrados:
 - instalación reproducible mediante `npm ci`.
 - reportes, capturas, video y trazas al fallar.
 
-### Cobertura total integrada después del PR #10
+### Cobertura total integrada después del PR #11
 
 ```text
-92 pruebas Vitest
-13 pruebas Playwright
-105 comprobaciones automatizadas
+120 pruebas Vitest
+17 pruebas Playwright
+137 comprobaciones automatizadas
 ```
 
 ### Quality Gate final del Comparador A/B
@@ -363,7 +401,7 @@ Ese build se realizó antes de recibir el merge del PR #10. Arturo estaba ejecut
 
 Después de actualizar `main`, debe hacer `Pull origin` antes de considerar que su copia local contiene el Comparador A/B.
 
-## 8. Arquitectura relevante
+## 9. Arquitectura relevante
 
 ### Juego
 
@@ -408,6 +446,13 @@ Después de actualizar `main`, debe hacer `Pull origin` antes de considerar que 
 - `src/ComparativeExperimentSystem.tsx`: interfaz del comparador.
 - `src/ComparativeExperimentSystem.css`: presentación responsive.
 
+### Plantillas matemáticas
+
+- `src/mathematicalTemplates.ts`: contratos, evaluadores, destinos, validación y serialización.
+- `src/mathematicalTemplateTransfer.ts`: candidato transitorio en memoria.
+- `src/MathematicalTemplateSystem.tsx`: editor, previsualización y acciones de transferencia.
+- `src/MathematicalTemplateSystem.css`: presentación de la herramienta.
+
 ### Pruebas
 
 - `vitest.config.ts`
@@ -417,7 +462,7 @@ Después de actualizar `main`, debe hacer `Pull origin` antes de considerar que 
 - `tests/integration/`
 - `tests/e2e/`
 
-## 9. Controles DualSense / Gamepad integrados
+## 10. Controles DualSense / Gamepad integrados
 
 - X/A pulsa la esfera.
 - R2/RT activa el Gatillo.
@@ -429,7 +474,7 @@ Después de actualizar `main`, debe hacer `Pull origin` antes de considerar que 
 - BUG-001 está validado físicamente.
 - BUG-002 tiene corrección integrada y validación formal pendiente.
 
-## 10. Forma de trabajo obligatoria
+## 11. Forma de trabajo obligatoria
 
 - Trabajar de forma directa y evitar microcomprobaciones redundantes.
 - Usar GitHub Desktop para el flujo local normal.
@@ -444,94 +489,43 @@ Después de actualizar `main`, debe hacer `Pull origin` antes de considerar que 
 - Antes de integrar: confirmar CI en verde, comparar contra `main`, resumir cambios y esperar permiso.
 - Mantener gameplay, fórmulas y visuales idénticos durante cambios exclusivamente documentales o de infraestructura salvo aprobación específica.
 
-## 11. Riesgos y advertencias vigentes
+## 12. Riesgos y advertencias vigentes
 
 - `localStorage` todavía funciona parcialmente como bus interno.
 - Existen varios bucles de sondeo del gamepad.
 - El estado completo se guarda con cada cambio principal.
 - Conviven varios relojes, WebGL y Web Animations API.
-- El bundle de producción ya supera la advertencia de 500 kB minificados; el PR #10 reportó aproximadamente 539.68 kB.
+- El bundle de producción ya supera la advertencia de 500 kB minificados; el PR #11 reportó aproximadamente 565.87 kB.
 - Conviene aplicar lazy loading o code splitting a herramientas DEV en una rama independiente.
 - GitHub Actions puede advertir que acciones internas orientadas a Node 20 se ejecutan con Node 24; no ha producido fallos del proyecto.
 
-No mezclar estas refactorizaciones con Fase 6 salvo necesidad técnica demostrada.
+No mezclar estas refactorizaciones con el rediseño visual del Panel DEV salvo necesidad técnica demostrada.
 
-## 12. Siguiente paso recomendado — Fase 6 matemática
+## 13. Siguiente paso recomendado — Panel DEV acotado y no bloqueante
 
-La infraestructura esencial del Laboratorio ya está cerrada:
-
-```text
-Fase 4   aplicación completa y segura
-Fase 5   perfiles DEV persistentes
-Fase 5.5 escenarios y simulación determinista
-Fase 5.6 comparador de experimentos A/B
-```
-
-El siguiente paso funcional es:
+Rama nueva:
 
 ```text
-Fase 6 — Plantillas matemáticas seguras
+Dev-Developer-Panel-Viewport
 ```
 
-Rama sugerida:
+### Problema observado
 
-```text
-Dev-Balance-Mathematical-Templates
-```
+El Panel DEV crece verticalmente con todas sus herramientas, supera la altura del juego y obliga a desplazar la página completa. Además, las herramientas modales pueden impedir observar e interactuar con el juego mientras se experimenta.
 
-### Objetivo
+### Objetivo aprobado
 
-Permitir construir variantes de balance mediante plantillas tipadas y explicables, evaluarlas con los escenarios reproducibles y compararlas contra el balance oficial antes de modificar fórmulas reales.
+- igualar la altura visible del Panel DEV con la superficie principal del juego;
+- mantener el panel a la derecha en un rectángulo estable;
+- usar desplazamiento vertical interno, nunca horizontal;
+- conservar el juego visible y activo mientras se modifican valores;
+- evitar que las herramientas DEV bloqueen la interacción con la partida;
+- mantener compatibilidad responsive y navegación por teclado/gamepad;
+- añadir pruebas de layout, scroll, interacción simultánea y regresión funcional.
 
-### Plantillas iniciales previstas
+### Estrategia inicial
 
-- lineal;
-- exponencial;
-- potencia;
-- raíz;
-- logarítmica;
-- rendimientos decrecientes.
-
-### Reglas de seguridad
-
-- no usar `eval()`;
-- no usar `new Function()`;
-- no aceptar JavaScript arbitrario;
-- usar discriminated unions y parámetros validados;
-- limitar dominio, rango, exponentes, bases y número de muestras;
-- impedir `NaN`, infinitos y divisiones inválidas;
-- no aplicar automáticamente una plantilla a la partida;
-- generar siempre un `BalanceConfig` validado antes de simular;
-- conservar restauración oficial;
-- ejecutar comparaciones por medio del Comparador A/B autoritativo.
-
-### Primera entrega recomendada
-
-1. Definir un contrato tipado para plantillas y parámetros.
-2. Implementar evaluadores puros y seguros.
-3. Añadir previsualización tabular de valores.
-4. Convertir una plantilla válida en un borrador de `BalanceConfig`.
-5. Permitir enviarla al Laboratorio como borrador, nunca aplicarla automáticamente.
-6. Permitir guardarla como perfil DEV mediante confirmación explícita.
-7. Compararla con Oficial o con otro perfil mediante el Comparador A/B.
-8. Añadir exportación/importación versionada de especificaciones matemáticas.
-9. Documentar límites y ejemplos en un archivo rector nuevo.
-10. Diseñar pruebas unitarias, integración y Playwright desde el inicio.
-
-### Cobertura mínima
-
-- cada tipo de plantilla con valores normales;
-- límites inferiores, superiores e igualdad exacta;
-- parámetros inválidos;
-- dominios inválidos;
-- prevención de `NaN` e infinitos;
-- determinismo;
-- serialización y deserialización;
-- conversión a `BalanceConfig`;
-- rechazo por `balanceValidation`;
-- aislamiento del runtime y del guardado;
-- comparación A/B reproducible;
-- recorrido completo de creación, previsualización, guardado y comparación.
+Usar un contenedor DEV con altura vinculada al contenedor principal del juego, `overflow-y: auto`, `overflow-x: hidden` y herramientas acopladas dentro de la columna derecha. Las ventanas de trabajo que requieran más espacio deben usar una superficie lateral no modal dentro del panel, de forma que el juego siga recibiendo interacción.
 
 ## 13. Después de Fase 6 — Esmeralda
 
@@ -554,13 +548,13 @@ Antes de programarla deben definirse:
 
 La idea de regeneración, reciclaje, conservación o renacimiento continúa siendo una hipótesis, no una especificación aprobada.
 
-## 14. Prompt de continuidad para un nuevo chat
+## 15. Prompt de continuidad para un nuevo chat
 
 ```text
 Quiero continuar el desarrollo del repositorio privado xArtXtrAx/incremental-game-A.
 
 Antes de modificarlo:
-1. Lee HISTORIAL_GPT.MD, TESTING_POLICY.md, PLAN_MAESTRO.md, MODELO_MATEMATICO.md, BALANCE_LABORATORY.md, EXPERIMENTAL_CONTROL_CENTER.md, COMPARATIVE_EXPERIMENT_RUNNER.md, PERFORMANCE_AUDIT.md y GAMEPAD_DEVICE_SELECTION.md.
+1. Lee HISTORIAL_GPT.MD, TESTING_POLICY.md, PLAN_MAESTRO.md, MODELO_MATEMATICO.md, BALANCE_LABORATORY.md, EXPERIMENTAL_CONTROL_CENTER.md, COMPARATIVE_EXPERIMENT_RUNNER.md, MATHEMATICAL_TEMPLATES.md, PERFORMANCE_AUDIT.md y GAMEPAD_DEVICE_SELECTION.md.
 2. Comprueba el estado real de main, ramas, PRs y CI.
 3. No reutilices ramas ya integradas.
 4. No elimines ramas.
@@ -568,16 +562,12 @@ Antes de modificarlo:
 6. Diseña pruebas automatizadas junto con cada cambio.
 
 Estado conocido al 4 de agosto de 2026:
-- PR #10 Comparador de Experimentos A/B está integrado.
-- Último merge funcional: 217d94c2daa03c137351b651f78e8c5812b9c296.
-- Main incluye Laboratorio de Balance, perfiles DEV persistentes, Centro de Control Experimental, escenarios reproducibles, sesión aislada, simulación determinista, métricas y comparación A/B.
-- Cobertura integrada validada: 92 Vitest + 13 Playwright = 105 comprobaciones.
-- Quality Gate #96, run 30890096807, terminó completamente en verde sobre el HEAD funcional 4a380dcf8e12c584195766275b69975d3707a7b0.
-- No hay PRs abiertos.
-- Arturo confirmó localmente npm ci y npm run build antes del merge del PR #10; estaba ejecutando la suite completa y aún no había reportado su resultado final.
+- PR #11 Plantillas Matemáticas Seguras está integrado.
+- Último merge funcional: 1449d2284d3fdcfec46fdc7c0ed80b28ab88cce1.
+- Main incluye Laboratorio de Balance, perfiles DEV, Centro de Control Experimental, Comparador A/B y Plantillas Matemáticas Seguras.
+- Cobertura integrada validada: 120 Vitest + 17 Playwright = 137 comprobaciones.
+- Quality Gate #149, run 30952073709, terminó completamente en verde sobre fe8230bb27179e7395e2ea8d49eaaed73759eab2.
 
-Siguiente paso recomendado:
-Fase 6 — Plantillas matemáticas seguras, en una rama nueva Dev-Balance-Mathematical-Templates.
-
-Primero verifica estos datos contra GitHub. Después presenta un diseño concreto y seguro para Fase 6 antes de implementar. No mezcles code splitting, refactorizaciones de rendimiento ni Esmeralda con esta primera entrega salvo necesidad técnica clara.
+Siguiente trabajo:
+Rediseñar el Panel DEV en una rama nueva Dev-Developer-Panel-Viewport para que tenga la misma altura visible que el juego, scroll vertical interno sin scroll horizontal y herramientas no bloqueantes que permitan experimentar mientras la partida continúa visible y operable.
 ```
