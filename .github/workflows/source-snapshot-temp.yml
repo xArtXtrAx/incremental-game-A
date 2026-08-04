@@ -1,0 +1,27 @@
+name: Source Snapshot Temp
+
+on:
+  pull_request:
+    branches: [main]
+
+jobs:
+  snapshot:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Upload editable sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-snapshot-temp
+          path: |
+            src/BalanceLaboratorySystem.tsx
+            src/DeveloperComparativeExperimentSystem.tsx
+            src/MathematicalTemplateSystem.tsx
+            src/MathematicalTemplateSystem.css
+            src/main.tsx
+            src/comparativeExperiment.ts
+            tests/e2e/mathematical-templates.spec.ts
+            tests/integration/mathematicalTemplates.integration.test.ts
+            tests/unit/mathematicalTemplates.test.ts
+          retention-days: 1
