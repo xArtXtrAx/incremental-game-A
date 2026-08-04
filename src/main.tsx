@@ -6,6 +6,7 @@ import './ChromaticDeveloperPreview.css'
 import './DeveloperChromaticAccess.css'
 import App from './App.tsx'
 import { BalanceLaboratorySystem } from './BalanceLaboratorySystem'
+import { BalanceProfileSystem } from './BalanceProfileSystem'
 import { ChromaticChamberSystem } from './ChromaticChamberSystem'
 import { ChromaticGamepadBridge } from './ChromaticGamepadBridge'
 import { GamepadController } from './GamepadController'
@@ -37,6 +38,7 @@ createRoot(document.getElementById('root')!).render(
     <UpgradeProgressSystem />
     <ChromaticChamberSystem />
     <BalanceLaboratorySystem />
+    <BalanceProfileSystem />
     <GamepadController />
     <ChromaticGamepadBridge />
     <GamepadEventHaptics />

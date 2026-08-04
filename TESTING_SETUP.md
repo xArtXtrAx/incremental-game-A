@@ -29,11 +29,27 @@ Fase 4 completa:
 npm run test:phase4
 ```
 
+Fase 5 completa — perfiles DEV persistentes:
+
+```powershell
+npm run test:phase5
+```
+
 Control total antes de integrar:
 
 ```powershell
 npm run test:all
 ```
+
+## Cobertura específica de Fase 5
+
+```text
+tests/unit/balanceProfiles.test.ts
+tests/integration/balanceProfiles.integration.test.ts
+tests/e2e/balance-phase5.spec.ts
+```
+
+La cobertura comprueba guardado, listado, carga manual, reemplazo, borrado y cancelación, importación/exportación, límites, versiones incompatibles, migración heredada, ausencia de carga automática, separación de la partida normal y restauración oficial.
 
 ## Resultados de Playwright
 
