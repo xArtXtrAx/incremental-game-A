@@ -27,14 +27,26 @@
 - detección de inflación, estancamiento, desbloqueos tardíos y límites finitos;
 - comprobaciones de clonación, modificación y restauración del borrador.
 
-### Implementado en `Dev-Balance-Laboratory-Phase-3`
+### Integrado en `main` mediante PR #6
 
 - aplicación de configuraciones válidas únicamente a la sesión;
 - restauración inmediata del balance oficial;
 - normalización conservadora de la partida;
-- reporte de los ajustes realizados durante la transición;
+- reporte de ajustes realizados durante la transición;
 - cancelación de efectos temporales para evitar duraciones híbridas;
-- separación estricta entre parámetros aplicables y parámetros todavía limitados a simulación.
+- aplicación inicial de costos, Autoclicker y Zafiro.
+
+### Implementado en `Dev-Balance-Laboratory-Phase-4`
+
+- cobertura dinámica de capacidad de esfera, Presión y desbloqueos;
+- textos, botones, reducer y Comprar todo unidos a una política autoritativa;
+- previsualización del impacto sobre la partida antes de aplicar;
+- transición visible entre esfera completa e incompleta;
+- comparación del bono actual de Presión;
+- reporte de compras que pasan a estar disponibles o bloqueadas;
+- conservación de todos los niveles ya adquiridos;
+- continuidad de sistemas comprados aunque un requisito experimental se eleve;
+- ampliación de la matriz de normalización.
 
 ## 2. Fuente de verdad
 
@@ -45,14 +57,18 @@ DEFAULT_BALANCE_CONFIG
 Balance Runtime
           │
           ├── game.ts
+          ├── balanceUnlockPolicy.ts
           ├── refraction.ts
           ├── pulseTrigger.ts
           ├── bulkPurchase.ts
+          ├── UpgradesPanelCompact.tsx
+          ├── GameCore.tsx
+          ├── DeveloperPanel.tsx
           ├── simulación DEV
           └── editor del Laboratorio
 ```
 
-Las constantes históricas continúan exportándose temporalmente para compatibilidad. Ninguna fórmula nueva debe depender de ellas.
+Las constantes históricas permanecen como enlaces vivos de compatibilidad. Se sincronizan con el runtime, pero las nuevas fórmulas y reglas deben usar consultas autoritativas.
 
 ## 3. Guardados separados
 
@@ -68,11 +84,26 @@ Perfil experimental:
 incremental-game-a:balance-dev:v1
 ```
 
-La Fase 3 **no guarda automáticamente** el perfil aplicado. Recargar la página reconstruye el runtime con `DEFAULT_BALANCE_CONFIG`.
+El perfil aplicado a la sesión **no se guarda automáticamente**. Recargar la página reconstruye el runtime con `DEFAULT_BALANCE_CONFIG`.
 
-## 4. Aplicación atómica de sesión
+## 4. Aplicación y previsualización
 
-El Laboratorio envía una solicitud síncrona a `App`:
+La previsualización consulta el estado vivo de la partida sin modificarlo:
+
+```text
+Borrador validado
+      │
+      ▼
+Previsualización pura
+      │
+      ├── esfera completa / incompleta
+      ├── bono actual de Presión
+      ├── disponibilidad de compras
+      ├── cargas que se recortarán
+      └── efectos que se cancelarán
+```
+
+La aplicación utiliza después una transición atómica:
 
 ```text
 Borrador validado
@@ -87,13 +118,11 @@ Aplicación completa al runtime
 Reemplazo del estado normalizado
 ```
 
-Si la validación falla, ni el runtime ni la partida cambian.
-
-La restauración oficial utiliza el mismo proceso en sentido inverso.
+Si la validación falla, ni el runtime ni la partida cambian. La restauración oficial utiliza el mismo proceso en sentido inverso.
 
 ## 5. Política de normalización
 
-Se conservan:
+Se conservan siempre:
 
 - energía;
 - clics acumulados;
@@ -118,30 +147,59 @@ Se cancelan al cambiar de perfil:
 
 Esto evita conservar efectos temporales calculados con una configuración anterior.
 
-## 6. Parámetros aplicables en Fase 3
+## 6. Política de desbloqueos experimentales
 
-### Aplicables a sesión
+La misma función autoritativa decide el estado de compra en:
+
+- reducer;
+- tarjetas de mejoras;
+- Comprar todo;
+- previsualización;
+- reporte de normalización.
+
+Reglas:
+
+1. Los requisitos oficiales conservan el comportamiento de planos permanentes después de prestigiar.
+2. Reducir un requisito experimental no elimina el beneficio de los planos.
+3. Elevar un requisito por encima del valor oficial bloquea compras nuevas hasta cumplirlo, incluso si existe un plano permanente.
+4. Ningún nivel comprado se elimina.
+5. Un sistema ya comprado continúa funcionando.
+6. Refracción comprada continúa cargando y descargando aunque se eleve su requisito de prestigio; únicamente se bloquea la compra del siguiente nivel.
+7. Restaurar valores oficiales recupera la política oficial inmediatamente.
+
+Ejemplo:
+
+```text
+Autoclicker nivel 4
+Requisito experimental: 8,000 clics
+Clics actuales: 3,000
+
+Resultado:
+- nivel 4 conservado;
+- Autoclicker sigue funcionando;
+- compra de nivel 5 bloqueada;
+- al llegar a 8,000 clics, la compra vuelve a habilitarse.
+```
+
+## 7. Parámetros aplicables en Fase 4
+
+Todos los campos editables actuales pueden aplicarse a la sesión:
 
 - costos base de las nueve evoluciones;
 - crecimiento de las nueve curvas de costo;
-- tasa inicial del Autoclicker;
-- crecimiento del Autoclicker;
-- tasa máxima del Autoclicker;
-- multiplicadores P1–P5 del Zafiro;
-- incremento provisional posterior a P5.
-
-### Solo simulación
-
 - capacidad de la esfera;
 - bono de Presión por tramo;
 - desbloqueo de Presión;
 - desbloqueo de Cavitación;
 - desbloqueo del Autoclicker;
-- desbloqueo de Refracción.
+- desbloqueo de Refracción;
+- tasa inicial, crecimiento y máximo del Autoclicker;
+- multiplicadores P1–P5 del Zafiro;
+- incremento provisional posterior a P5.
 
-Estos campos bloquean el botón de aplicación hasta migrar todos sus textos, barras y controles visuales restantes.
+Los límites absolutos del motor continúan visibles, pero no editables.
 
-## 7. Invariantes de seguridad
+## 8. Invariantes de seguridad
 
 1. Una configuración se aplica completa o no se aplica.
 2. Todo valor debe ser finito y permanecer dentro de límites absolutos.
@@ -154,8 +212,10 @@ Estos campos bloquean el botón de aplicación hasta migrar todos sus textos, ba
 9. El perfil de sesión no se guarda automáticamente.
 10. Restaurar valores oficiales siempre está disponible.
 11. La partida normal no contiene una copia del perfil DEV.
+12. Un requisito experimental nunca elimina progreso comprado.
+13. Previsualizar nunca cambia el runtime, el reducer ni el guardado.
 
-## 8. Validación requerida de la Fase 3
+## 9. Validación requerida de la Fase 4
 
 ### Automatizada/local
 
@@ -166,31 +226,29 @@ npm run build
 
 ### Prueba funcional
 
-1. modificar el costo base de una mejora;
-2. aplicar a sesión y confirmar que el costo del juego cambia;
-3. restaurar la sesión oficial y confirmar el valor original;
-4. modificar el Autoclicker y observar la tasa en el reactor;
-5. modificar Zafiro y comprobar el multiplicador mostrado;
-6. activar Sobrecarga o PRISMA y aplicar un perfil;
-7. confirmar que el efecto temporal se cancela y queda reportado;
-8. intentar aplicar con un campo inválido;
-9. intentar aplicar después de modificar capacidad o desbloqueos;
-10. recargar y confirmar que vuelve el balance oficial.
+1. cambiar la capacidad de la esfera de 5,000 a un valor inferior a los clics actuales;
+2. confirmar en la previsualización que la esfera pasará a completa;
+3. aplicar y verificar contador, llenado, cristalización y requisito de Sobrecarga;
+4. elevar la capacidad por encima de los clics actuales;
+5. confirmar que la esfera queda incompleta y se limpia la carga de Sobrecarga;
+6. modificar el bono de Presión y comprobar resumen, tarjeta y producción;
+7. elevar cada requisito de clics por encima del progreso actual;
+8. comprobar que la tarjeta y Comprar todo bloquean únicamente compras nuevas;
+9. verificar que los niveles existentes continúan funcionando;
+10. elevar el prestigio requerido de Refracción por encima del prestigio actual;
+11. confirmar que la Matriz comprada sigue cargando, pero su siguiente compra queda bloqueada;
+12. alcanzar el requisito experimental y comprobar que la compra se habilita;
+13. restaurar la sesión oficial y verificar todos los textos y controles;
+14. recargar y confirmar runtime `official` sin pérdida de progreso.
 
-## 9. Fases siguientes
-
-### Fase 4 — Migración visual completa
-
-- sustituir consumidores de `SPHERE_CLICK_CAPACITY` por consultas dinámicas;
-- migrar requisitos visuales de desbloqueo;
-- migrar textos del Panel DEV;
-- habilitar aplicación de Núcleo y desbloqueos.
+## 10. Fases siguientes
 
 ### Fase 5 — Perfiles persistentes
 
 - asignar nombre;
 - guardar perfil DEV;
 - cargarlo manualmente;
+- reemplazarlo;
 - eliminarlo;
 - exportar e importar JSON validado;
 - mantener desactivada la carga automática por defecto.
@@ -199,13 +257,19 @@ npm run build
 
 Evaluar curvas exponenciales, lineales, potencia, raíz, logarítmicas y rendimientos decrecientes mediante plantillas seguras.
 
-## 10. Regla de integración
+### Etapa de contenido — Esmeralda
 
-`Dev-Balance-Laboratory-Phase-3` no debe integrarse hasta que:
+Después de cerrar la cobertura y perfiles esenciales, usar el Laboratorio para definir, simular y documentar la economía de Esmeralda antes de implementarla.
+
+## 11. Regla de integración
+
+`Dev-Balance-Laboratory-Phase-4` no debe integrarse hasta que:
 
 - `lint` y `build` pasen;
-- aplicación y restauración funcionen en la misma sesión;
-- el guardado normal permanezca intacto;
+- la previsualización no altere la partida;
+- capacidad, Presión y desbloqueos se reflejen en toda la interfaz;
+- Comprar todo respete los requisitos experimentales;
+- los sistemas comprados continúen funcionando;
+- la restauración oficial recupere todos los valores;
 - recargar restaure el balance oficial;
-- la normalización se compruebe con efectos temporales activos;
 - Arturo autorice expresamente la integración.
