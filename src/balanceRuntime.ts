@@ -49,11 +49,26 @@ export type BalanceProfileReadResult =
       issues: BalanceValidationIssue[]
     }
 
+export class BalanceRuntimeOverrideError extends Error {
+  readonly issues: BalanceValidationIssue[]
+
+  constructor(issues: BalanceValidationIssue[]) {
+    super(
+      issues[0]?.message ??
+        'La configuración de balance transitoria no es válida.',
+    )
+    this.name = 'BalanceRuntimeOverrideError'
+    this.issues = issues.map((issue) => ({ ...issue }))
+  }
+}
+
 let snapshot: BalanceRuntimeSnapshot = {
   revision: 0,
   source: 'official',
   config: DEFAULT_BALANCE_CONFIG,
 }
+
+let transientBalanceConfig: Readonly<BalanceConfig> | null = null
 
 const listeners = new Set<() => void>()
 
@@ -87,7 +102,32 @@ export function getBalanceRuntimeSnapshot() {
 }
 
 export function getActiveBalanceConfig() {
-  return snapshot.config
+  return transientBalanceConfig ?? snapshot.config
+}
+
+/**
+ * Ejecuta una operación síncrona con un balance alternativo sin modificar el
+ * snapshot visible, emitir eventos ni persistir datos. El override se restaura
+ * siempre, incluso cuando la operación lanza una excepción, y admite llamadas
+ * anidadas de forma segura.
+ */
+export function runWithBalanceConfig<T>(
+  candidate: unknown,
+  operation: () => T,
+): T {
+  const validation = validateBalanceConfig(candidate)
+  if (!validation.valid) {
+    throw new BalanceRuntimeOverrideError(validation.issues)
+  }
+
+  const previousOverride = transientBalanceConfig
+  transientBalanceConfig = validation.config
+
+  try {
+    return operation()
+  } finally {
+    transientBalanceConfig = previousOverride
+  }
 }
 
 export function subscribeBalanceRuntime(listener: () => void) {

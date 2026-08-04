@@ -9,6 +9,7 @@ import { BalanceLaboratorySystem } from './BalanceLaboratorySystem'
 import { BalanceProfileSystem } from './BalanceProfileSystem'
 import { ChromaticChamberSystem } from './ChromaticChamberSystem'
 import { ChromaticGamepadBridge } from './ChromaticGamepadBridge'
+import { DeveloperComparativeExperimentSystem } from './DeveloperComparativeExperimentSystem'
 import { DeveloperControlCenterSystem } from './DeveloperControlCenterSystem'
 import './DeveloperControlCompatibility.css'
 import { DeveloperToolLaunchBridge } from './DeveloperToolLaunchBridge'
@@ -43,6 +44,7 @@ createRoot(document.getElementById('root')!).render(
     <BalanceLaboratorySystem />
     <BalanceProfileSystem />
     <DeveloperControlCenterSystem />
+    <DeveloperComparativeExperimentSystem />
     <DeveloperToolLaunchBridge />
     <GamepadController />
     <ChromaticGamepadBridge />
