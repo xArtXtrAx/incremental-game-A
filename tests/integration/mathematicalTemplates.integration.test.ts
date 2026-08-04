@@ -7,6 +7,7 @@ import {
 } from '../../src/comparativeExperiment'
 import { createBuiltInDeveloperScenarios } from '../../src/developerScenarios'
 import {
+  getActiveBalanceConfig,
   getBalanceRuntimeSnapshot,
   runWithBalanceConfig,
 } from '../../src/balanceRuntime'
@@ -95,16 +96,19 @@ describe('integración de plantillas matemáticas', () => {
     expect(storage.snapshot().size).toBe(1)
   })
 
-  it('puede evaluarse mediante el override transitorio sin cambiar revisión ni listeners', () => {
+  it('expone el override solo a consultas activas sin cambiar el snapshot visible', () => {
     const generated = createGeneratedConfig()
     const before = getBalanceRuntimeSnapshot()
 
-    const observed = runWithBalanceConfig(generated.config, () =>
-      getBalanceRuntimeSnapshot(),
-    )
+    const observed = runWithBalanceConfig(generated.config, () => ({
+      activeBaseCost: getActiveBalanceConfig().costs.click.baseCost,
+      visibleSnapshot: getBalanceRuntimeSnapshot(),
+    }))
 
-    expect(observed.config.costs.click.baseCost).toBe(100)
+    expect(observed.activeBaseCost).toBe(100)
+    expect(observed.visibleSnapshot).toEqual(before)
     expect(getBalanceRuntimeSnapshot()).toEqual(before)
+    expect(getActiveBalanceConfig().costs.click.baseCost).toBe(10)
   })
 
   it('produce comparaciones A/B reproducibles y conserva el runtime visible', () => {
