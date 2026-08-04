@@ -1,47 +1,41 @@
 # HISTORIAL_GPT — Incremental Game A
 
-> Bitácora compartida entre Arturo y GPT.  
-> **Regla para nuevos chats:** leer primero este archivo, `TESTING_POLICY.md`, `PLAN_MAESTRO.md`, `MODELO_MATEMATICO.md`, `BALANCE_LABORATORY.md`, `PERFORMANCE_AUDIT.md` y `GAMEPAD_DEVICE_SELECTION.md`; después comprobar la rama activa antes de modificar el proyecto.
+> Bitácora compartida entre Arturo y GPT.
+>
+> **Regla para nuevos chats:** leer primero este archivo, `TESTING_POLICY.md`, `PLAN_MAESTRO.md`, `MODELO_MATEMATICO.md`, `BALANCE_LABORATORY.md`, `PERFORMANCE_AUDIT.md` y `GAMEPAD_DEVICE_SELECTION.md`; después comprobar el estado real del repositorio antes de modificarlo.
 
 ## 0. PRIORIDAD CENTRAL — Automatización de pruebas
 
-La automatización de pruebas es una política obligatoria del proyecto y debe considerarse desde el diseño de cada funcionalidad, no añadirse únicamente al final.
+La automatización de pruebas es una política obligatoria del proyecto y debe diseñarse junto con cada funcionalidad.
 
 ### Regla operativa
 
 - Todo cambio funcional importante debe incluir pruebas automatizadas proporcionales a su riesgo.
-- No se debe entregar a Arturo una matriz manual extensa cuando el comportamiento pueda verificarse razonablemente con Vitest, Playwright o GitHub Actions.
-- La validación manual de Arturo debe reservarse para apariencia, experiencia de uso, WebGL, rendimiento perceptible, almacenamiento real del navegador, DualSense, vibración y diferencias particulares de hardware o sistema operativo.
-- Cada bug automatizable debe producir una prueba permanente que impida su reaparición silenciosa.
-- Nunca afirmar que una prueba pasó si no se ejecutó realmente.
+- No se debe entregar a Arturo una matriz manual extensa cuando el comportamiento pueda verificarse razonablemente mediante Vitest, Playwright o GitHub Actions.
+- La validación manual de Arturo se reserva principalmente para apariencia, experiencia de uso, WebGL, rendimiento perceptible, DualSense, vibración y diferencias específicas de Windows, Chrome, GPU o pantalla.
+- Cada bug automatizable debe producir una prueba de regresión permanente.
+- Nunca afirmar que lint, build o pruebas pasaron si no fueron ejecutados realmente.
 
-### Escala recomendada
+La política completa, los comandos y los criterios se encuentran en `TESTING_POLICY.md`.
 
-| Tipo de cambio | Unitarias | Integración | E2E | Manual |
-|---|---:|---:|---:|---:|
-| Corrección pequeña y aislada | 3–6 | 0–2 | 0–1 | humo breve si aplica |
-| Función importante | 12–20 | 4–8 | 1–3 | revisión visual breve |
-| Sistema crítico | 20–40+ | 6–12+ | 2–5+ | matriz física focalizada |
+## 1. Estado real del repositorio
 
-Sistemas críticos actuales: guardado y migraciones, cristalización y prestigio, Laboratorio de Balance, Comprar todo, producción, gamepad y nuevas gemas.
+Estado comprobado el **3 de agosto de 2026, 23:36 CDMX**:
 
-La política completa, comandos y criterios se encuentran en `TESTING_POLICY.md`.
-
-## 1. Estado actual del repositorio
-
-- Repositorio: `xArtXtrAx/incremental-game-A`.
+- Repositorio privado: `xArtXtrAx/incremental-game-A`.
 - Rama estable: `main`.
-- HEAD estable conocido de `main`: `1a7b327c7061e42a34a7cb9f248d39a881a4d5ee`.
-- Rama de desarrollo activa: `Dev-Balance-Laboratory-Phase-4`.
-- PR en borrador: **#7 — Automatiza la Fase 4 y establece la política de pruebas**.
-- El PR #7 no está integrado y no debe fusionarse sin autorización explícita de Arturo.
-- Las ramas DEV integradas se conservan como respaldos históricos y no deben eliminarse sin autorización explícita.
+- Último merge funcional comprobado en `main`: `89b78582699858d0d27acc07dd7971699b6411e1`.
+- Integración más reciente: **PR #7 — Automatiza la Fase 4 y establece la política de pruebas**.
+- Estado del PR #7: **fusionado**.
+- Rama integrada: `Dev-Balance-Laboratory-Phase-4`.
+- La rama de Fase 4 conserva **0 commits exclusivos** frente a `main` y está detrás únicamente por el merge commit.
+- No hay pull requests abiertos.
+- Las ramas DEV integradas se conservan como respaldos históricos y no deben eliminarse sin autorización explícita de Arturo.
 - Entorno: React 19 + TypeScript 6 + Vite 8 + Motion.
 - Guardado principal: `incremental-game-a:save:v1`.
 - Ajustes de mando: `incremental-game-a:gamepad:v1`.
 - Reserva del Gatillo: `incremental-game-a:pulse-trigger:v1`.
-- Perfil experimental de balance: `incremental-game-a:balance-dev:v1`.
-- Última actualización: **3 de agosto de 2026, 23:16 CDMX**.
+- Perfil experimental histórico: `incremental-game-a:balance-dev:v1`.
 
 ### Integraciones realizadas
 
@@ -53,148 +47,104 @@ La política completa, comandos y criterios se encuentran en `TESTING_POLICY.md`
 | #4 | `Dev-Balance-Laboratory` | `90975a3e49e5100f851865c17d7ac89cd393b136` | Configuración matemática central y primera ventana del Laboratorio de Balance |
 | #5 | `Dev-Balance-Laboratory-Phase-2` | `734aadd83357e47a33b93f35efd271281d2cd63a` | Editor seguro de borradores, comparación Oficial/Borrador y diagnósticos |
 | #6 | `Dev-Balance-Laboratory-Phase-3` | `852de786ded06e7e2ac1fbf16378dd7498489e39` | Aplicación reversible a sesión, normalización y restauración oficial |
+| #7 | `Dev-Balance-Laboratory-Phase-4` | `89b78582699858d0d27acc07dd7971699b6411e1` | Fase 4 completa e infraestructura permanente de pruebas automatizadas |
 
-## 2. Infraestructura de pruebas automatizadas
+## 2. Fase 4 integrada
 
-### Componentes incorporados en `Dev-Balance-Laboratory-Phase-4`
+La Fase 4 del Laboratorio de Balance ya forma parte de `main`.
 
-- `vitest.config.ts`: ejecución en Node de pruebas unitarias e integración.
-- `playwright.config.ts`: Chromium aislado, servidor Vite, trazas, capturas y video al fallar.
-- `.github/workflows/quality-gate.yml`: `npm ci`, lint, Vitest, build y Playwright en ramas DEV, PR y `main`.
-- `TESTING_POLICY.md`: política rectora de pruebas.
-- `TESTING_SETUP.md`: instalación y comandos operativos.
-- `.gitignore`: excluye reportes, trazas y cobertura locales.
-- `package-lock.json`: actualizado automáticamente para Vitest y Playwright en el commit `fc6ec47845be85ffa458794f835779916fc0eeee`.
+### Implementación integrada
 
-### Comandos oficiales
+- Capacidad de esfera dinámica en lógica y visuales.
+- Bono de Presión dinámico.
+- Desbloqueos dinámicos de Presión, Cavitación, Autoclicker, Sobrecarga y Refracción.
+- Política autoritativa compartida por reducer, tarjetas, Comprar todo y previsualización.
+- Previsualización del impacto antes de aplicar un perfil.
+- Transición segura entre esfera completa e incompleta.
+- Conservación de niveles comprados.
+- Continuidad de sistemas comprados aunque se eleve un requisito experimental.
+- Bloqueo únicamente de compras nuevas.
+- Continuidad de Refracción comprada.
+- Normalización y restauración oficial.
+- Aplicación de todos los parámetros editables actuales a la sesión.
 
-```powershell
-npm run test
-npm run test:unit
-npm run test:integration
-npm run test:e2e
-npm run test:phase4
-npm run test:all
+### Política acordada
+
+> Elevar un requisito experimental nunca elimina niveles comprados ni detiene el sistema existente. Solo bloquea compras nuevas hasta volver a cumplir el requisito.
+
+Sobrecarga conserva su nivel, pero no puede cargar mientras la esfera esté incompleta porque esa condición forma parte de su mecánica.
+
+### Validación visual realizada
+
+Arturo confirmó:
+
+```text
+3,000 clics
+Capacidad experimental: 2,000
+Resultado observado: NÚCLEO LLENO
 ```
 
-La instalación reproducible usa:
+## 3. Infraestructura de pruebas integrada
 
-```powershell
-npm ci
-npx playwright install chromium
-```
+Componentes integrados mediante PR #7:
 
-### Cobertura automatizada de Fase 4
+- Vitest.
+- Playwright.
+- GitHub Actions.
+- `TESTING_POLICY.md`.
+- `TESTING_SETUP.md`.
+- `package-lock.json` actualizado.
+- instalación reproducible mediante `npm ci`.
+- reportes, capturas, video y trazas al fallar.
+
+### Cobertura confirmada de Fase 4
 
 Vitest:
 
-- `tests/unit/balanceUnlockPolicy.test.ts`: 20 casos sobre requisitos, planos, aumentos experimentales y Refracción.
-- `tests/unit/balanceStateNormalization.test.ts`: 12 casos sobre transición de esfera, Presión, cargas, efectos y conservación de niveles.
-- `tests/integration/balancePhase4.integration.test.ts`: 9 casos sobre runtime, reducer, Autoclicker, Comprar todo, Refracción y restauración.
+- 20 pruebas unitarias de desbloqueos.
+- 12 pruebas unitarias de normalización.
+- 9 pruebas de integración.
 
 Playwright:
 
-- `tests/e2e/balance-phase4.spec.ts`: 4 recorridos completos:
-  1. esfera incompleta → completa → incompleta → recarga oficial;
-  2. cambio de Presión en resumen, clic y producción;
-  3. Autoclicker comprado continúa activo mientras su siguiente compra queda bloqueada;
-  4. Refracción comprada continúa avanzando mientras su siguiente compra queda bloqueada.
+- 4 recorridos completos en Chromium.
 
-Total vigente:
+Total:
 
 ```text
 41 pruebas Vitest
 4 pruebas Playwright
-45 comprobaciones automatizadas ejecutables
+45 comprobaciones automatizadas
 ```
 
-### Resultado real de GitHub Actions
+### Último resultado confirmado en GitHub Actions
 
-Ejecución definitiva sobre el commit `9bf587e05f074ca87641cfe7c7bb4f19310e9c84`, con dependencias instaladas mediante `npm ci`:
+La ejecución **Quality Gate #20** sobre el último commit de la rama de Fase 4, `6f6384c10e7597fd1a4e2f1dfb405a2f6476bd6e`, terminó correctamente antes del merge:
 
 ```text
-Instalación bloqueada       APROBADA
-Lint                        APROBADO
-Vitest                      41/41 APROBADAS
-Build de producción         APROBADO
-Playwright Chromium          4/4 APROBADAS
+npm ci                     APROBADO
+Lint                       APROBADO
+Vitest                     41/41
+Build de producción        APROBADO
+Playwright Chromium         4/4
 ```
 
-La primera ejecución de Playwright detectó tres defectos en los propios selectores de prueba:
-
-- un campo modificado podía resolver el botón `Restaurar` en vez del `input`;
-- una expectativa no contemplaba el separador de miles;
-- la pestaña Avanzadas se buscaba como botón en lugar de `tab`.
-
-Los tres se corrigieron en `9a8e335a307d8840f01595ff52314dab4f223b5e`. La segunda ejecución y la ejecución definitiva con `npm ci` terminaron completamente en verde.
-
-## 3. Documentación rectora
-
-### `TESTING_POLICY.md`
-
-Define qué debe automatizarse, cantidades orientativas, cobertura conceptual mínima, regresiones permanentes, responsabilidades de CI y qué validación manual sigue siendo valiosa.
-
-### `PLAN_MAESTRO.md`
-
-Define la visión y secuencia cromática:
-
-```text
-Reactor básico
-  ↓
-Cristalización / Prestigio
-  ↓
-Zafiro
-  ↓
-Esmeralda
-  ↓
-Gema amarilla
-  ↓
-Gema naranja
-  ↓
-Gema roja
-  ↓
-Nexo Prismático completo
-```
-
-- Zafiro está integrado provisionalmente hasta nivel 5.
-- Esmeralda es la siguiente etapa de contenido que debe diseñarse antes de programarse.
-
-### `MODELO_MATEMATICO.md`
-
-- Documenta costos, producción, Presión, Cavitación, Autoclicker, Sobrecarga, PRISMA, Gatillo y Zafiro.
-- Distingue fórmulas Integradas, Provisionales, Propuestas y Pendientes.
-- El código de `main` sigue siendo la autoridad final.
-
-### `BALANCE_LABORATORY.md`
-
-- Describe la arquitectura e invariantes del Laboratorio.
-- Registra las fases #4, #5 y #6.
-- La Fase 4 está implementada y automatizada en rama, pendiente únicamente de revisión final e integración autorizada.
-
-### División de responsabilidades
-
-```text
-TESTING_POLICY.md     → cómo se valida cada cambio
-PLAN_MAESTRO.md       → hacia dónde va el juego
-MODELO_MATEMATICO.md  → cómo se comporta matemáticamente
-BALANCE_LABORATORY.md → cómo se inspecciona y modifica el balance
-HISTORIAL_GPT.MD      → qué se hizo, integró y validó
-PERFORMANCE_AUDIT.md  → riesgos y presupuestos de rendimiento
-```
+El merge commit `89b78582699858d0d27acc07dd7971699b6411e1` integra exactamente esa cabeza aprobada mediante PR #7.
 
 ## 4. Forma de trabajo obligatoria
 
 - Trabajar de forma directa y evitar microcomprobaciones redundantes.
 - Usar GitHub Desktop para el flujo local normal.
-- Crear ramas para cambios visuales, estructurales, mecánicos o de balance importantes.
-- Diseñar las pruebas junto con la funcionalidad.
-- Antes de integrar, comparar con `main`, explicar el alcance y esperar autorización explícita de Arturo.
-- Nunca integrar a `main` ni eliminar ramas sin autorización explícita.
-- Conservar ramas remotas como respaldo salvo instrucción contraria.
-- Evitar `force push`, resets agresivos, ZIP, manifiestos y hashes salvo necesidad técnica clara.
-- No afirmar que se ejecutaron lint, build, benchmarks o pruebas cuando no se ejecutaron realmente.
-- Mantener gameplay, fórmulas y visuales idénticos durante refactorizaciones de infraestructura salvo aprobación específica.
-- Una expansión cromática debe pasar por idea, documento, fórmulas, simulación, pruebas, rama, implementación e integración.
+- Crear ramas nuevas para cambios importantes; no reutilizar ramas ya integradas.
+- Diseñar las pruebas junto con cada funcionalidad.
+- Agrupar validaciones.
+- No mezclar refactorizaciones de rendimiento con fases de funcionalidad del Laboratorio.
+- No hacer `force push` ni resets agresivos.
+- No preparar ZIP, hashes o manifiestos salvo necesidad técnica clara.
+- No eliminar ramas.
+- No integrar a `main` sin autorización explícita de Arturo.
+- Antes de integrar: confirmar CI en verde, comparar contra `main`, resumir cambios y esperar permiso.
+- Mantener gameplay, fórmulas y visuales idénticos durante cambios exclusivamente documentales o de infraestructura salvo aprobación específica.
 
 ## 5. Estado jugable integrado en `main`
 
@@ -206,7 +156,7 @@ PERFORMANCE_AUDIT.md  → riesgos y presupuestos de rendimiento
 - Cristalización, prestigio y Zafiro.
 - Cámara Cromática.
 - Panel DEV.
-- Laboratorio de Balance con editor, simulación y aplicación reversible de costos, Autoclicker y Zafiro.
+- Laboratorio de Balance con editor, simulación, previsualización, aplicación reversible y restauración oficial.
 - Navegación por mouse, teclado y gamepad.
 
 ### Prestigio y Zafiro oficiales
@@ -216,45 +166,7 @@ PERFORMANCE_AUDIT.md  → riesgos y presupuestos de rendimiento
 - Después de P5: +0.50 provisional por prestigio.
 - Una a cinco partículas orbitales equidistantes según el nivel visual.
 
-## 6. Laboratorio de Balance — Fase 4
-
-### Objetivo cumplido
-
-Se eliminó la diferencia entre parámetros aplicables y parámetros de solo simulación.
-
-### Implementado
-
-- Capacidad de esfera dinámica en lógica y visuales.
-- Bono de Presión dinámico.
-- Desbloqueos dinámicos de Presión, Cavitación, Autoclicker, Sobrecarga y Refracción.
-- Política autoritativa compartida por reducer, tarjetas, Comprar todo y previsualización.
-- Previsualización del impacto antes de aplicar.
-- Reporte de esfera completa/incompleta, Presión y disponibilidad de compras.
-- Conservación de niveles comprados.
-- Los sistemas comprados continúan funcionando aunque un requisito experimental se eleve.
-- Refracción comprada sigue avanzando; únicamente se bloquea la compra siguiente.
-- El Panel DEV ya no elimina la Matriz al reducir el prestigio.
-- Matriz interna de normalización ampliada.
-
-### Política acordada
-
-> Elevar un requisito experimental nunca elimina niveles comprados ni detiene el sistema existente. Solo bloquea compras nuevas hasta volver a cumplir el requisito.
-
-Sobrecarga conserva su nivel, pero no puede cargar mientras la esfera esté incompleta porque esa condición forma parte de su mecánica.
-
-### Validación manual realizada
-
-Arturo completó la comprobación visual focalizada:
-
-```text
-3,000 clics
-Capacidad experimental: 2,000
-Resultado observado: NÚCLEO LLENO
-```
-
-Las cinco pruebas manuales restantes fueron sustituidas por la suite automatizada aprobada. No es necesario que Arturo las repita en su PC salvo que aparezca una anomalía visual o de entorno.
-
-## 7. Controles DualSense / Gamepad integrados
+## 6. Controles DualSense / Gamepad integrados
 
 - X/A pulsa la esfera.
 - R2/RT activa el Gatillo.
@@ -262,11 +174,11 @@ Las cinco pruebas manuales restantes fueron sustituidas por la suite automatizad
 - Cruceta y joystick permanecen confinados en la zona activa.
 - El juego detecta el dispositivo realmente activo.
 - El foco del gamepad se dibuja explícitamente después de usar el mouse.
-- Vibraciones se suspenden al entrar en modalidad mouse.
+- Las vibraciones se suspenden al entrar en modalidad mouse.
 - BUG-001 está validado físicamente.
 - BUG-002 tiene corrección integrada y validación formal pendiente.
 
-## 8. Arquitectura relevante
+## 7. Arquitectura relevante
 
 ### Juego
 
@@ -300,78 +212,137 @@ Las cinco pruebas manuales restantes fueron sustituidas por la suite automatizad
 - `tests/integration/`
 - `tests/e2e/`
 
-## 9. Riesgos de rendimiento vigentes
+## 8. Riesgos de rendimiento vigentes
 
 - `localStorage` todavía funciona parcialmente como bus interno.
 - Existen varios bucles de sondeo del gamepad.
 - El estado completo se guarda con cada cambio principal.
 - Conviven varios relojes, WebGL y Web Animations API.
 
-No mezclar estas refactorizaciones con la primera implementación de Esmeralda salvo necesidad técnica clara.
+Estas refactorizaciones deben realizarse en ramas separadas y no mezclarse con la Fase 5.
 
-## 10. Validaciones realizadas y pendientes
+## 9. Siguiente paso técnico — Fase 5
 
-### Realizadas
+Crear una rama nueva desde el `main` actualizado:
 
-- BUG-001 validado físicamente.
-- Partículas orbitales validadas localmente por Arturo.
-- Fases 2 y 3 del Laboratorio validadas localmente por Arturo.
-- Fase 4: transición visual a Núcleo lleno validada por Arturo.
-- `npm ci` aprobado en GitHub Actions.
-- `npm run lint` aprobado en GitHub Actions.
-- 41/41 pruebas Vitest aprobadas.
-- `npm run build` aprobado.
-- 4/4 recorridos Playwright aprobados en Chromium.
-- `package-lock.json` actualizado y versionado.
+```text
+Dev-Balance-Laboratory-Phase-5
+```
 
-### Pendientes antes de integrar
+Objetivo: perfiles DEV persistentes del Laboratorio de Balance.
 
-1. Confirmar que el último commit documental conserve GitHub Actions en verde.
-2. Comparar la rama final contra `main`.
-3. Actualizar el cuerpo del PR #7 con resultados definitivos.
-4. Solicitar autorización explícita de Arturo.
-5. Marcar el PR listo y fusionar únicamente después de esa autorización.
+La Fase 5 debe permitir:
 
-## 11. Orden recomendado para continuar
+- asignar nombre a un perfil;
+- guardar perfiles DEV;
+- listar perfiles guardados;
+- cargar un perfil manualmente;
+- reemplazar un perfil existente;
+- eliminarlo con confirmación;
+- exportarlo como JSON;
+- importar JSON validado;
+- rechazar perfiles corruptos o incompatibles;
+- mantener la carga automática desactivada;
+- mantener siempre disponible la restauración oficial;
+- conservar los perfiles separados de la partida normal;
+- evitar modificar el esquema del guardado principal salvo necesidad demostrada.
 
-### Inmediato — cerrar Fase 4
+Antes de implementar se debe inspeccionar el uso real de:
 
-- confirmar CI del último commit;
-- revisar la comparación final;
-- integrar PR #7 cuando Arturo lo autorice;
-- actualizar esta bitácora en `main` con el merge definitivo.
+```text
+incremental-game-a:balance-dev:v1
+```
 
-### Fase 5 — perfiles DEV persistentes
+No se deben destruir perfiles existentes silenciosamente. La persistencia debe usar una estructura versionada y una migración explícita cuando corresponda.
 
-Después de integrar Fase 4:
+## 10. Pruebas mínimas de Fase 5
 
-- nombrar y guardar perfiles;
-- cargarlos manualmente;
-- reemplazarlos o eliminarlos;
-- exportar/importar JSON validado;
-- mantener desactivada la carga automática;
-- restaurar siempre el balance oficial;
-- diseñar las pruebas junto con la implementación.
+Como sistema crítico, debe cubrir al menos:
 
-### Etapa de contenido — Esmeralda
+- guardar un perfil válido;
+- recuperar una lista de perfiles;
+- cargarlo manualmente;
+- reemplazarlo;
+- eliminarlo;
+- cancelar una eliminación;
+- exportar JSON;
+- importar JSON válido;
+- rechazar JSON malformado;
+- rechazar valores fuera de límites;
+- rechazar versiones incompatibles;
+- conservar el balance oficial;
+- no cargar perfiles automáticamente al reiniciar;
+- mantener separada la partida normal;
+- restaurar el perfil oficial;
+- evitar mutaciones de objetos almacenados;
+- migrar una estructura anterior, cuando corresponda;
+- impedir pérdida accidental de perfiles.
 
-Después de cerrar la infraestructura esencial del Laboratorio:
+GitHub Actions debe ejecutar:
+
+```text
+npm ci
+lint
+Vitest
+build
+Playwright
+```
+
+## 11. Después de Fase 5
+
+### Fase 6 — Plantillas matemáticas seguras
+
+Evaluar curvas:
+
+- exponenciales;
+- lineales;
+- potencia;
+- raíz;
+- logarítmicas;
+- rendimientos decrecientes.
+
+No se permiten expresiones JavaScript arbitrarias, `eval()` ni `new Function()`.
+
+### Expansión de contenido — Esmeralda
+
+Esmeralda debe diseñarse antes de programarse, definiendo:
 
 1. identidad mecánica;
 2. relación con Zafiro 5;
 3. condición de activación;
 4. recurso persistente;
 5. fórmula de obtención;
-6. niveles y costos;
+6. cinco niveles y costos;
 7. beneficio visible;
 8. interacción con cristalización;
-9. desbloqueo de Amarilla;
-10. pruebas automatizadas desde el diseño.
+9. desbloqueo de la gema amarilla;
+10. migración del guardado;
+11. pruebas automatizadas desde el diseño.
 
-## 12. Optimizaciones que deben esperar
+La dirección temática de regeneración, reciclaje, conservación o renacimiento sigue siendo una hipótesis no aprobada.
 
-No implementar todavía: ECS, Typed Arrays para niveles, min-heap, Web Workers para el tick normal, IndexedDB, BigNumber sin definir escala, memoización indiscriminada ni reescritura completa del reducer.
+## 12. Estado de pendientes
 
-## 13. Prompt recomendado para el siguiente chat
+### Completado
 
-> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. Lee primero `HISTORIAL_GPT.MD` y `TESTING_POLICY.md`, después los demás documentos rectores. La rama estable es `main` en `1a7b327...`; la rama activa es `Dev-Balance-Laboratory-Phase-4` y el PR #7 permanece en borrador sin autorización de merge. La Fase 4 habilita capacidad de esfera, Presión y desbloqueos dinámicos, conserva niveles comprados y añade previsualización. Arturo validó visualmente el caso 3,000 clics con capacidad 2,000 mostrando NÚCLEO LLENO. La infraestructura Vitest + Playwright + GitHub Actions está operativa: `npm ci`, lint, 41/41 Vitest, build y 4/4 E2E pasaron en GitHub Actions; el lockfile quedó versionado. La automatización es prioridad central: no pedir a Arturo matrices manuales extensas cuando puedan automatizarse. Antes de fusionar, confirma el último CI, compara con `main` y solicita autorización explícita. No elimines ramas ni hagas merge sin permiso.
+- Confirmar CI definitivo de Fase 4.
+- Comparar Fase 4 contra `main`.
+- Actualizar el PR #7.
+- Obtener autorización de integración.
+- Fusionar PR #7.
+- Integrar Vitest, Playwright, GitHub Actions y la política de pruebas.
+- Actualizar esta bitácora después del merge.
+
+### Pendiente actual
+
+1. Crear `Dev-Balance-Laboratory-Phase-5` desde el `main` actualizado.
+2. Diseñar la estructura versionada y la migración de perfiles DEV.
+3. Implementar perfiles persistentes sin carga automática.
+4. Añadir pruebas unitarias, de integración y Playwright proporcionales al riesgo.
+5. Confirmar CI en verde.
+6. Comparar la rama contra `main`.
+7. Resumir cambios y esperar autorización explícita antes de integrar.
+
+## 13. Prompt recomendado para continuidad
+
+> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. Lee los documentos rectores y confirma siempre el estado real del repositorio. La última integración funcional es el PR #7 mediante merge `89b78582699858d0d27acc07dd7971699b6411e1`; Fase 4 y la infraestructura permanente de pruebas ya están integradas. No hay PR abiertos. La rama `Dev-Balance-Laboratory-Phase-4` se conserva como respaldo y no tiene commits exclusivos pendientes. La siguiente tarea es Fase 5 en una rama nueva: perfiles DEV persistentes, versionados, importables/exportables, separados de la partida normal y sin carga automática. Diseña las pruebas junto con la funcionalidad. No elimines ramas ni integres a `main` sin autorización explícita de Arturo.
