@@ -2,7 +2,7 @@
 
 > Bitácora compartida entre Arturo y GPT.
 >
-> **Regla para nuevos chats:** leer primero este archivo, `TESTING_POLICY.md`, `PLAN_MAESTRO.md`, `MODELO_MATEMATICO.md`, `BALANCE_LABORATORY.md`, `EXPERIMENTAL_CONTROL_CENTER.md`, `PERFORMANCE_AUDIT.md` y `GAMEPAD_DEVICE_SELECTION.md`; después comprobar el estado real del repositorio antes de modificarlo.
+> **Regla para nuevos chats:** leer primero este archivo, `TESTING_POLICY.md`, `PLAN_MAESTRO.md`, `MODELO_MATEMATICO.md`, `BALANCE_LABORATORY.md`, `EXPERIMENTAL_CONTROL_CENTER.md`, `COMPARATIVE_EXPERIMENT_RUNNER.md`, `PERFORMANCE_AUDIT.md` y `GAMEPAD_DEVICE_SELECTION.md`; después comprobar el estado real del repositorio antes de modificarlo.
 
 ## 0. PRIORIDAD CENTRAL — Automatización de pruebas
 
@@ -10,26 +10,26 @@ La automatización es obligatoria y debe diseñarse junto con cada funcionalidad
 
 - Todo cambio funcional importante debe incluir pruebas proporcionales a su riesgo.
 - Cada bug automatizable debe producir una prueba de regresión permanente.
-- Vitest cubre lógica y contratos deterministas.
+- Vitest cubre lógica, transformaciones puras y contratos deterministas.
 - Playwright cubre recorridos integrados de navegador.
 - GitHub Actions ejecuta el Quality Gate completo.
 - La validación manual de Arturo se reserva principalmente para apariencia, experiencia de uso, WebGL, rendimiento perceptible, DualSense, vibración y diferencias específicas de Windows, Chrome, GPU o pantalla.
 - Nunca afirmar que lint, build o pruebas pasaron si no fueron ejecutados realmente.
+- No entregar a Arturo matrices manuales extensas cuando el comportamiento pueda comprobarse razonablemente con automatización.
 
 La política completa está en `TESTING_POLICY.md`.
 
 ## 1. Estado real del repositorio
 
-Estado comprobado el **4 de agosto de 2026, después del merge del PR #9**:
+Estado comprobado el **4 de agosto de 2026, después del merge del PR #10**:
 
 - Repositorio privado: `xArtXtrAx/incremental-game-A`.
 - Rama estable: `main`.
-- Último merge funcional: `046b8b3532e92b3f6dbb7000c7c5abe62c7253fa`.
-- Integración funcional más reciente: **PR #9 — Centro de Control Experimental DEV**.
-- Estado del PR #9: **fusionado**.
-- Rama integrada: `Dev-Experimental-Control-Center`.
-- HEAD validado de la rama: `20dbd56de4c368a63847d842ba375b6f97c4d7bb`.
-- La rama conserva **0 commits exclusivos** frente a `main` y está detrás únicamente por el merge commit.
+- Último merge funcional: `217d94c2daa03c137351b651f78e8c5812b9c296`.
+- Integración funcional más reciente: **PR #10 — Fase 5.6: Comparador de Experimentos A/B**.
+- Estado del PR #10: **fusionado**.
+- Rama integrada: `Dev-Comparative-Experiment-Runner`.
+- HEAD validado de la rama: `4a380dcf8e12c584195766275b69975d3707a7b0`.
 - La rama se conserva como respaldo y no debe eliminarse sin autorización explícita de Arturo.
 - No hay pull requests abiertos.
 - Entorno: React 19 + TypeScript 6 + Vite 8 + Motion.
@@ -47,6 +47,7 @@ Estado comprobado el **4 de agosto de 2026, después del merge del PR #9**:
 | #7 | `Dev-Balance-Laboratory-Phase-4` | `89b78582699858d0d27acc07dd7971699b6411e1` | Fase 4 completa e infraestructura permanente de pruebas automatizadas |
 | #8 | `Dev-Balance-Laboratory-Phase-5` | `b376f1310f2081749fc1d18991955c2c51a8148f` | Perfiles DEV persistentes, versionados, migrables, importables y exportables |
 | #9 | `Dev-Experimental-Control-Center` | `046b8b3532e92b3f6dbb7000c7c5abe62c7253fa` | Escenarios reproducibles, sesión aislada, simulación determinista, métricas y navegación DEV unificada |
+| #10 | `Dev-Comparative-Experiment-Runner` | `217d94c2daa03c137351b651f78e8c5812b9c296` | Comparador A/B determinista, métricas reproducibles y exportación JSON/CSV |
 
 ## 2. Estado jugable integrado en `main`
 
@@ -61,6 +62,7 @@ Estado comprobado el **4 de agosto de 2026, después del merge del PR #9**:
 - Laboratorio de Balance.
 - Perfiles DEV persistentes.
 - Centro de Control Experimental DEV.
+- Comparador de Experimentos A/B.
 - Navegación por mouse, teclado y gamepad.
 
 ### Prestigio y Zafiro oficiales
@@ -119,8 +121,6 @@ Funcionalidad integrada:
 
 ## 4. Fase 5.5 integrada — Centro de Control Experimental DEV
 
-La primera entrega del Centro DEV forma parte de `main` mediante el PR #9.
-
 Documentación técnica:
 
 ```text
@@ -153,7 +153,7 @@ Los escenarios se regeneran con la capacidad activa del núcleo:
 
 ### Snapshots personalizados
 
-Colección nueva y versionada:
+Colección versionada:
 
 ```text
 incremental-game-a:developer-scenarios:v1
@@ -202,19 +202,81 @@ Pasos disponibles:
 - No se usa `eval()` ni `new Function()`.
 - No se aceptan expresiones JavaScript arbitrarias.
 
-### Métricas iniciales
+## 5. Fase 5.6 integrada — Comparador de Experimentos A/B
 
-- energía por segundo;
-- energía por minuto;
-- potencia por clic;
-- clics automáticos por segundo;
-- porcentaje de llenado del núcleo;
-- clics restantes;
-- tiempo estimado al núcleo lleno con la tasa automática actual;
-- multiplicador temporal activo;
-- multiplicador de Zafiro.
+Documentación técnica:
 
-## 5. Persistencia separada
+```text
+COMPARATIVE_EXPERIMENT_RUNNER.md
+```
+
+### Objetivo cumplido
+
+Comparar dos balances bajo exactamente el mismo escenario, marca temporal, política de clics, política de compras y condición de parada, sin modificar la partida normal ni el runtime visible.
+
+### Flujo disponible
+
+- seleccionar un escenario base o snapshot personalizado;
+- seleccionar Balance Oficial o cualquier perfil DEV como candidato A y B;
+- configurar duración y clics manuales por segundo;
+- activar o desactivar compras automáticas;
+- activar o desactivar cristalización automática;
+- detener por duración, núcleo lleno, primera cristalización o evolución objetivo;
+- mostrar resultados lado a lado;
+- mostrar diferencias absolutas y porcentuales;
+- exportar resultados JSON y CSV.
+
+### Motor e aislamiento
+
+`runWithBalanceConfig()` instala un override transitorio y síncrono:
+
+- valida la configuración;
+- no modifica `BalanceRuntimeSnapshot`;
+- no incrementa la revisión;
+- no emite listeners;
+- no escribe `localStorage`;
+- admite overrides anidados;
+- restaura siempre el balance anterior mediante `finally`, incluso si la simulación falla.
+
+Cada recorrido reutiliza `gameReducer()` para clics, ticks, compras y cristalizaciones. No existen fórmulas paralelas de gameplay.
+
+### Política de compra determinista inicial
+
+1. probar cada acción mediante `gameReducer()`;
+2. descartar compras bloqueadas o no financiables;
+3. elegir la compra válida de menor costo;
+4. resolver empates con un orden estable;
+5. repetir hasta agotar presupuesto o alcanzar límites.
+
+Esta estrategia es una línea base reproducible, no un optimizador global.
+
+### Métricas disponibles
+
+- tiempo ejecutado;
+- tiempo al núcleo lleno;
+- tiempo a la primera cristalización;
+- energía final;
+- producción efectiva estimada;
+- compras y acciones ejecutadas;
+- tiempo total sin decisiones;
+- mayor intervalo sin decisiones;
+- cristalizaciones finales;
+- primer acceso y nivel final por evolución;
+- retorno promedio estimado por evolución;
+- delta absoluto, porcentual y ventaja A/B.
+
+### Límites de seguridad
+
+```text
+Duración máxima:        7,200 segundos por recorrido
+Clics manuales:         20 por segundo
+Acciones máximas:       250,000 por recorrido
+Compras registradas:    2,000 como máximo
+```
+
+El límite efectivo también respeta `engineLimits.maximumBulkPurchaseIterations` del perfil evaluado.
+
+## 6. Persistencia separada
 
 | Sistema | Clave |
 |---|---|
@@ -225,9 +287,9 @@ Pasos disponibles:
 | Perfiles de balance | `incremental-game-a:balance-dev-profiles:v2` |
 | Escenarios experimentales | `incremental-game-a:developer-scenarios:v1` |
 
-Ninguna colección sustituye a otra.
+El comparador solo lee perfiles y escenarios. No escribe en estas colecciones ni en la partida normal.
 
-## 6. Infraestructura y resultados de pruebas
+## 7. Infraestructura y resultados de pruebas
 
 Componentes integrados:
 
@@ -239,44 +301,69 @@ Componentes integrados:
 - instalación reproducible mediante `npm ci`.
 - reportes, capturas, video y trazas al fallar.
 
-### Cobertura total integrada después del PR #9
+### Cobertura total integrada después del PR #10
 
 ```text
-79 pruebas Vitest
-11 pruebas Playwright
-90 comprobaciones automatizadas
+92 pruebas Vitest
+13 pruebas Playwright
+105 comprobaciones automatizadas
 ```
 
-### Quality Gate final del Centro DEV
+### Quality Gate final del Comparador A/B
 
-Ejecución **Quality Gate #71**, run `30885651811`, sobre el HEAD validado `20dbd56de4c368a63847d842ba375b6f97c4d7bb`:
+Ejecución **Quality Gate #96**, run `30890096807`, sobre el HEAD validado `4a380dcf8e12c584195766275b69975d3707a7b0`:
 
 ```text
 npm ci                     APROBADO
 Lint                       APROBADO — 0 errores
-Vitest                     79/79
+Vitest                     92/92
 Build de producción        APROBADO
-Playwright Chromium         11/11
+Playwright Chromium         13/13
 ```
 
-Playwright terminó con `11 passed (1.0m)`.
+Los jobs reales de instalación, lint, Vitest, build y Playwright concluyeron correctamente antes del merge.
 
-Lint conserva únicamente tres advertencias históricas de Fast Refresh. La advertencia nueva de React Hooks detectada durante el desarrollo fue corregida.
+Lint conserva únicamente tres advertencias históricas de Fast Refresh. No se introdujeron advertencias nuevas.
 
-La primera ejecución E2E del Centro DEV encontró dos contratos imprecisos:
+Incidencias detectadas y corregidas durante CI:
 
-- un selector ambiguo del indicador de sesión;
-- el bloqueo deliberado de clics sintéticos al lanzar una herramienta heredada.
+- métricas no alcanzadas representadas como `null`, no como cero;
+- contrato de prueba que asumía incorrectamente qué perfil debía ganar;
+- importación sin uso bloqueada por TypeScript;
+- selector Playwright mal delimitado;
+- interacción legítima entre compra automática y tiempo exacto al núcleo.
 
-Se añadió una prueba precisa y un puente restringido al Centro DEV. Las ejecuciones posteriores completas terminaron verdes. No se ocultaron ni ignoraron fallos.
+No se ocultaron fallos ni se redujo cobertura para conseguir el resultado verde.
 
-Comando dedicado:
+### Comandos oficiales
 
 ```bash
+npm run test
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+npm run test:phase4
+npm run test:phase5
 npm run test:control-center
+npm run test:comparative
+npm run test:all
 ```
 
-## 7. Arquitectura relevante
+### Validación local de Arturo
+
+Arturo ejecutó correctamente en Windows:
+
+```text
+npm ci                     APROBADO
+npm run build              APROBADO
+Vulnerabilidades npm       0
+```
+
+Ese build se realizó antes de recibir el merge del PR #10. Arturo estaba ejecutando después la suite local completa; su resultado final todavía no había sido reportado al actualizar esta bitácora.
+
+Después de actualizar `main`, debe hacer `Pull origin` antes de considerar que su copia local contiene el Comparador A/B.
+
+## 8. Arquitectura relevante
 
 ### Juego
 
@@ -306,13 +393,20 @@ npm run test:control-center
 
 ### Centro de Control DEV
 
-- `src/DeveloperControlCenterSystem.tsx`: interfaz y navegación de la consola.
-- `src/DeveloperControlCenterSystem.css`: diseño de la consola.
-- `src/developerExperimentBridge.ts`: contrato entre la consola y `App`.
-- `src/developerScenarios.ts`: escenarios, snapshots, validación y persistencia.
-- `src/developerSimulation.ts`: avance determinista y métricas.
-- `src/DeveloperToolLaunchBridge.tsx`: apertura restringida de herramientas existentes.
-- `src/DeveloperControlCompatibility.css`: compatibilidad temporal con accesos antiguos.
+- `src/DeveloperControlCenterSystem.tsx`
+- `src/DeveloperControlCenterSystem.css`
+- `src/developerExperimentBridge.ts`
+- `src/developerScenarios.ts`
+- `src/developerSimulation.ts`
+- `src/DeveloperToolLaunchBridge.tsx`
+- `src/DeveloperControlCompatibility.css`
+
+### Comparador A/B
+
+- `src/balanceRuntime.ts`: override transitorio mediante `runWithBalanceConfig()`.
+- `src/comparativeExperiment.ts`: motor determinista, políticas, métricas y exportación.
+- `src/ComparativeExperimentSystem.tsx`: interfaz del comparador.
+- `src/ComparativeExperimentSystem.css`: presentación responsive.
 
 ### Pruebas
 
@@ -323,7 +417,7 @@ npm run test:control-center
 - `tests/integration/`
 - `tests/e2e/`
 
-## 8. Controles DualSense / Gamepad integrados
+## 9. Controles DualSense / Gamepad integrados
 
 - X/A pulsa la esfera.
 - R2/RT activa el Gatillo.
@@ -335,7 +429,7 @@ npm run test:control-center
 - BUG-001 está validado físicamente.
 - BUG-002 tiene corrección integrada y validación formal pendiente.
 
-## 9. Forma de trabajo obligatoria
+## 10. Forma de trabajo obligatoria
 
 - Trabajar de forma directa y evitar microcomprobaciones redundantes.
 - Usar GitHub Desktop para el flujo local normal.
@@ -350,116 +444,140 @@ npm run test:control-center
 - Antes de integrar: confirmar CI en verde, comparar contra `main`, resumir cambios y esperar permiso.
 - Mantener gameplay, fórmulas y visuales idénticos durante cambios exclusivamente documentales o de infraestructura salvo aprobación específica.
 
-## 10. Riesgos de rendimiento vigentes
+## 11. Riesgos y advertencias vigentes
 
 - `localStorage` todavía funciona parcialmente como bus interno.
 - Existen varios bucles de sondeo del gamepad.
 - El estado completo se guarda con cada cambio principal.
 - Conviven varios relojes, WebGL y Web Animations API.
-- El bundle de producción ya rebasa ligeramente la advertencia de 500 kB minificados.
+- El bundle de producción ya supera la advertencia de 500 kB minificados; el PR #10 reportó aproximadamente 539.68 kB.
+- Conviene aplicar lazy loading o code splitting a herramientas DEV en una rama independiente.
+- GitHub Actions puede advertir que acciones internas orientadas a Node 20 se ejecutan con Node 24; no ha producido fallos del proyecto.
 
-Estas refactorizaciones deben realizarse en ramas específicas y no mezclarse accidentalmente con trabajo de balance.
+No mezclar estas refactorizaciones con Fase 6 salvo necesidad técnica demostrada.
 
-## 11. Siguiente paso recomendado — Comparador de Experimentos A/B
+## 12. Siguiente paso recomendado — Fase 6 matemática
 
-La mejor evolución inmediata es convertir el Centro DEV de una consola de observación individual en una herramienta de **comparación reproducible entre dos perfiles de balance**.
-
-Nombre provisional:
+La infraestructura esencial del Laboratorio ya está cerrada:
 
 ```text
-Fase 5.6 — Comparative Experiment Runner
+Fase 4   aplicación completa y segura
+Fase 5   perfiles DEV persistentes
+Fase 5.5 escenarios y simulación determinista
+Fase 5.6 comparador de experimentos A/B
+```
+
+El siguiente paso funcional es:
+
+```text
+Fase 6 — Plantillas matemáticas seguras
 ```
 
 Rama sugerida:
 
 ```text
-Dev-Comparative-Experiment-Runner
+Dev-Balance-Mathematical-Templates
 ```
 
 ### Objetivo
 
-Ejecutar el mismo escenario y el mismo horizonte temporal con dos configuraciones de balance distintas, sin modificar la partida normal, y responder con datos:
+Permitir construir variantes de balance mediante plantillas tipadas y explicables, evaluarlas con los escenarios reproducibles y compararlas contra el balance oficial antes de modificar fórmulas reales.
 
-- ¿qué perfil llena antes el núcleo?;
-- ¿qué perfil llega antes a la primera cristalización?;
-- ¿cuál ofrece mejores decisiones de compra?;
-- ¿dónde aparecen cuellos de botella?;
-- ¿qué evolución ofrece mejor retorno?;
-- ¿cuánto tiempo permanece el jugador sin una decisión útil?;
-- ¿qué perfil produce una curva más fluida?
+### Plantillas iniciales previstas
 
-### Primera entrega recomendada
-
-1. Seleccionar escenario inicial común.
-2. Seleccionar Perfil A y Perfil B, incluyendo el balance oficial.
-3. Elegir horizonte temporal o condición de parada.
-4. Ejecutar ambos experimentos de manera determinista y fuera del estado visible del juego.
-5. Mostrar resultados lado a lado.
-6. Mostrar diferencias absolutas y porcentuales.
-7. Registrar hitos:
-   - núcleo lleno;
-   - primera cristalización;
-   - tiempo a cada evolución;
-   - energía acumulada;
-   - clics acumulados;
-   - periodos sin compra viable.
-8. Exportar un reporte JSON y CSV.
-
-### Reglas de seguridad
-
-- La simulación debe usar las funciones autoritativas del juego.
-- Ningún perfil debe cargarse automáticamente en la partida visible.
-- Las corridas deben ser reproducibles con el mismo escenario, perfil y semilla temporal.
-- El guardado normal no debe modificarse.
-- El tamaño de los lotes debe tener límites explícitos.
-- Las comparaciones deben producir pruebas unitarias, de integración y E2E desde el diseño.
-
-### Cobertura mínima propuesta
-
-- igualdad exacta al comparar un perfil consigo mismo;
-- resultados deterministas en ejecuciones repetidas;
-- aislamiento total del guardado normal;
-- aplicación independiente de Perfil A y Perfil B;
-- condiciones de parada correctas;
-- exportación consistente;
-- recorrido Playwright completo del comparador.
-
-Esta fase convertiría el Laboratorio y el Centro DEV en una herramienta realmente útil para decidir el balance antes de formalizar nuevas fórmulas.
-
-## 12. Después del comparador — Fase 6 matemática
-
-Una vez disponible la comparación A/B, conviene incorporar plantillas matemáticas seguras:
-
-- exponencial;
 - lineal;
+- exponencial;
 - potencia;
 - raíz;
 - logarítmica;
 - rendimientos decrecientes.
 
-Cada plantilla deberá ejecutarse contra los mismos escenarios reproducibles y compararse con el balance oficial. Después podrá iniciarse el diseño formal de **Esmeralda** sobre evidencia medible en lugar de ajustes aislados.
+### Reglas de seguridad
 
-## 13. Prompt de continuidad para un nuevo chat
+- no usar `eval()`;
+- no usar `new Function()`;
+- no aceptar JavaScript arbitrario;
+- usar discriminated unions y parámetros validados;
+- limitar dominio, rango, exponentes, bases y número de muestras;
+- impedir `NaN`, infinitos y divisiones inválidas;
+- no aplicar automáticamente una plantilla a la partida;
+- generar siempre un `BalanceConfig` validado antes de simular;
+- conservar restauración oficial;
+- ejecutar comparaciones por medio del Comparador A/B autoritativo.
+
+### Primera entrega recomendada
+
+1. Definir un contrato tipado para plantillas y parámetros.
+2. Implementar evaluadores puros y seguros.
+3. Añadir previsualización tabular de valores.
+4. Convertir una plantilla válida en un borrador de `BalanceConfig`.
+5. Permitir enviarla al Laboratorio como borrador, nunca aplicarla automáticamente.
+6. Permitir guardarla como perfil DEV mediante confirmación explícita.
+7. Compararla con Oficial o con otro perfil mediante el Comparador A/B.
+8. Añadir exportación/importación versionada de especificaciones matemáticas.
+9. Documentar límites y ejemplos en un archivo rector nuevo.
+10. Diseñar pruebas unitarias, integración y Playwright desde el inicio.
+
+### Cobertura mínima
+
+- cada tipo de plantilla con valores normales;
+- límites inferiores, superiores e igualdad exacta;
+- parámetros inválidos;
+- dominios inválidos;
+- prevención de `NaN` e infinitos;
+- determinismo;
+- serialización y deserialización;
+- conversión a `BalanceConfig`;
+- rechazo por `balanceValidation`;
+- aislamiento del runtime y del guardado;
+- comparación A/B reproducible;
+- recorrido completo de creación, previsualización, guardado y comparación.
+
+## 13. Después de Fase 6 — Esmeralda
+
+Una vez disponibles las plantillas matemáticas y la comparación A/B, comenzar el diseño formal de **Esmeralda** sobre evidencia medible.
+
+Antes de programarla deben definirse:
+
+1. identidad mecánica;
+2. relación con Zafiro 5;
+3. condición de activación;
+4. recurso persistente;
+5. fórmula de obtención;
+6. cinco niveles y costos;
+7. beneficio visible dentro del reactor;
+8. interacción con cristalización;
+9. condición de órbita completa;
+10. desbloqueo de la gema amarilla;
+11. migración del guardado;
+12. pruebas automatizadas desde el diseño.
+
+La idea de regeneración, reciclaje, conservación o renacimiento continúa siendo una hipótesis, no una especificación aprobada.
+
+## 14. Prompt de continuidad para un nuevo chat
 
 ```text
 Quiero continuar el desarrollo del repositorio privado xArtXtrAx/incremental-game-A.
 
 Antes de modificarlo:
-1. Lee HISTORIAL_GPT.MD, TESTING_POLICY.md, PLAN_MAESTRO.md, MODELO_MATEMATICO.md, BALANCE_LABORATORY.md, EXPERIMENTAL_CONTROL_CENTER.md, PERFORMANCE_AUDIT.md y GAMEPAD_DEVICE_SELECTION.md.
+1. Lee HISTORIAL_GPT.MD, TESTING_POLICY.md, PLAN_MAESTRO.md, MODELO_MATEMATICO.md, BALANCE_LABORATORY.md, EXPERIMENTAL_CONTROL_CENTER.md, COMPARATIVE_EXPERIMENT_RUNNER.md, PERFORMANCE_AUDIT.md y GAMEPAD_DEVICE_SELECTION.md.
 2. Comprueba el estado real de main, ramas, PRs y CI.
 3. No reutilices ramas ya integradas.
-4. No hagas merge sin mi autorización explícita.
-5. Diseña pruebas automatizadas junto con cada cambio.
+4. No elimines ramas.
+5. No hagas merge sin mi autorización explícita.
+6. Diseña pruebas automatizadas junto con cada cambio.
 
 Estado conocido al 4 de agosto de 2026:
-- PR #9 Centro de Control Experimental DEV está integrado.
-- Último merge funcional: 046b8b3532e92b3f6dbb7000c7c5abe62c7253fa.
-- Main incluye Laboratorio de Balance, perfiles DEV persistentes, escenarios reproducibles, sesión experimental aislada, pausa y avance determinista, métricas y navegación DEV unificada.
-- Cobertura integrada: 79 Vitest + 11 Playwright = 90 comprobaciones.
+- PR #10 Comparador de Experimentos A/B está integrado.
+- Último merge funcional: 217d94c2daa03c137351b651f78e8c5812b9c296.
+- Main incluye Laboratorio de Balance, perfiles DEV persistentes, Centro de Control Experimental, escenarios reproducibles, sesión aislada, simulación determinista, métricas y comparación A/B.
+- Cobertura integrada validada: 92 Vitest + 13 Playwright = 105 comprobaciones.
+- Quality Gate #96, run 30890096807, terminó completamente en verde sobre el HEAD funcional 4a380dcf8e12c584195766275b69975d3707a7b0.
 - No hay PRs abiertos.
+- Arturo confirmó localmente npm ci y npm run build antes del merge del PR #10; estaba ejecutando la suite completa y aún no había reportado su resultado final.
 
 Siguiente paso recomendado:
-Fase 5.6 — Comparative Experiment Runner, en una rama nueva Dev-Comparative-Experiment-Runner.
+Fase 6 — Plantillas matemáticas seguras, en una rama nueva Dev-Balance-Mathematical-Templates.
 
-Primero verifica estos datos contra GitHub y después explícame el plan concreto antes de implementar.
+Primero verifica estos datos contra GitHub. Después presenta un diseño concreto y seguro para Fase 6 antes de implementar. No mezcles code splitting, refactorizaciones de rendimiento ni Esmeralda con esta primera entrega salvo necesidad técnica clara.
 ```
