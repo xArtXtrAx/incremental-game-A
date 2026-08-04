@@ -1,13 +1,28 @@
-import type { BalanceConfig } from './balanceConfig'
+import {
+  DEFAULT_BALANCE_CONFIG,
+  type BalanceConfig,
+} from './balanceConfig'
+import { getActiveBalanceConfig } from './balanceRuntime'
+import {
+  getBalanceUnlockRequirement,
+  type BalanceUnlockId,
+} from './balanceUnlockPolicy'
 import type { GameState } from './game'
 
 export type BalanceNormalizationSeverity = 'info' | 'warning'
+export type BalanceNormalizationPath =
+  | keyof GameState
+  | 'balance.sphere-status'
+  | 'balance.pressure-bonus'
+  | `balance.unlock.${BalanceUnlockId}`
 
 export type BalanceNormalizationChange = {
-  path: keyof GameState
+  path: BalanceNormalizationPath
   label: string
   before: number
   after: number
+  beforeLabel?: string
+  afterLabel?: string
   severity: BalanceNormalizationSeverity
   reason: string
 }
@@ -59,26 +74,113 @@ function getRefractionFacetCount(
   return first
 }
 
+function getPressureBonus(
+  state: Readonly<GameState>,
+  config: Readonly<BalanceConfig>,
+) {
+  const fill = Math.min(
+    state.manualClicks / config.core.sphereClickCapacity,
+    1,
+  )
+  const tier = Math.min(Math.floor((fill * 100) / 10), 10)
+  return tier * config.core.pressureBonusPerTier * state.pressureLevel
+}
+
 function registerChange(
   changes: BalanceNormalizationChange[],
-  path: keyof GameState,
+  path: BalanceNormalizationPath,
   label: string,
   before: number,
   after: number,
   reason: string,
   severity: BalanceNormalizationSeverity = 'info',
+  beforeLabel?: string,
+  afterLabel?: string,
 ) {
   if (Object.is(before, after)) return
-  changes.push({ path, label, before, after, reason, severity })
+  changes.push({
+    path,
+    label,
+    before,
+    after,
+    reason,
+    severity,
+    beforeLabel,
+    afterLabel,
+  })
+}
+
+function registerUnlockTransitions(
+  changes: BalanceNormalizationChange[],
+  state: Readonly<GameState>,
+  previousConfig: Readonly<BalanceConfig>,
+  nextConfig: Readonly<BalanceConfig>,
+) {
+  const unlocks: readonly BalanceUnlockId[] = [
+    'pressure',
+    'cavitation',
+    'autoclick',
+    'overload',
+    'refraction',
+  ]
+
+  unlocks.forEach((id) => {
+    const previous = getBalanceUnlockRequirement(state, id, previousConfig)
+    const next = getBalanceUnlockRequirement(state, id, nextConfig)
+
+    registerChange(
+      changes,
+      `balance.unlock.${id}`,
+      `Compra de ${id}`,
+      previous.locked ? 0 : 1,
+      next.locked ? 0 : 1,
+      next.locked
+        ? `El requisito cambia a ${next.required}. Los niveles existentes se conservan y continúan funcionando; solo se bloquean compras nuevas.`
+        : `La compra vuelve a estar disponible con el requisito ${next.required}.`,
+      next.locked ? 'warning' : 'info',
+      previous.locked ? 'Bloqueada' : 'Disponible',
+      next.locked ? 'Bloqueada' : 'Disponible',
+    )
+  })
 }
 
 export function normalizeGameStateForBalance(
   state: Readonly<GameState>,
   nextConfig: Readonly<BalanceConfig>,
-  _now = Date.now(),
+  now = Date.now(),
+  previousConfig: Readonly<BalanceConfig> = getActiveBalanceConfig(),
 ): BalanceNormalizationPreview {
   const changes: BalanceNormalizationChange[] = []
   const next: GameState = { ...state }
+
+  const sphereWasFull =
+    state.manualClicks >= previousConfig.core.sphereClickCapacity
+  const sphereWillBeFull =
+    state.manualClicks >= nextConfig.core.sphereClickCapacity
+  registerChange(
+    changes,
+    'balance.sphere-status',
+    'Estado de la esfera',
+    sphereWasFull ? 1 : 0,
+    sphereWillBeFull ? 1 : 0,
+    sphereWillBeFull
+      ? 'La nueva capacidad deja disponible la cristalización y la carga de Sobrecarga.'
+      : 'La nueva capacidad deja la esfera incompleta; Sobrecarga no podrá cargarse hasta llenarla.',
+    sphereWillBeFull ? 'info' : 'warning',
+    sphereWasFull ? 'Completa' : 'Incompleta',
+    sphereWillBeFull ? 'Completa' : 'Incompleta',
+  )
+
+  registerChange(
+    changes,
+    'balance.pressure-bonus',
+    'Bono actual de Presión',
+    getPressureBonus(state, previousConfig),
+    getPressureBonus(state, nextConfig),
+    'Se recalcula con la nueva capacidad de esfera y el bono configurado por tramo.',
+  )
+
+  registerUnlockTransitions(changes, state, previousConfig, nextConfig)
 
   const pulseTriggerLevel = Math.min(
     state.pulseTriggerLevel,
@@ -159,10 +261,8 @@ export function normalizeGameStateForBalance(
   )
   next.overloadUntil = overloadUntil
 
-  const refractionAllowed =
-    state.refractionLevel > 0 &&
-    state.prestigeCount >= nextConfig.unlocks.refractionRequiredPrestige
-  const refractionOrbitProgress = refractionAllowed
+  const refractionAvailable = state.refractionLevel > 0
+  const refractionOrbitProgress = refractionAvailable
     ? clamp(state.refractionOrbitProgress, 0, 0.9999)
     : 0
   registerChange(
@@ -171,14 +271,14 @@ export function normalizeGameStateForBalance(
     'Órbita de Refracción',
     state.refractionOrbitProgress,
     refractionOrbitProgress,
-    refractionAllowed
-      ? 'El progreso orbital debe permanecer entre 0 y 1.'
-      : 'La partida no cumple el prestigio requerido por el nuevo perfil.',
+    refractionAvailable
+      ? 'El progreso orbital se conserva dentro del rango válido.'
+      : 'La Matriz no tiene niveles comprados.',
   )
   next.refractionOrbitProgress = refractionOrbitProgress
 
   const facetCount = getRefractionFacetCount(nextConfig, state.prestigeCount)
-  const refractionFacetsCharged = refractionAllowed
+  const refractionFacetsCharged = refractionAvailable
     ? clamp(state.refractionFacetsCharged, 0, Math.max(0, facetCount - 1))
     : 0
   registerChange(
@@ -187,9 +287,9 @@ export function normalizeGameStateForBalance(
     'Facetas cargadas',
     state.refractionFacetsCharged,
     refractionFacetsCharged,
-    refractionAllowed
+    refractionAvailable
       ? 'Las facetas se recortan al máximo válido del nuevo perfil.'
-      : 'La Matriz queda suspendida hasta recuperar el prestigio requerido.',
+      : 'La Matriz no tiene niveles comprados.',
   )
   next.refractionFacetsCharged = refractionFacetsCharged
 
@@ -206,4 +306,15 @@ export function normalizeGameStateForBalance(
   next.refractionUntil = refractionUntil
 
   return { state: next, changes }
+}
+
+export function normalizeGameStateForOfficialBalance(
+  state: Readonly<GameState>,
+  now = Date.now(),
+) {
+  return normalizeGameStateForBalance(
+    state,
+    DEFAULT_BALANCE_CONFIG,
+    now,
+  )
 }
