@@ -16,6 +16,7 @@ En anchuras mayores a 1,280 px:
 - el contenido normal del panel usa `overflow-y: auto` y `overflow-x: hidden`;
 - la página no obtiene una barra horizontal por causa del panel;
 - las herramientas avanzadas ocupan solamente el rectángulo del Panel DEV;
+- el panel flotante del control se reserva a la izquierda de la columna DEV y nunca cubre sus accesos;
 - el juego conserva eventos de puntero, reloj, animaciones y actualizaciones mientras una herramienta está abierta.
 
 ## 3. Hosts separados
@@ -65,7 +66,7 @@ Las superficies acopladas conservan `role="dialog"`, pero usan `aria-modal="fals
 5. acoplamiento de las cinco herramientas principales;
 6. vista cromática DEV sin bloqueo de `body`;
 7. juego operable durante la inspección cromática;
-8. prioridad de capa sobre el panel flotante del control y cierre real sin `force`;
+8. separación geométrica y prioridad de capa frente al panel flotante del control;
 9. foco estable ante deriva de DualSense mediante la regresión existente de Plantillas Matemáticas.
 
 Comando dedicado:
