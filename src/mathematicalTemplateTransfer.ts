@@ -67,7 +67,9 @@ export function getMathematicalTemplateTransferSnapshot() {
 
 export function subscribeMathematicalTemplateTransfer(listener: () => void) {
   listeners.add(listener)
-  return () => listeners.delete(listener)
+  return () => {
+    listeners.delete(listener)
+  }
 }
 
 export function publishMathematicalTemplateTransfer(
