@@ -87,8 +87,8 @@ test.describe('Comparador de Experimentos A/B', () => {
     const results = dialog.getByTestId('comparative-results')
     await expect(results).toBeVisible()
     await expect(dialog.getByText(/Comparación terminada:/)).toBeVisible()
-    const coreRow = dialog.locator('tr').filter({
-      has: dialog.getByText('Tiempo al núcleo lleno', { exact: true }),
+    const coreRow = dialog.getByRole('row', {
+      name: /Tiempo al núcleo lleno/,
     })
     await expect(coreRow).toContainText('Perfil B')
     await expect(coreRow).toContainText('1,000 s')
