@@ -173,6 +173,16 @@
   outline-offset: 3px;
 }
 
+@media (min-width: 1281px) {
+  .gamepad-panel {
+    right: calc(
+      max(24px, (100vw - 1800px) / 2) +
+      clamp(360px, 30vw, 560px) +
+      36px
+    );
+  }
+}
+
 @media (max-width: 760px) {
   .gamepad-panel {
     right: 10px;

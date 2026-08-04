@@ -33,7 +33,7 @@
 .developer-panel {
   position: sticky;
   top: 18px;
-  z-index: 20;
+  z-index: 120;
   width: 100%;
   height: var(--developer-panel-height, auto);
   min-height: 0;
