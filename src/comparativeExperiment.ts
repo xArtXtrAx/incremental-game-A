@@ -50,7 +50,7 @@ export type ComparativeUpgradeId =
 export type ComparativeBalanceCandidate = {
   id: string
   name: string
-  source: 'official' | 'profile'
+  source: 'official' | 'profile' | 'template'
   config: BalanceConfig
 }
 

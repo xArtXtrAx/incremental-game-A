@@ -15,6 +15,7 @@ import './DeveloperControlCompatibility.css'
 import { DeveloperToolLaunchBridge } from './DeveloperToolLaunchBridge'
 import { GamepadController } from './GamepadController'
 import { GamepadEventHaptics } from './GamepadEventHaptics'
+import { MathematicalTemplateSystem } from './MathematicalTemplateSystem'
 import { PulseTriggerSystem } from './PulseTriggerSystem'
 import { RegionFocusGuide } from './RegionFocusGuide'
 import { UpgradeProgressSystem } from './UpgradeProgressSystem'
@@ -45,6 +46,7 @@ createRoot(document.getElementById('root')!).render(
     <BalanceProfileSystem />
     <DeveloperControlCenterSystem />
     <DeveloperComparativeExperimentSystem />
+    <MathematicalTemplateSystem />
     <DeveloperToolLaunchBridge />
     <GamepadController />
     <ChromaticGamepadBridge />

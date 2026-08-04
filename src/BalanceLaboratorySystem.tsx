@@ -50,6 +50,11 @@ import {
   validateBalanceConfig,
   type BalanceValidationIssue,
 } from './balanceValidation'
+import {
+  clearMathematicalTemplateTransfer,
+  getMathematicalTemplateTransferSnapshot,
+  subscribeMathematicalTemplateTransfer,
+} from './mathematicalTemplateTransfer'
 
 type LaboratorySection =
   | 'costs'
@@ -288,6 +293,12 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
     getBalanceRuntimeSnapshot,
     getBalanceRuntimeSnapshot,
   )
+  const transferSnapshot = useSyncExternalStore(
+    subscribeMathematicalTemplateTransfer,
+    getMathematicalTemplateTransferSnapshot,
+    getMathematicalTemplateTransferSnapshot,
+  )
+  const transferredCandidate = transferSnapshot.candidate
   const [section, setSection] = useState<LaboratorySection>('costs')
   const [selectedSystem, setSelectedSystem] =
     useState<BalanceCostSystem>('click')
@@ -388,6 +399,32 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
     setSessionMessage('El borrador volvió a los valores oficiales.')
   }
 
+  function useTransferredDraft() {
+    if (!transferredCandidate) return
+
+    setDraft(cloneBalanceConfig(transferredCandidate.config))
+    if (transferredCandidate.target === 'sapphire-multipliers') {
+      setSection('sapphire')
+    } else {
+      setSection('costs')
+      setSelectedSystem('click')
+    }
+    setSessionMessage(
+      `Borrador “${transferredCandidate.name}” recibido desde Plantillas Matemáticas; aún no afecta la partida.`,
+    )
+    setLastNormalization([])
+    clearMathematicalTemplateTransfer()
+  }
+
+  function discardTransferredDraft() {
+    if (!transferredCandidate) return
+    const name = transferredCandidate.name
+    clearMathematicalTemplateTransfer()
+    setSessionMessage(
+      `La transferencia “${name}” fue descartada sin modificar el borrador.`,
+    )
+  }
+
   function applyDraftToSession() {
     if (!previewConfig || !canApply) return
 
@@ -456,6 +493,35 @@ function BalanceLaboratoryWindow({ onClose }: { onClose: () => void }) {
           desbloqueos, Autoclicker y Zafiro comparten ahora la misma configuración
           autoritativa. La previsualización no modifica la partida.
         </div>
+
+        {transferredCandidate && (
+          <div
+            className="mathematical-template-transfer-banner"
+            data-testid="laboratory-template-transfer"
+          >
+            <div>
+              <span>PLANTILLA MATEMÁTICA RECIBIDA</span>
+              <strong>{transferredCandidate.name}</strong>
+              <small>
+                Destino: {transferredCandidate.specification.target}. No se ha
+                aplicado al borrador ni a la sesión.
+              </small>
+            </div>
+            <div>
+              <button type="button" onClick={discardTransferredDraft}>
+                Descartar
+              </button>
+              <button
+                type="button"
+                className="is-primary"
+                data-testid="use-template-in-laboratory"
+                onClick={useTransferredDraft}
+              >
+                Usar en borrador
+              </button>
+            </div>
+          </div>
+        )}
 
         <nav className="balance-laboratory-tabs" aria-label="Secciones del laboratorio">
           {LABORATORY_SECTIONS.map((item) => (
