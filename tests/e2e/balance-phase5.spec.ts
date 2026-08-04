@@ -85,7 +85,7 @@ test.describe('Laboratorio de Balance · Fase 5', () => {
       .getByRole('button', { name: 'Restaurar balance oficial' })
       .click()
     await expect(profiles.locator('.balance-profile-message')).toContainText(
-      /balance oficial/i,
+      /Valores oficiales restaurados/i,
     )
     await closeProfiles(profiles)
 
