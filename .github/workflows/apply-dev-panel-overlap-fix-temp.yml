@@ -1,0 +1,37 @@
+name: Apply Developer Panel Overlap Fix Temp
+
+on:
+  push:
+    branches: [Dev-Developer-Panel-Viewport]
+    paths:
+      - .github/workflows/apply-dev-panel-overlap-fix-temp.yml
+
+permissions:
+  contents: write
+
+jobs:
+  apply:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout visual branch
+        uses: actions/checkout@v4
+        with:
+          ref: Dev-Developer-Panel-Viewport
+          fetch-depth: 0
+
+      - name: Separate floating controller from developer panel
+        shell: bash
+        run: |
+          echo 'H4sICFt4cmoAA2Rldi1wYW5lbC1vdmVybGFwLWZpeC5wYXRjaAB1kk1ugzAQhfc+xdtUAhkn/LQkIhukVuq2V3DBJFYBW+AktFXuXhtEitpEQsDMvLHffHYpqwqM7aUBX/ddsX4RJ1ErLbo33op6VfQ93u8UCGPsbhehlN7vzHOwJAk2oOM7zwlW5Sxj2unwTQBo1UsjVZuhN7L4+Ny5pFE6Q7TVw44w4IvJthRDhjjcEbqII5ew8rMszcGGYfgwxgch9weT4cQ7j7E/27KpGoAfjfJHfSNbNvfYFcu/yF55IzQvn1VrOlXXoltQu1lbgLtd/2V3u+7wRZskSEHdJ0pHgoA6mlq2gqmq6oV1mzhEuBAQmjeilByeG2YGEm8jPfgWtKW22k87XeHbHNBNUxe8LrwpY3HwwYsf9RDAs0hPZzB7FmHoVloj9kFnYVHzRntJGjptYpUBntJRd5UkqR6mf388uwuh9iG4uuXD7HYztY634p9ZLMxGoZv6B2OzEi/ZAgAA' | base64 -d | gzip -d > /tmp/dev-panel-overlap-fix.patch
+          git apply --check /tmp/dev-panel-overlap-fix.patch
+          git apply /tmp/dev-panel-overlap-fix.patch
+
+      - name: Commit fix and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/apply-dev-panel-overlap-fix-temp.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Separa control flotante del Panel DEV"
+          git push origin HEAD:Dev-Developer-Panel-Viewport
