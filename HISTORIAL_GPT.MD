@@ -20,22 +20,17 @@ La política completa, los comandos y los criterios se encuentran en `TESTING_PO
 
 ## 1. Estado real del repositorio
 
-Estado comprobado el **3 de agosto de 2026, 23:59 CDMX**:
+Estado comprobado el **4 de agosto de 2026, después del merge del PR #8**:
 
 - Repositorio privado: `xArtXtrAx/incremental-game-A`.
 - Rama estable: `main`.
-- HEAD de `main`: `b189ec18f99855a11be80964839a4d1c54b87b9d`.
-- Ese HEAD es una actualización exclusivamente documental de esta bitácora.
-- Último merge funcional en `main`: `89b78582699858d0d27acc07dd7971699b6411e1`.
-- Integración funcional más reciente: **PR #7 — Automatiza la Fase 4 y establece la política de pruebas**.
-- Rama integrada: `Dev-Balance-Laboratory-Phase-4`.
-- La rama de Fase 4 conserva 0 commits exclusivos frente a `main`; se mantiene como respaldo y no debe eliminarse sin autorización.
-- PR abierto: **#8 — Fase 5: perfiles DEV persistentes del Laboratorio**.
-- Estado del PR #8: **borrador, abierto, no fusionado**.
-- Rama de desarrollo activa: `Dev-Balance-Laboratory-Phase-5`.
-- Base de Fase 5: `b189ec18f99855a11be80964839a4d1c54b87b9d`.
-- Último commit funcional validado de Fase 5: `f13d7e5833910bb616b18c9eb889910fef9abc8e`.
-- La rama estaba 13 commits adelante y 0 detrás de `main` antes de esta actualización documental final.
+- Último merge funcional en `main`: `b376f1310f2081749fc1d18991955c2c51a8148f`.
+- Integración funcional más reciente: **PR #8 — Fase 5: perfiles DEV persistentes del Laboratorio**.
+- Estado del PR #8: **fusionado**.
+- Rama integrada: `Dev-Balance-Laboratory-Phase-5`.
+- La rama de Fase 5 conserva **0 commits exclusivos** frente a `main` y está detrás únicamente por el propio merge commit.
+- La rama DEV se conserva como respaldo y no debe eliminarse sin autorización explícita de Arturo.
+- No hay pull requests abiertos.
 - Entorno: React 19 + TypeScript 6 + Vite 8 + Motion.
 - Guardado principal: `incremental-game-a:save:v1`.
 - Ajustes de mando: `incremental-game-a:gamepad:v1`.
@@ -54,12 +49,11 @@ Estado comprobado el **3 de agosto de 2026, 23:59 CDMX**:
 | #5 | `Dev-Balance-Laboratory-Phase-2` | `734aadd83357e47a33b93f35efd271281d2cd63a` | Editor seguro de borradores, comparación Oficial/Borrador y diagnósticos |
 | #6 | `Dev-Balance-Laboratory-Phase-3` | `852de786ded06e7e2ac1fbf16378dd7498489e39` | Aplicación reversible a sesión, normalización y restauración oficial |
 | #7 | `Dev-Balance-Laboratory-Phase-4` | `89b78582699858d0d27acc07dd7971699b6411e1` | Fase 4 completa e infraestructura permanente de pruebas automatizadas |
+| #8 | `Dev-Balance-Laboratory-Phase-5` | `b376f1310f2081749fc1d18991955c2c51a8148f` | Perfiles DEV persistentes, versionados, migrables, importables y exportables |
 
-## 2. Fase 4 integrada
+## 2. Laboratorio de Balance integrado
 
-La Fase 4 del Laboratorio de Balance ya forma parte de `main`.
-
-### Implementación integrada
+### Fase 4
 
 - Capacidad de esfera dinámica en lógica y visuales.
 - Bono de Presión dinámico.
@@ -90,56 +84,31 @@ Capacidad experimental: 2,000
 Resultado observado: NÚCLEO LLENO
 ```
 
-## 3. Infraestructura de pruebas integrada
+## 3. Fase 5 integrada — Perfiles DEV persistentes
 
-Componentes integrados mediante PR #7:
+La Fase 5 forma parte de `main` mediante el PR #8.
 
-- Vitest.
-- Playwright.
-- GitHub Actions.
-- `TESTING_POLICY.md`.
-- `TESTING_SETUP.md`.
-- `package-lock.json` actualizado.
-- instalación reproducible mediante `npm ci`.
-- reportes, capturas, video y trazas al fallar.
+### Persistencia
 
-### Cobertura integrada de Fase 4
-
-```text
-41 pruebas Vitest
-4 pruebas Playwright
-45 comprobaciones automatizadas
-```
-
-Quality Gate confirmado antes del merge:
-
-```text
-npm ci                     APROBADO
-Lint                       APROBADO
-Vitest                     41/41
-Build de producción        APROBADO
-Playwright Chromium         4/4
-```
-
-## 4. Fase 5 implementada en rama DEV
-
-La Fase 5 está implementada en `Dev-Balance-Laboratory-Phase-5` y permanece fuera de `main`.
-
-### Diseño adoptado
-
-La persistencia usa una colección nueva y versionada:
+Colección nueva y versionada:
 
 ```text
 incremental-game-a:balance-dev-profiles:v2
 ```
 
-La clave anterior se conserva como fuente heredada y respaldo:
+Fuente heredada y respaldo:
 
 ```text
 incremental-game-a:balance-dev:v1
 ```
 
-Reglas de migración:
+Partida normal, siempre separada:
+
+```text
+incremental-game-a:save:v1
+```
+
+### Reglas de migración y seguridad
 
 1. Si la colección v2 no existe, se intenta validar el perfil v1.
 2. Un perfil v1 válido se copia a v2.
@@ -147,14 +116,15 @@ Reglas de migración:
 4. Un perfil v1 corrupto se conserva sin crear una colección vacía.
 5. Una colección v2 corrupta bloquea escrituras para impedir pérdida accidental.
 6. Los perfiles nunca se cargan automáticamente.
-7. La partida normal `incremental-game-a:save:v1` permanece separada e intacta.
+7. La partida normal permanece separada e intacta.
+8. Las lecturas devuelven clones para impedir mutaciones accidentales.
 
-### Funcionalidad implementada
+### Funcionalidad integrada
 
 - Asignar nombre a un perfil.
 - Guardar múltiples perfiles DEV.
 - Listar perfiles guardados.
-- Cargar un perfil manualmente en la sesión.
+- Cargar manualmente un perfil en la sesión.
 - Reemplazar un perfil con confirmación.
 - Eliminar un perfil con confirmación.
 - Cancelar una eliminación sin modificar datos.
@@ -163,46 +133,37 @@ Reglas de migración:
 - Rechazar JSON malformado.
 - Rechazar valores fuera de límites.
 - Rechazar versiones incompatibles.
-- Impedir sobrescritura silenciosa de nombres duplicados.
-- Devolver clones para evitar mutaciones accidentales.
+- Impedir sobrescrituras silenciosas por nombre duplicado.
 - Restaurar siempre el balance oficial.
 - Mantener la carga automática desactivada después de recargar.
 
-### Interfaz
+### Interfaz integrada
 
-Se añadió un acceso `Perfiles DEV` al Panel de Desarrollador.
+El Panel de Desarrollador ahora ofrece accesos separados a:
 
-El Laboratorio conserva la edición y aplicación del borrador. El gestor de perfiles persiste el balance activo y permite cargarlo manualmente después.
+- selector cromático temporal;
+- Cámara Cromática;
+- edición directa de energía, clics y cristalizaciones;
+- Laboratorio de Balance;
+- Perfiles DEV.
 
-### Archivos principales
-
-- `src/balanceProfiles.ts`
-- `src/BalanceProfileSystem.tsx`
-- `src/BalanceProfileSystem.css`
-- `tests/unit/balanceProfiles.test.ts`
-- `tests/integration/balanceProfiles.integration.test.ts`
-- `tests/e2e/balance-phase5.spec.ts`
+El Laboratorio edita, compara, diagnostica y aplica borradores a la sesión. El gestor de perfiles persiste configuraciones y exige carga manual.
 
 No se modificaron reducer, fórmulas, costos ni mecánicas de gameplay durante Fase 5.
 
-## 5. Pruebas de Fase 5
+## 4. Infraestructura de pruebas
 
-### Nuevas pruebas
+Componentes integrados:
 
-Vitest:
+- Vitest.
+- Playwright.
+- GitHub Actions.
+- `TESTING_POLICY.md`.
+- `TESTING_SETUP.md`.
+- instalación reproducible mediante `npm ci`.
+- reportes, capturas, video y trazas al fallar.
 
-- 18 pruebas unitarias de persistencia, validación, migración, corrupción e inmutabilidad.
-- 7 pruebas de integración con runtime, carga manual y restauración oficial.
-
-Playwright:
-
-- 4 recorridos de Fase 5:
-  - persistencia entre recargas sin carga automática, carga manual y restauración;
-  - reemplazo, cancelación y eliminación confirmada;
-  - exportación, descarga e importación válida;
-  - rechazo visible de JSON malformado, límites y versiones incompatibles.
-
-### Cobertura total de la rama
+### Cobertura total integrada
 
 ```text
 66 pruebas Vitest
@@ -210,9 +171,9 @@ Playwright:
 74 comprobaciones automatizadas
 ```
 
-### Quality Gate definitivo de código
+### Quality Gate final de Fase 5
 
-Ejecución **Quality Gate #40**, run `30882312175`, sobre el commit funcional `f13d7e5833910bb616b18c9eb889910fef9abc8e`:
+Ejecución **Quality Gate #42**, run `30882566951`, sobre el HEAD validado `fc65d0c7883f1a66f5a756238bb208015e31dd3e`:
 
 ```text
 npm ci                     APROBADO
@@ -222,11 +183,11 @@ Build de producción        APROBADO
 Playwright Chromium         8/8
 ```
 
-Lint conserva únicamente tres advertencias históricas de Fast Refresh. La advertencia nueva de dependencias de Hooks detectada durante el desarrollo fue corregida.
+Lint conserva únicamente tres advertencias históricas de Fast Refresh. La advertencia nueva de Hooks detectada durante el desarrollo fue corregida.
 
-Dos ejecuciones anteriores detectaron contratos imprecisos en selectores y texto de las pruebas E2E. Se corrigieron y la tercera ronda completa terminó verde. No se ocultaron ni ignoraron fallos.
+Dos ejecuciones anteriores detectaron contratos imprecisos en selectores y texto de las pruebas E2E. Se corrigieron y las ejecuciones finales completas terminaron verdes. No se ocultaron ni ignoraron fallos.
 
-## 6. Forma de trabajo obligatoria
+## 5. Forma de trabajo obligatoria
 
 - Trabajar de forma directa y evitar microcomprobaciones redundantes.
 - Usar GitHub Desktop para el flujo local normal.
@@ -241,7 +202,7 @@ Dos ejecuciones anteriores detectaron contratos imprecisos en selectores y texto
 - Antes de integrar: confirmar CI en verde, comparar contra `main`, resumir cambios y esperar permiso.
 - Mantener gameplay, fórmulas y visuales idénticos durante cambios exclusivamente documentales o de infraestructura salvo aprobación específica.
 
-## 7. Estado jugable integrado en `main`
+## 6. Estado jugable integrado en `main`
 
 ### Sistemas principales
 
@@ -252,6 +213,7 @@ Dos ejecuciones anteriores detectaron contratos imprecisos en selectores y texto
 - Cámara Cromática.
 - Panel DEV.
 - Laboratorio de Balance con editor, simulación, previsualización, aplicación reversible y restauración oficial.
+- Perfiles DEV persistentes y separados de la partida normal.
 - Navegación por mouse, teclado y gamepad.
 
 ### Prestigio y Zafiro oficiales
@@ -261,7 +223,7 @@ Dos ejecuciones anteriores detectaron contratos imprecisos en selectores y texto
 - Después de P5: +0.50 provisional por prestigio.
 - Una a cinco partículas orbitales equidistantes según el nivel visual.
 
-## 8. Controles DualSense / Gamepad integrados
+## 7. Controles DualSense / Gamepad integrados
 
 - X/A pulsa la esfera.
 - R2/RT activa el Gatillo.
@@ -273,12 +235,13 @@ Dos ejecuciones anteriores detectaron contratos imprecisos en selectores y texto
 - BUG-001 está validado físicamente.
 - BUG-002 tiene corrección integrada y validación formal pendiente.
 
-## 9. Arquitectura relevante
+## 8. Arquitectura relevante
 
 ### Juego
 
 - `src/game.ts`: estado, reducer, costos, guardado y consultas de balance.
 - `src/App.tsx`: estado autoritativo, ticks, efectos y transiciones.
+- `src/DeveloperPanel.tsx`: controles directos de estado y accesos DEV.
 - `src/refraction.ts`: Matriz y PRISMA.
 - `src/pulseTrigger.ts`: Gatillo de pulso.
 - `src/bulkPurchase.ts`: Comprar todo.
@@ -309,7 +272,7 @@ Dos ejecuciones anteriores detectaron contratos imprecisos en selectores y texto
 - `tests/integration/`
 - `tests/e2e/`
 
-## 10. Riesgos de rendimiento vigentes
+## 9. Riesgos de rendimiento vigentes
 
 - `localStorage` todavía funciona parcialmente como bus interno.
 - Existen varios bucles de sondeo del gamepad.
@@ -318,33 +281,67 @@ Dos ejecuciones anteriores detectaron contratos imprecisos en selectores y texto
 
 Estas refactorizaciones deben realizarse en ramas separadas y no se mezclaron con Fase 5.
 
-## 11. Estado de pendientes
+## 10. Siguiente paso recomendado — Centro de Control Experimental DEV
 
-### Completado
+Antes de añadir más campos aislados al Panel de Desarrollador, conviene convertirlo en una consola unificada para diseñar, ejecutar y comparar experimentos reproducibles.
 
-- Corregir la bitácora posterior al merge de Fase 4 en `main`.
-- Crear `Dev-Balance-Laboratory-Phase-5` desde el `main` actualizado.
-- Diseñar la estructura versionada y la migración conservadora.
-- Implementar perfiles persistentes sin carga automática.
-- Añadir pruebas unitarias, de integración y Playwright proporcionales al riesgo.
-- Ejecutar `npm ci`, lint, Vitest, build y Playwright en GitHub Actions.
-- Obtener Quality Gate verde con 66/66 Vitest y 8/8 Playwright.
-- Comparar la rama contra `main`.
-- Abrir PR #8 en borrador.
+Nombre provisional de la rama:
 
-### Pendiente actual
+```text
+Dev-Experimental-Control-Center
+```
 
-1. Confirmar el Quality Gate de esta actualización documental final.
-2. Repetir la comparación definitiva contra `main`.
-3. Realizar una validación manual breve de apariencia y experiencia del gestor de perfiles.
-4. Mantener PR #8 en borrador hasta completar la revisión.
-5. Resumir el estado final y esperar autorización explícita de Arturo antes de integrar.
+### Objetivo
 
-## 12. Después de Fase 5
+Tener control completo de la experiencia sin contaminar la partida normal y poder responder con datos preguntas como:
 
-### Fase 6 — Plantillas matemáticas seguras
+- ¿cuánto tarda un jugador en comprar cada evolución?;
+- ¿dónde aparece un cuello de botella?;
+- ¿qué mejora ofrece el mejor retorno por segundo?;
+- ¿cuánto tarda en llenarse el núcleo?;
+- ¿cuánto tarda en llegar la primera cristalización?;
+- ¿qué perfil produce una progresión más fluida?;
+- ¿qué cambia entre dos perfiles bajo exactamente el mismo escenario inicial?
 
-Evaluar curvas:
+### Diseño recomendado
+
+Un único Panel DEV con navegación interna:
+
+1. **Estado** — energía, clics, cristalizaciones, niveles comprados, cargas y efectos activos.
+2. **Balance** — acceso integrado al Laboratorio de Balance.
+3. **Perfiles** — guardar, cargar, importar, exportar y comparar perfiles.
+4. **Escenarios** — estados experimentales reproducibles separados de la partida normal.
+5. **Simulación** — avanzar tiempo de forma determinista, pausar, ejecutar pasos y acelerar pruebas.
+6. **Métricas** — tiempos, producción, retorno de inversión y cuellos de botella.
+7. **Visual** — selector cromático y Cámara Cromática.
+8. **Diagnóstico** — eventos, normalizaciones, advertencias y diferencias contra el balance oficial.
+
+### Primera entrega recomendada
+
+La primera rama no debe intentar construir todo a la vez. Debe establecer:
+
+- shell unificado del Panel DEV con pestañas;
+- estado DEV centralizado en vez de accesos agregados mediante portales independientes;
+- escenarios nombrados y versionados, separados del guardado normal;
+- escenarios base: partida nueva, mitad del primer ciclo, núcleo casi lleno, antes de cristalizar, P1, P3 y P5;
+- captura y restauración de snapshots experimentales;
+- vista previa de cambios antes de aplicar un escenario;
+- pausa del reloj del juego y avance determinista por pasos;
+- métricas iniciales: energía por segundo, clics por segundo, tiempo estimado al siguiente objetivo y tiempo estimado al núcleo lleno;
+- pruebas unitarias, integración y Playwright desde el diseño.
+
+### Política de seguridad
+
+- Ningún escenario DEV se carga automáticamente.
+- Ningún experimento modifica el guardado normal salvo una acción explícita y confirmada.
+- La restauración oficial debe permanecer siempre visible.
+- Los escenarios y resultados deben tener claves versionadas propias.
+- No usar `eval()`, `new Function()` ni expresiones JavaScript arbitrarias.
+- La simulación debe reutilizar las funciones autoritativas del juego y ser determinista.
+
+## 11. Etapa posterior — Fase 6: Plantillas matemáticas seguras
+
+Una vez que el Centro de Control pueda ejecutar y comparar escenarios, Fase 6 podrá añadir plantillas seguras para curvas:
 
 - exponenciales;
 - lineales;
@@ -353,9 +350,9 @@ Evaluar curvas:
 - logarítmicas;
 - rendimientos decrecientes.
 
-No se permiten expresiones JavaScript arbitrarias, `eval()` ni `new Function()`.
+Las plantillas deben alimentar el mismo Laboratorio y ejecutarse contra escenarios reproducibles. No se permiten expresiones JavaScript arbitrarias, `eval()` ni `new Function()`.
 
-### Expansión de contenido — Esmeralda
+## 12. Expansión de contenido — Esmeralda
 
 Esmeralda debe diseñarse antes de programarse, definiendo:
 
@@ -373,6 +370,32 @@ Esmeralda debe diseñarse antes de programarse, definiendo:
 
 La dirección temática de regeneración, reciclaje, conservación o renacimiento sigue siendo una hipótesis no aprobada.
 
-## 13. Prompt recomendado para continuidad
+## 13. Estado de pendientes
 
-> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. Lee los documentos rectores y confirma siempre el estado real del repositorio. `main` contiene Fase 4 y la infraestructura de pruebas mediante PR #7; su último merge funcional es `89b78582699858d0d27acc07dd7971699b6411e1`. Fase 5 está implementada en `Dev-Balance-Laboratory-Phase-5` y presentada en el PR #8, que permanece en borrador y no debe integrarse sin autorización explícita. La Fase 5 añade una colección versionada `balance-dev-profiles:v2`, migración conservadora desde `balance-dev:v1`, carga manual, reemplazo y eliminación confirmados, importación/exportación JSON, rechazo de datos incompatibles y separación del guardado normal. El último Quality Gate funcional confirmado pasó `npm ci`, lint, 66/66 Vitest, build y 8/8 Playwright. Antes de cualquier merge, vuelve a comprobar CI, comparación contra `main`, estado del PR y autorización de Arturo.
+### Completado
+
+- Integrar Fase 4 y la infraestructura de pruebas.
+- Implementar Fase 5 en una rama nueva.
+- Diseñar migración conservadora desde `balance-dev:v1`.
+- Añadir perfiles múltiples, carga manual e importación/exportación validada.
+- Añadir pruebas unitarias, integración y Playwright.
+- Obtener Quality Gate verde con 66/66 Vitest y 8/8 Playwright.
+- Comparar Fase 5 contra `main`.
+- Obtener autorización explícita de Arturo.
+- Fusionar PR #8.
+- Confirmar que la rama no conserva commits exclusivos.
+- Actualizar esta bitácora después del merge.
+
+### Pendiente actual
+
+1. Diseñar el alcance formal del Centro de Control Experimental DEV.
+2. Crear una rama nueva desde el `main` actualizado.
+3. Unificar la navegación del Panel DEV sin cambiar gameplay.
+4. Añadir escenarios experimentales y snapshots separados de la partida normal.
+5. Añadir pausa, avance determinista y métricas iniciales.
+6. Automatizar todos los escenarios razonablemente comprobables.
+7. Mantener Fase 6 como la siguiente ampliación matemática sobre esta infraestructura.
+
+## 14. Prompt recomendado para continuidad
+
+> Continúa el proyecto privado `xArtXtrAx/incremental-game-A`. Lee los documentos rectores y confirma siempre el estado real del repositorio. La última integración funcional es el PR #8 mediante el merge `b376f1310f2081749fc1d18991955c2c51a8148f`. Fase 5 ya forma parte de `main` y añade perfiles DEV persistentes en `incremental-game-a:balance-dev-profiles:v2`, con migración conservadora desde `balance-dev:v1`, carga manual, reemplazo y eliminación confirmados, importación/exportación JSON, rechazo de datos incompatibles y separación del guardado normal. La cobertura integrada es 66 pruebas Vitest y 8 recorridos Playwright; Quality Gate #42 terminó verde. La siguiente mejora recomendada es un Centro de Control Experimental DEV unificado con escenarios reproducibles, snapshots, pausa, avance determinista y métricas de progresión. No elimines ramas, no mezcles refactorizaciones de rendimiento y no integres a `main` sin autorización explícita de Arturo.
