@@ -38,8 +38,10 @@ test.describe('Centro de Control Experimental DEV', () => {
     await expect(dialog.getByText(/campos cambiarían/)).toBeVisible()
     await scenario.getByRole('button', { name: 'Aplicar aislado' }).click()
 
-    await expect(dialog.getByText('SESIÓN AISLADA')).toBeVisible()
-    await expect(dialog.getByText('PAUSADO')).toBeVisible()
+    await expect(
+      dialog.getByText('SESIÓN AISLADA', { exact: true }),
+    ).toBeVisible()
+    await expect(dialog.getByText('PAUSADO', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Clics del núcleo')).toHaveValue('5000')
     expect(
       await page.evaluate((key) => localStorage.getItem(key), GAME_STORAGE_KEY),
@@ -54,8 +56,10 @@ test.describe('Centro de Control Experimental DEV', () => {
 
     await dialog.getByRole('button', { name: 'Estado', exact: true }).click()
     await dialog.getByRole('button', { name: 'Restaurar sesión original' }).click()
-    await expect(dialog.getByText('SESIÓN NORMAL')).toBeVisible()
-    await expect(dialog.getByText('EN MARCHA')).toBeVisible()
+    await expect(
+      dialog.getByText('SESIÓN NORMAL', { exact: true }),
+    ).toBeVisible()
+    await expect(dialog.getByText('EN MARCHA', { exact: true })).toBeVisible()
     await expect(page.getByLabel('Clics del núcleo')).toHaveValue('0')
     expect(
       await page.evaluate((key) => localStorage.getItem(key), GAME_STORAGE_KEY),
