@@ -52,33 +52,118 @@ const PARAMETER_DEFINITIONS: Record<
   readonly ParameterDefinition[]
 > = {
   linear: [
-    { key: 'intercept', label: 'Intercepto', step: 0.01, help: 'Valor cuando x = 0.' },
-    { key: 'slope', label: 'Pendiente', step: 0.01, help: 'Cambio por muestra.' },
+    {
+      key: 'intercept',
+      label: 'Intercepto',
+      step: 0.01,
+      help: 'Valor cuando x = 0.',
+    },
+    {
+      key: 'slope',
+      label: 'Pendiente',
+      step: 0.01,
+      help: 'Cambio por muestra.',
+    },
   ],
   exponential: [
-    { key: 'initial', label: 'Valor inicial', step: 0.01, help: 'Escala inicial.' },
-    { key: 'growth', label: 'Crecimiento', step: 0.01, help: 'Base positiva de la potencia.' },
+    {
+      key: 'initial',
+      label: 'Valor inicial',
+      step: 0.01,
+      help: 'Escala inicial.',
+    },
+    {
+      key: 'growth',
+      label: 'Crecimiento',
+      step: 0.01,
+      help: 'Base positiva de la potencia.',
+    },
   ],
   power: [
-    { key: 'offset', label: 'Desplazamiento', step: 0.01, help: 'Valor base aditivo.' },
-    { key: 'scale', label: 'Escala', step: 0.01, help: 'Peso de la potencia.' },
-    { key: 'exponent', label: 'Exponente', step: 0.05, help: 'Limitado al rango seguro −8…8.' },
+    {
+      key: 'offset',
+      label: 'Desplazamiento',
+      step: 0.01,
+      help: 'Valor base aditivo.',
+    },
+    {
+      key: 'scale',
+      label: 'Escala',
+      step: 0.01,
+      help: 'Peso de la potencia.',
+    },
+    {
+      key: 'exponent',
+      label: 'Exponente',
+      step: 0.05,
+      help: 'Limitado al rango seguro −8…8.',
+    },
   ],
   root: [
-    { key: 'offset', label: 'Desplazamiento', step: 0.01, help: 'Valor base aditivo.' },
-    { key: 'scale', label: 'Escala', step: 0.01, help: 'Peso de la raíz.' },
-    { key: 'degree', label: 'Grado', step: 1, help: 'Entero seguro entre 1 y 16.' },
+    {
+      key: 'offset',
+      label: 'Desplazamiento',
+      step: 0.01,
+      help: 'Valor base aditivo.',
+    },
+    {
+      key: 'scale',
+      label: 'Escala',
+      step: 0.01,
+      help: 'Peso de la raíz.',
+    },
+    {
+      key: 'degree',
+      label: 'Grado',
+      step: 1,
+      help: 'Entero seguro entre 1 y 16.',
+    },
   ],
   logarithmic: [
-    { key: 'offset', label: 'Desplazamiento', step: 0.01, help: 'Valor base aditivo.' },
-    { key: 'scale', label: 'Escala', step: 0.01, help: 'Peso del logaritmo.' },
-    { key: 'base', label: 'Base', step: 0.1, help: 'Debe ser mayor que 1.' },
-    { key: 'inputOffset', label: 'Traslado de entrada', step: 0.01, help: 'Mantiene x + traslado por encima de cero.' },
+    {
+      key: 'offset',
+      label: 'Desplazamiento',
+      step: 0.01,
+      help: 'Valor base aditivo.',
+    },
+    {
+      key: 'scale',
+      label: 'Escala',
+      step: 0.01,
+      help: 'Peso del logaritmo.',
+    },
+    {
+      key: 'base',
+      label: 'Base',
+      step: 0.1,
+      help: 'Debe ser mayor que 1.',
+    },
+    {
+      key: 'inputOffset',
+      label: 'Traslado de entrada',
+      step: 0.01,
+      help: 'Mantiene x + traslado por encima de cero.',
+    },
   ],
   'diminishing-returns': [
-    { key: 'minimum', label: 'Mínimo', step: 0.01, help: 'Valor al inicio del dominio.' },
-    { key: 'maximum', label: 'Máximo asintótico', step: 0.01, help: 'Límite superior explicable.' },
-    { key: 'halfSaturation', label: 'Semisaturación', step: 0.1, help: 'x donde se alcanza la mitad del recorrido.' },
+    {
+      key: 'minimum',
+      label: 'Mínimo',
+      step: 0.01,
+      help: 'Valor al inicio del dominio.',
+    },
+    {
+      key: 'maximum',
+      label: 'Máximo asintótico',
+      step: 0.01,
+      help: 'Límite superior explicable.',
+    },
+    {
+      key: 'halfSaturation',
+      label: 'Semisaturación',
+      step: 0.1,
+      help: 'x donde se alcanza la mitad del recorrido.',
+    },
   ],
 }
 
@@ -135,6 +220,10 @@ function readNumberAtPath(value: unknown, path: string) {
   return typeof result === 'number' ? result : Number.NaN
 }
 
+function parseNumericInput(rawValue: string) {
+  return rawValue.trim() === '' ? Number.NaN : Number(rawValue)
+}
+
 function findToolButton(text: string) {
   return Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
     (button) => button.textContent?.includes(text),
@@ -188,7 +277,7 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
   }
 
   function updateParameter(key: string, rawValue: string) {
-    const value = rawValue.trim() === '' ? Number.NaN : Number(rawValue)
+    const value = parseNumericInput(rawValue)
     setSpecification((current) => ({
       ...current,
       template: {
@@ -315,9 +404,10 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
                   maxLength={MATHEMATICAL_TEMPLATE_NAME_MAX_LENGTH}
                   value={specification.name}
                   onChange={(event) => {
+                    const name = event.currentTarget.value
                     setSpecification((current) => ({
                       ...current,
-                      name: event.currentTarget.value,
+                      name,
                     }))
                     setSavedProfileName(null)
                     setConfirmingSave(false)
@@ -370,19 +460,21 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
                 <input
                   type="number"
                   aria-label="Inicio del dominio"
-                  value={Number.isFinite(specification.domain.start) ? specification.domain.start : ''}
-                  onChange={(event) =>
+                  value={
+                    Number.isFinite(specification.domain.start)
+                      ? specification.domain.start
+                      : ''
+                  }
+                  onChange={(event) => {
+                    const start = parseNumericInput(event.currentTarget.value)
                     setSpecification((current) => ({
                       ...current,
                       domain: {
                         ...current.domain,
-                        start:
-                          event.currentTarget.value.trim() === ''
-                            ? Number.NaN
-                            : Number(event.currentTarget.value),
+                        start,
                       },
                     }))
-                  }
+                  }}
                 />
               </label>
 
@@ -391,19 +483,21 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
                 <input
                   type="number"
                   aria-label="Paso del dominio"
-                  value={Number.isFinite(specification.domain.step) ? specification.domain.step : ''}
-                  onChange={(event) =>
+                  value={
+                    Number.isFinite(specification.domain.step)
+                      ? specification.domain.step
+                      : ''
+                  }
+                  onChange={(event) => {
+                    const step = parseNumericInput(event.currentTarget.value)
                     setSpecification((current) => ({
                       ...current,
                       domain: {
                         ...current.domain,
-                        step:
-                          event.currentTarget.value.trim() === ''
-                            ? Number.NaN
-                            : Number(event.currentTarget.value),
+                        step,
                       },
                     }))
-                  }
+                  }}
                 />
               </label>
 
@@ -412,16 +506,17 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
                 <select
                   aria-label="Redondeo de salida"
                   value={specification.output.rounding}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const rounding = event.currentTarget
+                      .value as MathematicalTemplateRounding
                     setSpecification((current) => ({
                       ...current,
                       output: {
                         ...current.output,
-                        rounding: event.currentTarget
-                          .value as MathematicalTemplateRounding,
+                        rounding,
                       },
                     }))
-                  }
+                  }}
                 >
                   <option value="none">Sin redondeo</option>
                   <option value="nearest-integer">Entero más cercano</option>
@@ -439,15 +534,16 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
                   max={MATHEMATICAL_TEMPLATE_MAX_DECIMALS}
                   step={1}
                   value={specification.output.decimalPlaces}
-                  onChange={(event) =>
+                  onChange={(event) => {
+                    const decimalPlaces = Number(event.currentTarget.value)
                     setSpecification((current) => ({
                       ...current,
                       output: {
                         ...current.output,
-                        decimalPlaces: Number(event.currentTarget.value),
+                        decimalPlaces,
                       },
                     }))
-                  }
+                  }}
                 />
               </label>
             </div>
@@ -493,7 +589,11 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
                 <span>PREVISUALIZACIÓN</span>
                 <h3>Balance oficial frente al borrador</h3>
               </div>
-              <b>{generation.ok ? `${generation.value.samples.length} valores` : 'inválido'}</b>
+              <b>
+                {generation.ok
+                  ? `${generation.value.samples.length} valores`
+                  : 'inválido'}
+              </b>
             </div>
 
             {generation.ok ? (
@@ -516,7 +616,10 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
                         <td>{numberFormat.format(sample.x)}</td>
                         <td>
                           {numberFormat.format(
-                            readNumberAtPath(DEFAULT_BALANCE_CONFIG, sample.targetPath),
+                            readNumberAtPath(
+                              DEFAULT_BALANCE_CONFIG,
+                              sample.targetPath,
+                            ),
                           )}
                         </td>
                         <td>{numberFormat.format(sample.value)}</td>
@@ -543,7 +646,11 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
                 <span>IMPORTAR / EXPORTAR</span>
                 <h3>Especificación versionada</h3>
               </div>
-              <button type="button" disabled={!generation.ok} onClick={handleExport}>
+              <button
+                type="button"
+                disabled={!generation.ok}
+                onClick={handleExport}
+              >
                 Exportar JSON
               </button>
             </div>
@@ -553,7 +660,11 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
               onChange={(event) => setImportText(event.currentTarget.value)}
               placeholder="Pega aquí una especificación .math-template.json"
             />
-            <button type="button" disabled={importText.trim() === ''} onClick={handleImport}>
+            <button
+              type="button"
+              disabled={importText.trim() === ''}
+              onClick={handleImport}
+            >
               Importar y validar
             </button>
           </section>
