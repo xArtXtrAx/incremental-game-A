@@ -141,8 +141,12 @@ function isUpgradeZoneFocused() {
   return getFocusedSection() === 'upgrades'
 }
 
-function isChromaticChamberOpen() {
-  return Boolean(document.querySelector('.chromatic-overlay'))
+function isBlockingModalOpen() {
+  return Boolean(
+    document.querySelector(
+      '[role="dialog"][aria-modal="true"], .chromatic-overlay',
+    ),
+  )
 }
 
 function switchSection(section: GameSection) {
@@ -469,7 +473,7 @@ export function GamepadController() {
         const leftTriggerHeld = Boolean(
           pressed[STANDARD_BUTTON.leftTrigger],
         )
-        const chamberOpen = isChromaticChamberOpen()
+        const blockingModalOpen = isBlockingModalOpen()
         const bothBumpersHeld = Boolean(
           pressed[STANDARD_BUTTON.leftBumper] &&
             pressed[STANDARD_BUTTON.rightBumper],
@@ -477,13 +481,13 @@ export function GamepadController() {
 
         if (
           !leftTriggerHeld &&
-          !chamberOpen &&
+          !blockingModalOpen &&
           justPressed(STANDARD_BUTTON.primary)
         ) {
           if (pulseCore()) rumble(gamepad, 45, 0.18, 0.08)
         }
 
-        if (!chamberOpen) {
+        if (!blockingModalOpen) {
           if (leftTriggerHeld) {
             if (justPressed(STANDARD_BUTTON.action)) {
               if (cyclePurchaseStrategy()) rumble(gamepad, 55, 0.2, 0.08)
@@ -503,7 +507,7 @@ export function GamepadController() {
         }
 
         if (
-          !chamberOpen &&
+          !blockingModalOpen &&
           !bothBumpersHeld &&
           justPressed(STANDARD_BUTTON.leftBumper)
         ) {
@@ -512,7 +516,7 @@ export function GamepadController() {
           rumble(gamepad, 35, 0.12, 0.04)
         }
         if (
-          !chamberOpen &&
+          !blockingModalOpen &&
           !bothBumpersHeld &&
           justPressed(STANDARD_BUTTON.rightBumper)
         ) {
@@ -520,13 +524,16 @@ export function GamepadController() {
           switchSection('upgrades')
           rumble(gamepad, 35, 0.12, 0.04)
         }
-        if (justPressed(STANDARD_BUTTON.options)) {
+        if (
+          !blockingModalOpen &&
+          justPressed(STANDARD_BUTTON.options)
+        ) {
           togglePanel()
           rumble(gamepad, 45, 0.14, 0.05)
         }
 
         const navigationReady = now - lastNavigationAt.current >= 190
-        if (!chamberOpen && navigationReady) {
+        if (!blockingModalOpen && navigationReady) {
           const deadzone = settingsRef.current.deadzone
           let direction: Direction | null = null
           if (
