@@ -19,6 +19,7 @@ import {
   clearDeveloperChromaticTheme,
   DEFAULT_CHROMATIC_THEME_PREVIEW,
 } from './chromaticThemePreview'
+import { getSphereClickCapacity } from './game'
 
 export const DEVELOPER_MAX_ENERGY = 90_000_000_000_000
 export const DEVELOPER_MAX_CLICKS = 1_000_000_000
@@ -100,6 +101,7 @@ export function DeveloperPanel({
   const [message, setMessage] = useState(
     'Los cambios se guardan en la partida actual.',
   )
+  const sphereClickCapacity = getSphereClickCapacity()
 
   useEffect(() => {
     if (dirty) {
@@ -454,10 +456,11 @@ export function DeveloperPanel({
       </p>
 
       <footer>
-        Reducir los clics por debajo de 5,000 cancela la sobrecarga activa.
-        Establecer 0 cristalizaciones también limpia la Matriz de refracción
-        para conservar un estado válido. La vista cromática siempre vuelve a
-        Zafiro al recargar.
+        Reducir los clics por debajo de{' '}
+        {sphereClickCapacity.toLocaleString('es-MX')} cancela la sobrecarga
+        activa. Establecer 0 cristalizaciones también limpia la Matriz de
+        refracción para conservar un estado válido. La vista cromática siempre
+        vuelve a Zafiro al recargar.
       </footer>
     </aside>
   )
