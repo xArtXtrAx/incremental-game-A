@@ -335,7 +335,15 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
   function launchExistingTool(button: HTMLButtonElement) {
     onClose()
     window.requestAnimationFrame(() => {
-      if (button.isConnected) button.click()
+      if (!button.isConnected) return
+      button.dispatchEvent(
+        new MouseEvent('click', {
+          bubbles: true,
+          cancelable: true,
+          detail: 1,
+          view: window,
+        }),
+      )
     })
   }
 
