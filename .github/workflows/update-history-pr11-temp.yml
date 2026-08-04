@@ -1,0 +1,209 @@
+name: Update History PR11 Temp
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - .github/workflows/update-history-pr11-temp.yml
+
+permissions:
+  contents: write
+
+jobs:
+  update-history:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v4
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Update HISTORIAL_GPT
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('HISTORIAL_GPT.MD')
+          text = path.read_text(encoding='utf-8')
+
+          replacements = {
+              'Estado comprobado el **4 de agosto de 2026, después del merge del PR #10**:': 'Estado comprobado el **4 de agosto de 2026, después del merge del PR #11**:',
+              '- Último merge funcional: `217d94c2daa03c137351b651f78e8c5812b9c296`.': '- Último merge funcional: `1449d2284d3fdcfec46fdc7c0ed80b28ab88cce1`.',
+              '- Integración funcional más reciente: **PR #10 — Fase 5.6: Comparador de Experimentos A/B**.': '- Integración funcional más reciente: **PR #11 — Fase 6: Plantillas Matemáticas Seguras**.',
+              '- Estado del PR #10: **fusionado**.': '- Estado del PR #11: **fusionado**.',
+              '- Rama integrada: `Dev-Comparative-Experiment-Runner`.': '- Rama integrada: `Dev-Balance-Mathematical-Templates`.',
+              '- HEAD validado de la rama: `4a380dcf8e12c584195766275b69975d3707a7b0`.': '- HEAD validado de la rama: `fe8230bb27179e7395e2ea8d49eaaed73759eab2`.',
+              '- No hay pull requests abiertos.': '- No hay pull requests abiertos al cerrar la integración; el siguiente cambio visual se trabajará en una rama nueva.',
+              '### Cobertura total integrada después del PR #10': '### Cobertura total integrada después del PR #11',
+              '92 pruebas Vitest\n13 pruebas Playwright\n105 comprobaciones automatizadas': '120 pruebas Vitest\n17 pruebas Playwright\n137 comprobaciones automatizadas',
+              '- El bundle de producción ya supera la advertencia de 500 kB minificados; el PR #10 reportó aproximadamente 539.68 kB.': '- El bundle de producción ya supera la advertencia de 500 kB minificados; el PR #11 reportó aproximadamente 565.87 kB.',
+              'No mezclar estas refactorizaciones con Fase 6 salvo necesidad técnica demostrada.': 'No mezclar estas refactorizaciones con el rediseño visual del Panel DEV salvo necesidad técnica demostrada.',
+          }
+          for old, new in replacements.items():
+              if old not in text:
+                  raise SystemExit(f'No se encontró texto esperado: {old}')
+              text = text.replace(old, new, 1)
+
+          row10 = '| #10 | `Dev-Comparative-Experiment-Runner` | `217d94c2daa03c137351b651f78e8c5812b9c296` | Comparador A/B determinista, métricas reproducibles y exportación JSON/CSV |'
+          row11 = '| #11 | `Dev-Balance-Mathematical-Templates` | `1449d2284d3fdcfec46fdc7c0ed80b28ab88cce1` | Plantillas matemáticas seguras, perfiles DEV, transferencia al Laboratorio y comparación A/B transitoria |'
+          if row11 not in text:
+              if row10 not in text:
+                  raise SystemExit('No se encontró la fila del PR #10')
+              text = text.replace(row10, row10 + '\n' + row11, 1)
+
+          system_anchor = '- Comparador de Experimentos A/B.\n- Navegación por mouse, teclado y gamepad.'
+          system_replacement = '- Comparador de Experimentos A/B.\n- Plantillas Matemáticas Seguras.\n- Navegación por mouse, teclado y gamepad.'
+          if system_anchor not in text:
+              raise SystemExit('No se encontró el bloque de sistemas principales')
+          text = text.replace(system_anchor, system_replacement, 1)
+
+          section6 = '''## 6. Persistencia separada'''
+          phase6 = '''## 6. Fase 6 integrada — Plantillas Matemáticas Seguras
+
+Documentación técnica:
+
+```text
+MATHEMATICAL_TEMPLATES.md
+```
+
+### Alcance integrado
+
+- familias lineal, exponencial, potencia, raíz, logarítmica y rendimientos decrecientes;
+- parámetros, dominios, redondeos y límites validados;
+- prevención de `NaN`, `Infinity` y desbordamientos;
+- destinos para costos base, crecimiento de costos y Zafiro P1–P5;
+- conversión obligatoria a un `BalanceConfig` aceptado por `validateBalanceConfig()`;
+- previsualización Oficial/Borrador;
+- importación y exportación JSON versionada;
+- guardado opcional como perfil DEV con confirmación explícita;
+- envío transitorio al borrador del Laboratorio sin aplicar la sesión;
+- comparación A/B transitoria sin crear perfil DEV;
+- transferencia únicamente en memoria, sin escribir la partida ni `localStorage`.
+
+### Quality Gate final de Fase 6
+
+Ejecución **Quality Gate #149**, run `30952073709`, sobre el HEAD validado `fe8230bb27179e7395e2ea8d49eaaed73759eab2`:
+
+```text
+npm ci                     APROBADO
+Lint                       APROBADO — 0 errores
+Vitest                     120/120
+Build de producción        APROBADO
+Playwright Chromium         17/17
+```
+
+El merge autorizado se realizó mediante PR #11 y produjo `1449d2284d3fdcfec46fdc7c0ed80b28ab88cce1`.
+
+## 7. Persistencia separada'''
+          if section6 not in text:
+              raise SystemExit('No se encontró la sección de persistencia')
+          text = text.replace(section6, phase6, 1)
+
+          for old, new in [
+              ('## 7. Infraestructura y resultados de pruebas', '## 8. Infraestructura y resultados de pruebas'),
+              ('## 8. Arquitectura relevante', '## 9. Arquitectura relevante'),
+              ('## 9. Controles DualSense / Gamepad integrados', '## 10. Controles DualSense / Gamepad integrados'),
+              ('## 10. Forma de trabajo obligatoria', '## 11. Forma de trabajo obligatoria'),
+              ('## 11. Riesgos y advertencias vigentes', '## 12. Riesgos y advertencias vigentes'),
+          ]:
+              if old not in text:
+                  raise SystemExit(f'No se encontró encabezado: {old}')
+              text = text.replace(old, new, 1)
+
+          comparator_arch = '''### Comparador A/B
+
+- `src/balanceRuntime.ts`: override transitorio mediante `runWithBalanceConfig()`.
+- `src/comparativeExperiment.ts`: motor determinista, políticas, métricas y exportación.
+- `src/ComparativeExperimentSystem.tsx`: interfaz del comparador.
+- `src/ComparativeExperimentSystem.css`: presentación responsive.
+'''
+          template_arch = comparator_arch + '''
+### Plantillas matemáticas
+
+- `src/mathematicalTemplates.ts`: contratos, evaluadores, destinos, validación y serialización.
+- `src/mathematicalTemplateTransfer.ts`: candidato transitorio en memoria.
+- `src/MathematicalTemplateSystem.tsx`: editor, previsualización y acciones de transferencia.
+- `src/MathematicalTemplateSystem.css`: presentación de la herramienta.
+'''
+          if comparator_arch not in text:
+              raise SystemExit('No se encontró la arquitectura del Comparador')
+          text = text.replace(comparator_arch, template_arch, 1)
+
+          text = re.sub(
+              r'## 12\. Siguiente paso recomendado — Fase 6 matemática.*?(?=## 13\. Después de Fase 6 — Esmeralda)',
+              '''## 13. Siguiente paso recomendado — Panel DEV acotado y no bloqueante
+
+Rama nueva:
+
+```text
+Dev-Developer-Panel-Viewport
+```
+
+### Problema observado
+
+El Panel DEV crece verticalmente con todas sus herramientas, supera la altura del juego y obliga a desplazar la página completa. Además, las herramientas modales pueden impedir observar e interactuar con el juego mientras se experimenta.
+
+### Objetivo aprobado
+
+- igualar la altura visible del Panel DEV con la superficie principal del juego;
+- mantener el panel a la derecha en un rectángulo estable;
+- usar desplazamiento vertical interno, nunca horizontal;
+- conservar el juego visible y activo mientras se modifican valores;
+- evitar que las herramientas DEV bloqueen la interacción con la partida;
+- mantener compatibilidad responsive y navegación por teclado/gamepad;
+- añadir pruebas de layout, scroll, interacción simultánea y regresión funcional.
+
+### Estrategia inicial
+
+Usar un contenedor DEV con altura vinculada al contenedor principal del juego, `overflow-y: auto`, `overflow-x: hidden` y herramientas acopladas dentro de la columna derecha. Las ventanas de trabajo que requieran más espacio deben usar una superficie lateral no modal dentro del panel, de forma que el juego siga recibiendo interacción.
+
+''',
+              text,
+              flags=re.S,
+          )
+
+          text = re.sub(
+              r'## 14\. Prompt de continuidad para un nuevo chat.*\Z',
+              '''## 15. Prompt de continuidad para un nuevo chat
+
+```text
+Quiero continuar el desarrollo del repositorio privado xArtXtrAx/incremental-game-A.
+
+Antes de modificarlo:
+1. Lee HISTORIAL_GPT.MD, TESTING_POLICY.md, PLAN_MAESTRO.md, MODELO_MATEMATICO.md, BALANCE_LABORATORY.md, EXPERIMENTAL_CONTROL_CENTER.md, COMPARATIVE_EXPERIMENT_RUNNER.md, MATHEMATICAL_TEMPLATES.md, PERFORMANCE_AUDIT.md y GAMEPAD_DEVICE_SELECTION.md.
+2. Comprueba el estado real de main, ramas, PRs y CI.
+3. No reutilices ramas ya integradas.
+4. No elimines ramas.
+5. No hagas merge sin mi autorización explícita.
+6. Diseña pruebas automatizadas junto con cada cambio.
+
+Estado conocido al 4 de agosto de 2026:
+- PR #11 Plantillas Matemáticas Seguras está integrado.
+- Último merge funcional: 1449d2284d3fdcfec46fdc7c0ed80b28ab88cce1.
+- Main incluye Laboratorio de Balance, perfiles DEV, Centro de Control Experimental, Comparador A/B y Plantillas Matemáticas Seguras.
+- Cobertura integrada validada: 120 Vitest + 17 Playwright = 137 comprobaciones.
+- Quality Gate #149, run 30952073709, terminó completamente en verde sobre fe8230bb27179e7395e2ea8d49eaaed73759eab2.
+
+Siguiente trabajo:
+Rediseñar el Panel DEV en una rama nueva Dev-Developer-Panel-Viewport para que tenga la misma altura visible que el juego, scroll vertical interno sin scroll horizontal y herramientas no bloqueantes que permitan experimentar mientras la partida continúa visible y operable.
+```
+''',
+              text,
+              flags=re.S,
+          )
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit history and remove temporary workflow
+        shell: bash
+        run: |
+          rm .github/workflows/update-history-pr11-temp.yml
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add HISTORIAL_GPT.MD .github/workflows/update-history-pr11-temp.yml
+          git commit -m "Actualiza bitácora tras integrar Fase 6"
+          git push origin HEAD:main
