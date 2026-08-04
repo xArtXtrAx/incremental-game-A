@@ -84,7 +84,9 @@ test.describe('Laboratorio de Balance · Fase 5', () => {
     await profiles
       .getByRole('button', { name: 'Restaurar balance oficial' })
       .click()
-    await expect(profiles.getByText(/balance oficial/i)).toBeVisible()
+    await expect(profiles.locator('.balance-profile-message')).toContainText(
+      /balance oficial/i,
+    )
     await closeProfiles(profiles)
 
     laboratory = await openLaboratory(page)
@@ -127,7 +129,7 @@ test.describe('Laboratorio de Balance · Fase 5', () => {
     await openCleanGame(page)
     await applySphereCapacity(page, 2_500)
 
-    let profiles = await openProfiles(page)
+    const profiles = await openProfiles(page)
     await saveActiveProfile(profiles, 'Perfil portable')
     const row = profileRow(profiles, 'Perfil portable')
     const downloadPromise = page.waitForEvent('download')
