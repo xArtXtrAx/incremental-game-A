@@ -249,6 +249,7 @@ export function normalizeGameStateForBalance(
   )
   next.overloadCharge = overloadCharge
 
+  const overloadWasActive = state.overloadUntil > now
   const overloadUntil = 0
   registerChange(
     changes,
@@ -256,7 +257,9 @@ export function normalizeGameStateForBalance(
     'Sobrecarga activa',
     state.overloadUntil,
     overloadUntil,
-    'Los efectos temporales se cancelan al cambiar de perfil para evitar duraciones híbridas.',
+    overloadWasActive
+      ? 'El efecto activo se cancela al cambiar de perfil para evitar duraciones híbridas.'
+      : 'La marca temporal vencida se limpia durante la transición.',
     'warning',
   )
   next.overloadUntil = overloadUntil
@@ -293,6 +296,7 @@ export function normalizeGameStateForBalance(
   )
   next.refractionFacetsCharged = refractionFacetsCharged
 
+  const refractionWasActive = state.refractionUntil > now
   const refractionUntil = 0
   registerChange(
     changes,
@@ -300,7 +304,9 @@ export function normalizeGameStateForBalance(
     'PRISMA activo',
     state.refractionUntil,
     refractionUntil,
-    'Los efectos temporales se cancelan al cambiar de perfil para evitar duraciones híbridas.',
+    refractionWasActive
+      ? 'El efecto activo se cancela al cambiar de perfil para evitar duraciones híbridas.'
+      : 'La marca temporal vencida se limpia durante la transición.',
     'warning',
   )
   next.refractionUntil = refractionUntil
