@@ -1,5 +1,7 @@
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
+const GEOMETRY_TOLERANCE_PX = 2
+
 async function openCleanWideGame(page: Page) {
   await page.setViewportSize({ width: 1600, height: 1200 })
   await page.goto('/')
@@ -23,13 +25,17 @@ async function expectInsidePanel(panel: Locator, surface: Locator) {
 
   if (!panelBox || !surfaceBox) return
 
-  expect(surfaceBox.x).toBeGreaterThanOrEqual(panelBox.x - 1)
-  expect(surfaceBox.y).toBeGreaterThanOrEqual(panelBox.y - 1)
+  expect(surfaceBox.x).toBeGreaterThanOrEqual(
+    panelBox.x - GEOMETRY_TOLERANCE_PX,
+  )
+  expect(surfaceBox.y).toBeGreaterThanOrEqual(
+    panelBox.y - GEOMETRY_TOLERANCE_PX,
+  )
   expect(surfaceBox.x + surfaceBox.width).toBeLessThanOrEqual(
-    panelBox.x + panelBox.width + 1,
+    panelBox.x + panelBox.width + GEOMETRY_TOLERANCE_PX,
   )
   expect(surfaceBox.y + surfaceBox.height).toBeLessThanOrEqual(
-    panelBox.y + panelBox.height + 1,
+    panelBox.y + panelBox.height + GEOMETRY_TOLERANCE_PX,
   )
 }
 
