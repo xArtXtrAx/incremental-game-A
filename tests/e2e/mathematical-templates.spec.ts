@@ -2,6 +2,7 @@ import { readFile } from 'node:fs/promises'
 import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const GAME_STORAGE_KEY = 'incremental-game-a:save:v1'
+const PROFILE_STORAGE_KEY = 'incremental-game-a:balance-dev-profiles:v2'
 
 async function installDriftingGamepad(page: Page) {
   await page.addInitScript(() => {
@@ -149,4 +150,74 @@ test.describe('Fase 6 · Plantillas Matemáticas Seguras', () => {
     await expect(name).toBeFocused()
     await expect(name).toHaveValue('Plantilla editable con DualSense')
   })
+
+  test('envía el BalanceConfig al borrador del Laboratorio sin aplicarlo a la sesión', async ({
+    page,
+  }) => {
+    await openCleanGame(page)
+    const normalSave = await page.evaluate(
+      (key) => localStorage.getItem(key),
+      GAME_STORAGE_KEY,
+    )
+
+    const templates = await openTemplates(page)
+    await templates.getByLabel('Nombre de la plantilla').fill('Costos para Laboratorio')
+    await templates.getByLabel('Intercepto').fill('100')
+    await templates.getByLabel('Pendiente').fill('100')
+    await templates.getByTestId('send-template-to-laboratory').click()
+
+    const laboratory = page.getByRole('dialog', {
+      name: 'Laboratorio de Balance',
+    })
+    const transfer = laboratory.getByTestId('laboratory-template-transfer')
+    await expect(transfer).toBeVisible()
+    await expect(transfer).toContainText('Costos para Laboratorio')
+    await expect(laboratory.getByText(/Runtime activo: official/)).toBeVisible()
+
+    await transfer.getByTestId('use-template-in-laboratory').click()
+    await expect(transfer).toBeHidden()
+    await expect(laboratory.getByLabel('Costo base')).toHaveValue('100')
+    await expect(
+      laboratory.getByText(/recibido desde Plantillas Matemáticas; aún no afecta la partida/),
+    ).toBeVisible()
+    await expect(laboratory.getByText(/Runtime activo: official/)).toBeVisible()
+    expect(
+      await page.evaluate((key) => localStorage.getItem(key), GAME_STORAGE_KEY),
+    ).toBe(normalSave)
+  })
+
+  test('compara una plantilla transitoria sin crear un perfil DEV', async ({
+    page,
+  }) => {
+    await openCleanGame(page)
+    const profileStorageBefore = await page.evaluate(
+      (key) => localStorage.getItem(key),
+      PROFILE_STORAGE_KEY,
+    )
+
+    const templates = await openTemplates(page)
+    await templates.getByLabel('Nombre de la plantilla').fill('Candidato matemático sin guardar')
+    await templates.getByLabel('Intercepto').fill('100')
+    await templates.getByLabel('Pendiente').fill('100')
+    await templates.getByTestId('compare-template-transient').click()
+
+    const comparator = page.getByRole('dialog', {
+      name: 'Comparador de Experimentos A/B',
+    })
+    await expect(comparator.getByTestId('comparative-template-transfer')).toContainText(
+      'Candidato matemático sin guardar',
+    )
+    await expect(comparator.getByTestId('comparative-profile-b')).toHaveValue(
+      /template:/,
+    )
+    await comparator.getByLabel('Límite temporal').selectOption({ label: '5 min' })
+    await comparator.getByTestId('comparative-run').click()
+    await expect(comparator.getByTestId('comparative-results')).toBeVisible()
+    await expect(comparator.getByText(/Comparación terminada:/)).toBeVisible()
+
+    expect(
+      await page.evaluate((key) => localStorage.getItem(key), PROFILE_STORAGE_KEY),
+    ).toBe(profileStorageBefore)
+  })
+
 })

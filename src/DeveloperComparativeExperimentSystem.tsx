@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { DEFAULT_BALANCE_CONFIG } from './balanceConfig'
 import {
@@ -21,6 +27,11 @@ import {
   createBuiltInDeveloperScenarios,
   type DeveloperScenario,
 } from './developerScenarios'
+import {
+  clearMathematicalTemplateTransfer,
+  getMathematicalTemplateTransferSnapshot,
+  subscribeMathematicalTemplateTransfer,
+} from './mathematicalTemplateTransfer'
 import './DeveloperComparativeExperimentSystem.css'
 
 const numberFormat = new Intl.NumberFormat('es-MX', {
@@ -231,6 +242,12 @@ function ComparativeWindow({ onClose }: { onClose: () => void }) {
     () => createBrowserDeveloperScenarioRepository(),
     [],
   )
+  const transferSnapshot = useSyncExternalStore(
+    subscribeMathematicalTemplateTransfer,
+    getMathematicalTemplateTransferSnapshot,
+    getMathematicalTemplateTransferSnapshot,
+  )
+  const transferredCandidate = transferSnapshot.candidate
   const [profiles, setProfiles] = useState<BalanceDevProfile[]>([])
   const [scenarios, setScenarios] = useState<DeveloperScenario[]>([])
   const [scenarioId, setScenarioId] = useState('builtin-mid-first-cycle')
@@ -251,12 +268,26 @@ function ComparativeWindow({ onClose }: { onClose: () => void }) {
   const [hasError, setHasError] = useState(false)
   const [running, setRunning] = useState(false)
 
+  const transientCandidate = useMemo<ComparativeBalanceCandidate | null>(
+    () =>
+      transferredCandidate
+        ? {
+            id: transferredCandidate.id,
+            name: `${transferredCandidate.name} · transitoria`,
+            source: 'template',
+            config: structuredClone(transferredCandidate.config),
+          }
+        : null,
+    [transferredCandidate],
+  )
+
   const candidates = useMemo(
     () => [
       createOfficialComparativeCandidate(),
+      ...(transientCandidate ? [transientCandidate] : []),
       ...profiles.map(profileToCandidate),
     ],
-    [profiles],
+    [profiles, transientCandidate],
   )
 
   const refreshLibraries = useCallback(() => {
@@ -284,21 +315,34 @@ function ComparativeWindow({ onClose }: { onClose: () => void }) {
       DEFAULT_BALANCE_CONFIG.core.sphereClickCapacity,
     )
     const nextProfiles = profileResult.value
-    const candidateIds = nextProfiles.map((profile) => `profile:${profile.id}`)
+    const profileCandidateIds = nextProfiles.map(
+      (profile) => `profile:${profile.id}`,
+    )
+    const candidateIds = [
+      ...(transferredCandidate ? [transferredCandidate.id] : []),
+      ...profileCandidateIds,
+    ]
 
     setProfiles(nextProfiles)
     setScenarios([...builtIns, ...scenarioResult.value])
+    setCandidateAId((current) =>
+      current === 'official' || candidateIds.includes(current)
+        ? current
+        : 'official',
+    )
     setCandidateBId((current) => {
       if (current !== 'official' && candidateIds.includes(current)) return current
-      return candidateIds[0] ?? 'official'
+      return transferredCandidate?.id ?? profileCandidateIds[0] ?? 'official'
     })
     setHasError(false)
     setMessage(
-      nextProfiles.length > 0
-        ? 'Perfiles y escenarios actualizados.'
-        : 'No hay perfiles guardados; puedes comparar Oficial contra Oficial.',
+      transferredCandidate
+        ? `Plantilla transitoria “${transferredCandidate.name}” seleccionada como Perfil B.`
+        : nextProfiles.length > 0
+          ? 'Perfiles y escenarios actualizados.'
+          : 'No hay perfiles guardados; puedes comparar Oficial contra Oficial.',
     )
-  }, [profileRepository, scenarioRepository])
+  }, [profileRepository, scenarioRepository, transferredCandidate])
 
   useEffect(() => {
     refreshLibraries()
@@ -311,6 +355,17 @@ function ComparativeWindow({ onClose }: { onClose: () => void }) {
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [onClose])
+
+  function discardTransientCandidate() {
+    if (!transferredCandidate) return
+    const discardedId = transferredCandidate.id
+    clearMathematicalTemplateTransfer()
+    if (candidateAId === discardedId) setCandidateAId('official')
+    if (candidateBId === discardedId) setCandidateBId('official')
+    setComparison(null)
+    setHasError(false)
+    setMessage('El candidato matemático transitorio fue descartado.')
+  }
 
   function runExperiment() {
     const scenario = scenarios.find((item) => item.id === scenarioId)
@@ -415,6 +470,27 @@ function ComparativeWindow({ onClose }: { onClose: () => void }) {
                 Actualizar bibliotecas
               </button>
             </div>
+
+            {transferredCandidate && (
+              <div
+                className="mathematical-template-transfer-banner"
+                data-testid="comparative-template-transfer"
+              >
+                <div>
+                  <span>CANDIDATO MATEMÁTICO TRANSITORIO</span>
+                  <strong>{transferredCandidate.name}</strong>
+                  <small>
+                    Disponible solo en memoria. No se guardó como perfil y no
+                    modifica la partida.
+                  </small>
+                </div>
+                <div>
+                  <button type="button" onClick={discardTransientCandidate}>
+                    Descartar candidato
+                  </button>
+                </div>
+              </div>
+            )}
 
             <div className="comparative-form-grid">
               <label>

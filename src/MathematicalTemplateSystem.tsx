@@ -17,6 +17,7 @@ import {
   type MathematicalTemplateSpecification,
   type MathematicalTemplateTargetId,
 } from './mathematicalTemplates'
+import { publishMathematicalTemplateTransfer } from './mathematicalTemplateTransfer'
 import './MathematicalTemplateSystem.css'
 
 const numberFormat = new Intl.NumberFormat('es-MX', {
@@ -316,6 +317,30 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
     setMessage('Especificación importada y reevaluada desde cero.')
   }
 
+  function publishCurrentTransfer() {
+    if (!generation.ok) {
+      setHasError(true)
+      setMessage('Corrige la plantilla antes de enviarla a otra herramienta.')
+      return false
+    }
+
+    const published = publishMathematicalTemplateTransfer({
+      specification: generation.value.specification,
+      config: generation.value.config,
+    })
+    if (!published.ok) {
+      setHasError(true)
+      setMessage(
+        published.issues[0]?.message ??
+          'No fue posible preparar la transferencia transitoria.',
+      )
+      return false
+    }
+
+    setHasError(false)
+    return true
+  }
+
   function handleSaveProfile() {
     if (!generation.ok) return
     const saved = repository.save(specification.name, generation.value.config)
@@ -345,6 +370,32 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
         }),
       )
     })
+  }
+
+  function openLaboratoryWithTransfer() {
+    if (!publishCurrentTransfer()) return
+    const button = findToolButton('Laboratorio de Balance')
+    if (!button) {
+      setHasError(true)
+      setMessage('No se encontró el Laboratorio de Balance.')
+      return
+    }
+    setMessage(
+      'Borrador enviado al Laboratorio sin aplicarlo a la sesión.',
+    )
+    launchExistingTool(button)
+  }
+
+  function compareWithoutSaving() {
+    if (!publishCurrentTransfer()) return
+    const button = findToolButton('Comparador de Experimentos')
+    if (!button) {
+      setHasError(true)
+      setMessage('No se encontró el Comparador de Experimentos.')
+      return
+    }
+    setMessage('Candidato transitorio preparado para la comparación A/B.')
+    launchExistingTool(button)
   }
 
   function openProfiles() {
@@ -688,6 +739,23 @@ function MathematicalTemplateWindow({ onClose }: { onClose: () => void }) {
             {message}
           </span>
           <div>
+            <button
+              type="button"
+              className="is-primary"
+              data-testid="send-template-to-laboratory"
+              disabled={!generation.ok}
+              onClick={openLaboratoryWithTransfer}
+            >
+              Enviar al Laboratorio
+            </button>
+            <button
+              type="button"
+              data-testid="compare-template-transient"
+              disabled={!generation.ok}
+              onClick={compareWithoutSaving}
+            >
+              Comparar sin guardar
+            </button>
             <button type="button" onClick={openProfiles}>
               Abrir Perfiles DEV
             </button>

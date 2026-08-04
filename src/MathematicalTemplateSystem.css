@@ -345,3 +345,70 @@
     justify-content: flex-start;
   }
 }
+
+.mathematical-template-transfer-banner {
+  margin: 14px 28px 0;
+  padding: 14px 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  border: 1px solid rgba(103, 232, 249, 0.3);
+  border-radius: 14px;
+  background: rgba(8, 145, 178, 0.12);
+  color: #dffbff;
+}
+
+.mathematical-template-transfer-banner > div:first-child {
+  display: grid;
+  gap: 4px;
+}
+
+.mathematical-template-transfer-banner > div:last-child {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+.mathematical-template-transfer-banner span {
+  color: #67e8f9;
+  font-size: 0.7rem;
+  font-weight: 850;
+  letter-spacing: 0.09em;
+}
+
+.mathematical-template-transfer-banner small {
+  color: #a9bfd2;
+}
+
+.mathematical-template-transfer-banner button {
+  border: 1px solid rgba(103, 232, 249, 0.28);
+  border-radius: 10px;
+  padding: 9px 12px;
+  color: #e6fbff;
+  background: rgba(15, 23, 42, 0.88);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.mathematical-template-transfer-banner button.is-primary {
+  border-color: rgba(34, 211, 238, 0.68);
+  background: rgba(8, 145, 178, 0.35);
+}
+
+.comparative-config-card > .mathematical-template-transfer-banner {
+  margin: 14px 0 18px;
+}
+
+@media (max-width: 720px) {
+  .mathematical-template-transfer-banner {
+    margin-inline: 16px;
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .comparative-config-card > .mathematical-template-transfer-banner {
+    margin-inline: 0;
+  }
+}
