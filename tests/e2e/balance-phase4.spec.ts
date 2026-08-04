@@ -1,4 +1,4 @@
-import { expect, test, type Page } from '@playwright/test'
+import { expect, test, type Locator, type Page } from '@playwright/test'
 
 const GAME_STORAGE_KEY = 'incremental-game-a:save:v1'
 
@@ -27,8 +27,9 @@ const baseGameState = {
 }
 
 async function openCleanGame(page: Page) {
-  await page.addInitScript(() => window.localStorage.clear())
   await page.goto('/')
+  await page.evaluate(() => window.localStorage.clear())
+  await page.reload()
 }
 
 async function openSeededGame(
@@ -36,7 +37,8 @@ async function openSeededGame(
   overrides: Partial<typeof baseGameState>,
 ) {
   const state = { ...baseGameState, ...overrides }
-  await page.addInitScript(
+  await page.goto('/')
+  await page.evaluate(
     ({ key, gameState }) => {
       window.localStorage.clear()
       window.localStorage.setItem(
@@ -46,7 +48,7 @@ async function openSeededGame(
     },
     { key: GAME_STORAGE_KEY, gameState: state },
   )
-  await page.goto('/')
+  await page.reload()
 }
 
 async function applyDeveloperValues(
@@ -73,14 +75,14 @@ async function openLaboratory(page: Page) {
 }
 
 async function setLaboratoryField(
-  dialog: ReturnType<Page['getByRole']>,
+  dialog: Locator,
   label: RegExp,
   value: number,
 ) {
   await dialog.getByLabel(label).fill(String(value))
 }
 
-async function closeLaboratory(dialog: ReturnType<Page['getByRole']>) {
+async function closeLaboratory(dialog: Locator) {
   await dialog.getByRole('button', { name: 'Cerrar', exact: true }).click()
   await expect(dialog).toBeHidden()
 }
@@ -224,7 +226,7 @@ test.describe('Laboratorio de Balance · Fase 4', () => {
     await dialog.getByRole('button', { name: 'Aplicar a sesión' }).click()
     await closeLaboratory(dialog)
 
-    await page.getByRole('button', { name: 'Avanzadas', exact: true }).click()
+    await page.getByRole('button', { name: /^Avanzadas/ }).click()
     const refractionCard = page
       .locator('article')
       .filter({ hasText: 'Matriz de refracción' })
