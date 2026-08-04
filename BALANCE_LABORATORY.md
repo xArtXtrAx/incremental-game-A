@@ -1,52 +1,37 @@
 # LABORATORIO DE BALANCE — Arquitectura y estado
 
-> Documento técnico del sistema de inspección, simulación y edición controlada del balance.
+> Documento técnico del sistema de inspección, simulación, aplicación y persistencia controlada del balance.
 >
-> El objetivo es experimentar con la economía sin duplicar fórmulas, introducir estados imposibles ni mezclar el perfil DEV con el guardado normal.
+> El objetivo es experimentar con la economía sin duplicar fórmulas, introducir estados imposibles ni mezclar perfiles DEV con el guardado normal.
 
 ## 1. Estado actual
 
-### Integrado en `main` mediante PR #4
+### Integrado en `main`
 
-- contrato tipado `BalanceConfig`;
-- configuración oficial congelada `DEFAULT_BALANCE_CONFIG`;
-- validación de estructura, números finitos, rangos y relaciones;
-- runtime reversible con fuente `official`, `session` o `stored-profile`;
-- guardado DEV separado de la partida;
-- simulador puro de costos, Autoclicker y Zafiro;
-- matriz de paridad del balance anterior;
-- migración inicial de fórmulas autoritativas en `game.ts`, Refracción, Gatillo y Comprar todo;
-- ventana de inspección dentro del Panel de Desarrollador.
+- PR #4: contrato tipado, configuración oficial, runtime reversible, validación y primera ventana.
+- PR #5: editor de borradores, comparación Oficial/Borrador, restauración y diagnósticos.
+- PR #6: aplicación reversible a sesión, normalización y restauración oficial.
+- PR #7: Fase 4 completa, previsualización, capacidad y Presión dinámicas, desbloqueos autoritativos e infraestructura permanente de pruebas.
 
-### Integrado en `main` mediante PR #5
+Merge de Fase 4:
 
-- editor de borradores en memoria;
-- campos controlados para costos, núcleo, desbloqueos, Autoclicker y Zafiro;
-- comparación Oficial/Borrador;
-- restauración individual y global;
-- detección de inflación, estancamiento, desbloqueos tardíos y límites finitos;
-- comprobaciones de clonación, modificación y restauración del borrador.
+```text
+89b78582699858d0d27acc07dd7971699b6411e1
+```
 
-### Integrado en `main` mediante PR #6
+### En desarrollo — `Dev-Balance-Laboratory-Phase-5`
 
-- aplicación de configuraciones válidas únicamente a la sesión;
-- restauración inmediata del balance oficial;
-- normalización conservadora de la partida;
-- reporte de ajustes realizados durante la transición;
-- cancelación de efectos temporales para evitar duraciones híbridas;
-- aplicación inicial de costos, Autoclicker y Zafiro.
-
-### Implementado en `Dev-Balance-Laboratory-Phase-4`
-
-- cobertura dinámica de capacidad de esfera, Presión y desbloqueos;
-- textos, botones, reducer y Comprar todo unidos a una política autoritativa;
-- previsualización del impacto sobre la partida antes de aplicar;
-- transición visible entre esfera completa e incompleta;
-- comparación del bono actual de Presión;
-- reporte de compras que pasan a estar disponibles o bloqueadas;
-- conservación de todos los niveles ya adquiridos;
-- continuidad de sistemas comprados aunque un requisito experimental se eleve;
-- ampliación de la matriz de normalización.
+- colección versionada de perfiles DEV;
+- migración conservadora del perfil heredado;
+- guardado y listado de múltiples perfiles;
+- carga manual;
+- reemplazo con confirmación;
+- eliminación con confirmación y cancelación;
+- exportación e importación JSON;
+- rechazo de estructuras corruptas, valores fuera de límites y versiones incompatibles;
+- restauración oficial siempre disponible;
+- carga automática desactivada;
+- separación estricta del guardado principal.
 
 ## 2. Fuente de verdad
 
@@ -68,9 +53,9 @@ Balance Runtime
           └── editor del Laboratorio
 ```
 
-Las constantes históricas permanecen como enlaces vivos de compatibilidad. Se sincronizan con el runtime, pero las nuevas fórmulas y reglas deben usar consultas autoritativas.
+El reducer conserva la autoridad del gameplay. Los perfiles almacenan únicamente configuraciones validadas y nunca sustituyen el estado de la partida.
 
-## 3. Guardados separados
+## 3. Persistencia separada
 
 Partida normal:
 
@@ -78,49 +63,112 @@ Partida normal:
 incremental-game-a:save:v1
 ```
 
-Perfil experimental:
+Perfil heredado de una sola configuración:
 
 ```text
 incremental-game-a:balance-dev:v1
 ```
 
-El perfil aplicado a la sesión **no se guarda automáticamente**. Recargar la página reconstruye el runtime con `DEFAULT_BALANCE_CONFIG`.
-
-## 4. Aplicación y previsualización
-
-La previsualización consulta el estado vivo de la partida sin modificarlo:
+Colección nueva de Fase 5:
 
 ```text
-Borrador validado
-      │
-      ▼
-Previsualización pura
-      │
-      ├── esfera completa / incompleta
-      ├── bono actual de Presión
-      ├── disponibilidad de compras
-      ├── cargas que se recortarán
-      └── efectos que se cancelarán
+incremental-game-a:balance-dev-profiles:v2
 ```
 
-La aplicación utiliza después una transición atómica:
+### Decisión de migración
+
+La clave heredada no se sobreescribe ni se elimina.
+
+Cuando la colección nueva todavía no existe:
+
+1. se intenta leer el perfil heredado;
+2. se valida completamente;
+3. se copia como primer perfil de la colección v2;
+4. se conserva la clave v1 como respaldo;
+5. si el perfil heredado es inválido, no se crea una colección vacía ni se destruye información.
+
+Si la colección v2 ya existe pero está corrupta, las operaciones de escritura se rechazan para impedir una pérdida accidental.
+
+## 4. Modelo de perfiles
+
+Cada perfil contiene:
 
 ```text
-Borrador validado
-      │
-      ▼
-Normalización pura de GameState
-      │
-      ▼
-Aplicación completa al runtime
-      │
-      ▼
-Reemplazo del estado normalizado
+id
+name
+createdAt
+updatedAt
+config
 ```
 
-Si la validación falla, ni el runtime ni la partida cambian. La restauración oficial utiliza el mismo proceso en sentido inverso.
+La colección contiene:
 
-## 5. Política de normalización
+```text
+storageVersion: 2
+profiles: BalanceDevProfile[]
+```
+
+Las configuraciones usan el mismo `BalanceConfig` y pasan por `validateBalanceConfig()` antes de guardarse, reemplazarse, importarse o cargarse.
+
+## 5. Flujo de uso
+
+```text
+Editar borrador en Laboratorio
+          │
+          ▼
+Aplicar a sesión
+          │
+          ▼
+Abrir Perfiles DEV
+          │
+          ├── Guardar perfil nuevo
+          ├── Reemplazar perfil existente
+          ├── Exportar JSON
+          └── Restaurar balance oficial
+```
+
+La carga de un perfil es siempre manual:
+
+```text
+Perfil guardado
+      │
+      ▼
+Cargar
+      │
+      ▼
+Normalización de GameState
+      │
+      ▼
+Aplicación a la sesión actual
+```
+
+Recargar la página reconstruye el runtime con `DEFAULT_BALANCE_CONFIG`.
+
+## 6. Importación y exportación
+
+La exportación incluye versiones explícitas:
+
+```text
+exportVersion
+configSchemaVersion
+exportedAt
+profile.name
+profile.config
+```
+
+La importación rechaza:
+
+- JSON malformado;
+- versión de exportación incompatible;
+- versión de `BalanceConfig` incompatible;
+- nombre vacío o demasiado largo;
+- estructura incompleta;
+- números no finitos;
+- valores fuera de límites;
+- relaciones matemáticas inválidas;
+- nombres duplicados que implicarían sobrescritura silenciosa.
+
+## 7. Política de normalización y desbloqueos
 
 Se conservan siempre:
 
@@ -131,145 +179,115 @@ Se conservan siempre:
 - conteo histórico de descargas;
 - último valor de recompensa registrado.
 
-Se ajustan únicamente cuando es necesario:
+Se ajustan únicamente cargas o progresos parciales incompatibles. Sobrecarga y PRISMA activos se cancelan al cambiar de perfil para evitar duraciones híbridas.
 
-- nivel del Gatillo, si excede su máximo;
-- carga parcial de Cavitación;
-- progreso fraccionario del Autoclicker;
-- carga parcial de Sobrecarga;
-- progreso orbital de Refracción;
-- facetas cargadas.
+> Elevar un requisito experimental nunca elimina niveles comprados ni detiene el sistema existente. Solo bloquea compras nuevas hasta volver a cumplir el requisito.
 
-Se cancelan al cambiar de perfil:
-
-- Sobrecarga activa;
-- PRISMA activo.
-
-Esto evita conservar efectos temporales calculados con una configuración anterior.
-
-## 6. Política de desbloqueos experimentales
-
-La misma función autoritativa decide el estado de compra en:
-
-- reducer;
-- tarjetas de mejoras;
-- Comprar todo;
-- previsualización;
-- reporte de normalización.
-
-Reglas:
-
-1. Los requisitos oficiales conservan el comportamiento de planos permanentes después de prestigiar.
-2. Reducir un requisito experimental no elimina el beneficio de los planos.
-3. Elevar un requisito por encima del valor oficial bloquea compras nuevas hasta cumplirlo, incluso si existe un plano permanente.
-4. Ningún nivel comprado se elimina.
-5. Un sistema ya comprado continúa funcionando.
-6. Refracción comprada continúa cargando y descargando aunque se eleve su requisito de prestigio; únicamente se bloquea la compra del siguiente nivel.
-7. Restaurar valores oficiales recupera la política oficial inmediatamente.
-
-Ejemplo:
-
-```text
-Autoclicker nivel 4
-Requisito experimental: 8,000 clics
-Clics actuales: 3,000
-
-Resultado:
-- nivel 4 conservado;
-- Autoclicker sigue funcionando;
-- compra de nivel 5 bloqueada;
-- al llegar a 8,000 clics, la compra vuelve a habilitarse.
-```
-
-## 7. Parámetros aplicables en Fase 4
-
-Todos los campos editables actuales pueden aplicarse a la sesión:
-
-- costos base de las nueve evoluciones;
-- crecimiento de las nueve curvas de costo;
-- capacidad de la esfera;
-- bono de Presión por tramo;
-- desbloqueo de Presión;
-- desbloqueo de Cavitación;
-- desbloqueo del Autoclicker;
-- desbloqueo de Refracción;
-- tasa inicial, crecimiento y máximo del Autoclicker;
-- multiplicadores P1–P5 del Zafiro;
-- incremento provisional posterior a P5.
-
-Los límites absolutos del motor continúan visibles, pero no editables.
+Refracción comprada continúa funcionando. Sobrecarga conserva su nivel, pero no carga mientras la esfera esté incompleta porque esa condición pertenece a su mecánica.
 
 ## 8. Invariantes de seguridad
 
 1. Una configuración se aplica completa o no se aplica.
 2. Todo valor debe ser finito y permanecer dentro de límites absolutos.
-3. Los límites del motor no son editables.
-4. El Autoclicker no puede superar el máximo de operaciones por tick.
-5. Comprar todo conserva su límite de iteraciones.
-6. Zafiro mantiene una secuencia estrictamente creciente.
-7. No se admiten expresiones JavaScript libres.
-8. No se usa `eval()` ni `new Function()`.
-9. El perfil de sesión no se guarda automáticamente.
-10. Restaurar valores oficiales siempre está disponible.
-11. La partida normal no contiene una copia del perfil DEV.
-12. Un requisito experimental nunca elimina progreso comprado.
-13. Previsualizar nunca cambia el runtime, el reducer ni el guardado.
+3. No se admiten expresiones JavaScript libres.
+4. No se usa `eval()` ni `new Function()`.
+5. Restaurar valores oficiales siempre está disponible.
+6. La partida normal nunca contiene perfiles DEV.
+7. Guardar, reemplazar o importar no aplica automáticamente un perfil.
+8. Recargar nunca carga un perfil DEV.
+9. Las operaciones devuelven clones para evitar mutaciones accidentales.
+10. Un nombre existente no se sobrescribe mediante Guardar o Importar.
+11. Reemplazar y Eliminar requieren una acción explícita separada.
+12. Una colección corrupta no se reemplaza silenciosamente.
+13. La migración heredada conserva la fuente original.
 
-## 9. Validación requerida de la Fase 4
+## 9. Pruebas de Fase 5
 
-### Automatizada/local
+### Unitarias
+
+`tests/unit/balanceProfiles.test.ts` cubre:
+
+- guardado;
+- listado;
+- lectura manual;
+- reemplazo;
+- borrado;
+- duplicados;
+- exportación;
+- importación válida;
+- JSON malformado;
+- límites;
+- versiones incompatibles;
+- clones e inmutabilidad;
+- migración heredada;
+- colecciones corruptas;
+- protección del guardado normal.
+
+### Integración
+
+`tests/integration/balanceProfiles.integration.test.ts` cubre:
+
+- ausencia de carga automática;
+- carga manual al runtime;
+- restauración oficial;
+- reemplazo sin alterar la sesión activa;
+- importación inactiva hasta carga manual;
+- rechazo sin alterar el runtime;
+- migración heredada inactiva.
+
+### Playwright
+
+`tests/e2e/balance-phase5.spec.ts` cubre:
+
+- persistencia entre recargas sin autocarga;
+- carga manual y restauración oficial;
+- reemplazo confirmado;
+- cancelación y confirmación de eliminación;
+- descarga de exportación;
+- reimportación válida;
+- rechazo visible de JSON malformado, límites y versiones incompatibles.
+
+Comando focalizado:
 
 ```powershell
-npm run lint
-npm run build
+npm run test:phase5
 ```
 
-### Prueba funcional
+Control total:
 
-1. cambiar la capacidad de la esfera de 5,000 a un valor inferior a los clics actuales;
-2. confirmar en la previsualización que la esfera pasará a completa;
-3. aplicar y verificar contador, llenado, cristalización y requisito de Sobrecarga;
-4. elevar la capacidad por encima de los clics actuales;
-5. confirmar que la esfera queda incompleta y se limpia la carga de Sobrecarga;
-6. modificar el bono de Presión y comprobar resumen, tarjeta y producción;
-7. elevar cada requisito de clics por encima del progreso actual;
-8. comprobar que la tarjeta y Comprar todo bloquean únicamente compras nuevas;
-9. verificar que los niveles existentes continúan funcionando;
-10. elevar el prestigio requerido de Refracción por encima del prestigio actual;
-11. confirmar que la Matriz comprada sigue cargando, pero su siguiente compra queda bloqueada;
-12. alcanzar el requisito experimental y comprobar que la compra se habilita;
-13. restaurar la sesión oficial y verificar todos los textos y controles;
-14. recargar y confirmar runtime `official` sin pérdida de progreso.
+```powershell
+npm run test:all
+```
 
-## 10. Fases siguientes
+## 10. Fase 6 — Plantillas matemáticas seguras
 
-### Fase 5 — Perfiles persistentes
+Después de cerrar Fase 5 se evaluarán plantillas declarativas para curvas:
 
-- asignar nombre;
-- guardar perfil DEV;
-- cargarlo manualmente;
-- reemplazarlo;
-- eliminarlo;
-- exportar e importar JSON validado;
-- mantener desactivada la carga automática por defecto.
+- exponenciales;
+- lineales;
+- potencia;
+- raíz;
+- logarítmicas;
+- rendimientos decrecientes.
 
-### Fase 6 — Plantillas matemáticas
+No se permitirán expresiones JavaScript arbitrarias, `eval()` ni `new Function()`.
 
-Evaluar curvas exponenciales, lineales, potencia, raíz, logarítmicas y rendimientos decrecientes mediante plantillas seguras.
+## 11. Etapa de contenido — Esmeralda
 
-### Etapa de contenido — Esmeralda
+Después de cerrar los perfiles y la infraestructura esencial del Laboratorio, Esmeralda debe diseñarse antes de programarse, definiendo identidad, relación con Zafiro 5, recurso, fórmula, cinco niveles, beneficio visible, interacción con cristalización, desbloqueo de Amarilla, migración y pruebas desde el diseño.
 
-Después de cerrar la cobertura y perfiles esenciales, usar el Laboratorio para definir, simular y documentar la economía de Esmeralda antes de implementarla.
+## 12. Regla de integración
 
-## 11. Regla de integración
+`Dev-Balance-Laboratory-Phase-5` no debe integrarse hasta que:
 
-`Dev-Balance-Laboratory-Phase-4` no debe integrarse hasta que:
-
-- `lint` y `build` pasen;
-- la previsualización no altere la partida;
-- capacidad, Presión y desbloqueos se reflejen en toda la interfaz;
-- Comprar todo respete los requisitos experimentales;
-- los sistemas comprados continúen funcionando;
-- la restauración oficial recupere todos los valores;
-- recargar restaure el balance oficial;
-- Arturo autorice expresamente la integración.
+- `npm ci` pase;
+- lint pase;
+- Vitest pase;
+- build de producción pase;
+- Playwright Chromium pase;
+- la colección v2 migre sin destruir v1;
+- ningún perfil se cargue automáticamente;
+- el guardado normal permanezca intacto;
+- la restauración oficial funcione;
+- la rama se compare contra `main`;
+- Arturo autorice expresamente el merge.
