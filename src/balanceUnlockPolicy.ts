@@ -24,7 +24,7 @@ export type BalanceUnlockRequirement = {
 function getClickRequirement(
   id: Exclude<BalanceUnlockId, 'refraction'>,
   config: Readonly<BalanceConfig>,
-) {
+): number {
   switch (id) {
     case 'pressure':
       return config.unlocks.pressureRequiredClicks
@@ -39,7 +39,7 @@ function getClickRequirement(
 
 function getOfficialClickRequirement(
   id: Exclude<BalanceUnlockId, 'refraction'>,
-) {
+): number {
   return getClickRequirement(id, DEFAULT_BALANCE_CONFIG)
 }
 
