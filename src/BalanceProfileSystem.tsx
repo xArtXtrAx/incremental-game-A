@@ -6,6 +6,10 @@ import {
   useSyncExternalStore,
 } from 'react'
 import { createPortal } from 'react-dom'
+import {
+  useDeveloperPanelLauncherHost,
+  useDeveloperPanelWorkspaceHost,
+} from './developerPanelWorkspace'
 import './BalanceProfileSystem.css'
 import {
   BALANCE_PROFILE_NAME_MAX_LENGTH,
@@ -31,27 +35,6 @@ const dateFormat = new Intl.DateTimeFormat('es-MX', {
   dateStyle: 'medium',
   timeStyle: 'short',
 })
-
-function findDeveloperPanel() {
-  return document.querySelector<HTMLElement>('.developer-panel')
-}
-
-function useDeveloperPanelHost() {
-  const [host, setHost] = useState<HTMLElement | null>(() =>
-    findDeveloperPanel(),
-  )
-
-  useEffect(() => {
-    const updateHost = () => setHost(findDeveloperPanel())
-    updateHost()
-
-    const observer = new MutationObserver(updateHost)
-    observer.observe(document.body, { childList: true, subtree: true })
-    return () => observer.disconnect()
-  }, [])
-
-  return host
-}
 
 function firstIssueMessage(issues: readonly BalanceValidationIssue[]) {
   return issues[0]?.message ?? 'La operación no pudo completarse.'
@@ -79,7 +62,13 @@ function downloadJson(name: string, content: string) {
   URL.revokeObjectURL(url)
 }
 
-function BalanceProfileWindow({ onClose }: { onClose: () => void }) {
+function BalanceProfileWindow({
+  onClose,
+  portalHost,
+}: {
+  onClose: () => void
+  portalHost: HTMLElement
+}) {
   const repository = useMemo(() => createBrowserBalanceProfileRepository(), [])
   const snapshot = useSyncExternalStore(
     subscribeBalanceRuntime,
@@ -221,7 +210,7 @@ function BalanceProfileWindow({ onClose }: { onClose: () => void }) {
 
   return createPortal(
     <div
-      className="balance-profile-backdrop"
+      className="balance-profile-backdrop developer-workspace-overlay"
       role="presentation"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose()
@@ -230,7 +219,7 @@ function BalanceProfileWindow({ onClose }: { onClose: () => void }) {
       <section
         className="balance-profile-window"
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-labelledby="balance-profile-title"
       >
         <header className="balance-profile-header">
@@ -433,12 +422,13 @@ function BalanceProfileWindow({ onClose }: { onClose: () => void }) {
         </footer>
       </section>
     </div>,
-    document.body,
+    portalHost,
   )
 }
 
 export function BalanceProfileSystem() {
-  const host = useDeveloperPanelHost()
+  const host = useDeveloperPanelLauncherHost()
+  const workspaceHost = useDeveloperPanelWorkspaceHost()
   const [open, setOpen] = useState(false)
 
   return (
@@ -457,7 +447,12 @@ export function BalanceProfileSystem() {
           </section>,
           host,
         )}
-      {open && <BalanceProfileWindow onClose={() => setOpen(false)} />}
+      {open && workspaceHost && (
+        <BalanceProfileWindow
+          portalHost={workspaceHost}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </>
   )
 }

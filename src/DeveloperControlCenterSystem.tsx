@@ -1,5 +1,9 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { createPortal } from 'react-dom'
+import {
+  useDeveloperPanelLauncherHost,
+  useDeveloperPanelWorkspaceHost,
+} from './developerPanelWorkspace'
 import './DeveloperControlCenterSystem.css'
 import {
   requestDeveloperExperiment,
@@ -59,26 +63,6 @@ const STATE_FIELDS: readonly {
 const numberFormat = new Intl.NumberFormat('es-MX', {
   maximumFractionDigits: 4,
 })
-
-function findDeveloperPanel() {
-  return document.querySelector<HTMLElement>('.developer-panel')
-}
-
-function useDeveloperPanelHost() {
-  const [host, setHost] = useState<HTMLElement | null>(() =>
-    findDeveloperPanel(),
-  )
-
-  useEffect(() => {
-    const updateHost = () => setHost(findDeveloperPanel())
-    updateHost()
-    const observer = new MutationObserver(updateHost)
-    observer.observe(document.body, { childList: true, subtree: true })
-    return () => observer.disconnect()
-  }, [])
-
-  return host
-}
 
 function formatSeconds(value: number | null) {
   if (value === null) return 'Sin autoclick suficiente'
@@ -159,7 +143,13 @@ function ScenarioCard({
   )
 }
 
-function ControlCenterWindow({ onClose }: { onClose: () => void }) {
+function ControlCenterWindow({
+  onClose,
+  portalHost,
+}: {
+  onClose: () => void
+  portalHost: HTMLElement
+}) {
   const repository = useMemo(
     () => createBrowserDeveloperScenarioRepository(),
     [],
@@ -314,11 +304,11 @@ function ControlCenterWindow({ onClose }: { onClose: () => void }) {
   }
 
   return createPortal(
-    <div className="developer-control-overlay" role="presentation">
+    <div className="developer-control-overlay developer-workspace-overlay" role="presentation">
       <section
         className="developer-control-window"
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-labelledby="developer-control-title"
       >
         <header className="developer-control-header">
@@ -645,12 +635,13 @@ function ControlCenterWindow({ onClose }: { onClose: () => void }) {
         </footer>
       </section>
     </div>,
-    document.body,
+    portalHost,
   )
 }
 
 export function DeveloperControlCenterSystem() {
-  const host = useDeveloperPanelHost()
+  const host = useDeveloperPanelLauncherHost()
+  const workspaceHost = useDeveloperPanelWorkspaceHost()
   const [open, setOpen] = useState(false)
 
   return (
@@ -670,7 +661,12 @@ export function DeveloperControlCenterSystem() {
           </section>,
           host,
         )}
-      {open && <ControlCenterWindow onClose={() => setOpen(false)} />}
+      {open && workspaceHost && (
+        <ControlCenterWindow
+          portalHost={workspaceHost}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </>
   )
 }

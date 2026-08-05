@@ -12,6 +12,8 @@ import { ChromaticGamepadBridge } from './ChromaticGamepadBridge'
 import { DeveloperComparativeExperimentSystem } from './DeveloperComparativeExperimentSystem'
 import { DeveloperControlCenterSystem } from './DeveloperControlCenterSystem'
 import './DeveloperControlCompatibility.css'
+import './DeveloperPanelWorkspace.css'
+import { DeveloperPanelWidthSystem } from './DeveloperPanelWidthSystem'
 import { DeveloperToolLaunchBridge } from './DeveloperToolLaunchBridge'
 import { GamepadController } from './GamepadController'
 import { GamepadEventHaptics } from './GamepadEventHaptics'
@@ -47,6 +49,7 @@ createRoot(document.getElementById('root')!).render(
     <DeveloperControlCenterSystem />
     <DeveloperComparativeExperimentSystem />
     <MathematicalTemplateSystem />
+    <DeveloperPanelWidthSystem />
     <DeveloperToolLaunchBridge />
     <GamepadController />
     <ChromaticGamepadBridge />

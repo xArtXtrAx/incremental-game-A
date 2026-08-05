@@ -6,6 +6,11 @@ import {
   useSyncExternalStore,
 } from 'react'
 import { createPortal } from 'react-dom'
+import {
+  useDeveloperPanelLauncherHost,
+  useDeveloperPanelWorkspaceHost,
+  usePortalHost,
+} from './developerPanelWorkspace'
 import { DEFAULT_BALANCE_CONFIG } from './balanceConfig'
 import {
   createBrowserBalanceProfileRepository,
@@ -39,24 +44,6 @@ const numberFormat = new Intl.NumberFormat('es-MX', {
 })
 const durationOptions = [300, 900, 1_800, 3_600, 7_200] as const
 const clickRateOptions = [0, 1, 2, 5, 10, 20] as const
-
-function usePortalHost(selector: string) {
-  const find = useCallback(
-    () => document.querySelector<HTMLElement>(selector),
-    [selector],
-  )
-  const [host, setHost] = useState<HTMLElement | null>(() => find())
-
-  useEffect(() => {
-    const update = () => setHost(find())
-    update()
-    const observer = new MutationObserver(update)
-    observer.observe(document.body, { childList: true, subtree: true })
-    return () => observer.disconnect()
-  }, [find])
-
-  return host
-}
 
 function formatSeconds(value: number | null) {
   if (value === null) return 'No alcanzado'
@@ -233,7 +220,13 @@ function ComparisonResults({
   )
 }
 
-function ComparativeWindow({ onClose }: { onClose: () => void }) {
+function ComparativeWindow({
+  onClose,
+  portalHost,
+}: {
+  onClose: () => void
+  portalHost: HTMLElement
+}) {
   const profileRepository = useMemo(
     () => createBrowserBalanceProfileRepository(),
     [],
@@ -435,11 +428,11 @@ function ComparativeWindow({ onClose }: { onClose: () => void }) {
   }
 
   return createPortal(
-    <div className="comparative-overlay" role="presentation">
+    <div className="comparative-overlay developer-workspace-overlay" role="presentation">
       <section
         className="comparative-window"
         role="dialog"
-        aria-modal="true"
+        aria-modal="false"
         aria-labelledby="comparative-title"
       >
         <header className="comparative-header">
@@ -694,12 +687,13 @@ function ComparativeWindow({ onClose }: { onClose: () => void }) {
         </footer>
       </section>
     </div>,
-    document.body,
+    portalHost,
   )
 }
 
 export function DeveloperComparativeExperimentSystem() {
-  const developerPanelHost = usePortalHost('.developer-panel')
+  const developerPanelHost = useDeveloperPanelLauncherHost()
+  const workspaceHost = useDeveloperPanelWorkspaceHost()
   const toolsHost = usePortalHost('.developer-tools-grid')
   const [open, setOpen] = useState(false)
 
@@ -735,7 +729,12 @@ export function DeveloperComparativeExperimentSystem() {
           toolsHost,
         )}
 
-      {open && <ComparativeWindow onClose={() => setOpen(false)} />}
+      {open && workspaceHost && (
+        <ComparativeWindow
+          portalHost={workspaceHost}
+          onClose={() => setOpen(false)}
+        />
+      )}
     </>
   )
 }

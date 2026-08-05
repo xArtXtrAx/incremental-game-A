@@ -1,0 +1,204 @@
+.developer-panel-workspace-host {
+  position: absolute;
+  inset: 0;
+  z-index: 80;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  border-radius: inherit;
+  pointer-events: none;
+}
+
+.developer-panel-workspace-host:empty {
+  display: none;
+}
+
+.developer-workspace-overlay {
+  position: absolute !important;
+  inset: 0 !important;
+  z-index: 1 !important;
+  display: grid !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  padding: 0 !important;
+  place-items: stretch !important;
+  overflow: hidden !important;
+  border-radius: inherit;
+  background: rgba(2, 8, 22, 0.985) !important;
+  backdrop-filter: none !important;
+  pointer-events: auto;
+}
+
+.developer-workspace-overlay.chromatic-developer-docked {
+  animation: none !important;
+  transform: none !important;
+}
+
+.developer-workspace-overlay > [role='dialog'] {
+  width: 100% !important;
+  max-width: none !important;
+  height: 100% !important;
+  max-height: none !important;
+  min-width: 0 !important;
+  min-height: 0 !important;
+  box-sizing: border-box;
+  border-width: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+
+.developer-workspace-overlay [role='dialog'] {
+  overscroll-behavior: contain;
+}
+
+@container developer-panel (max-width: 620px) {
+  .developer-workspace-overlay .balance-laboratory-header,
+  .developer-workspace-overlay .balance-profile-header,
+  .developer-workspace-overlay .balance-profile-footer,
+  .developer-workspace-overlay .developer-control-header,
+  .developer-workspace-overlay .comparative-header,
+  .developer-workspace-overlay .mathematical-template-header,
+  .developer-workspace-overlay .mathematical-template-footer {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.7rem;
+  }
+
+  .developer-workspace-overlay .balance-laboratory-window,
+  .developer-workspace-overlay .balance-profile-window,
+  .developer-workspace-overlay .developer-control-window,
+  .developer-workspace-overlay .comparative-window,
+  .developer-workspace-overlay .mathematical-template-window {
+    font-size: 0.9rem;
+  }
+
+  .developer-workspace-overlay .balance-laboratory-window,
+  .developer-workspace-overlay .balance-profile-window {
+    padding: 14px;
+  }
+
+  .developer-workspace-overlay .balance-laboratory-content,
+  .developer-workspace-overlay .balance-profile-content,
+  .developer-workspace-overlay .developer-control-content,
+  .developer-workspace-overlay .comparative-content,
+  .developer-workspace-overlay .mathematical-template-content {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .developer-workspace-overlay .balance-laboratory-tabs,
+  .developer-workspace-overlay .developer-control-tabs {
+    overflow-x: auto;
+    scrollbar-width: thin;
+  }
+
+  .developer-workspace-overlay .balance-laboratory-split,
+  .developer-workspace-overlay .balance-laboratory-field-grid,
+  .developer-workspace-overlay .balance-profile-grid,
+  .developer-workspace-overlay .developer-control-grid-layout,
+  .developer-workspace-overlay .developer-state-grid,
+  .developer-workspace-overlay .developer-capture-card,
+  .developer-workspace-overlay .developer-scenario-grid,
+  .developer-workspace-overlay .developer-step-grid,
+  .developer-workspace-overlay .developer-metrics-grid,
+  .developer-workspace-overlay .developer-tools-grid,
+  .developer-workspace-overlay .comparative-form-grid,
+  .developer-workspace-overlay .comparative-summary-grid,
+  .developer-workspace-overlay .comparative-summary-grid dl,
+  .developer-workspace-overlay .mathematical-template-content,
+  .developer-workspace-overlay .mathematical-template-form-grid,
+  .developer-workspace-overlay .mathematical-template-parameter-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+
+  .developer-workspace-overlay .balance-laboratory-footer,
+  .developer-workspace-overlay .comparative-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .developer-workspace-overlay .balance-laboratory-table-wrap,
+  .developer-workspace-overlay .comparative-table-scroll {
+    overflow-x: hidden;
+  }
+
+  .developer-workspace-overlay table {
+    width: 100%;
+    min-width: 0 !important;
+    table-layout: fixed;
+  }
+
+  .developer-workspace-overlay th,
+  .developer-workspace-overlay td {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
+}
+
+.chromatic-developer-docked .chromatic-space {
+  position: absolute;
+}
+
+.chromatic-developer-docked .chromatic-chamber {
+  width: 100%;
+  min-height: 100%;
+  height: 100%;
+  padding: 14px;
+  overflow-x: hidden;
+  overflow-y: auto;
+  box-sizing: border-box;
+  scrollbar-gutter: stable;
+  overscroll-behavior: contain;
+}
+
+.chromatic-developer-docked .chromatic-header {
+  grid-template-columns: 1fr auto;
+}
+
+.chromatic-developer-docked .chromatic-header > div:nth-child(2) {
+  grid-column: 1 / -1;
+  grid-row: 1;
+}
+
+.chromatic-developer-docked .chromatic-back-button {
+  grid-column: 1;
+  grid-row: 2;
+}
+
+.chromatic-developer-docked .chromatic-header-status {
+  grid-column: 2;
+  grid-row: 2;
+}
+
+.chromatic-developer-docked .chromatic-content {
+  grid-template-columns: minmax(0, 1fr);
+  min-height: 0;
+  gap: 16px;
+  align-items: start;
+}
+
+.chromatic-developer-docked .chromatic-stage {
+  width: 100%;
+  min-height: 540px;
+  aspect-ratio: auto;
+}
+
+.chromatic-developer-docked .chromatic-inspector {
+  width: 100%;
+  min-height: 0;
+  box-sizing: border-box;
+}
+
+.chromatic-developer-docked .chromatic-footer {
+  align-items: flex-start;
+  flex-direction: column;
+  gap: 4px;
+}
+
+@media (max-width: 1280px) {
+  .developer-panel {
+    position: relative;
+    top: auto;
+  }
+}
