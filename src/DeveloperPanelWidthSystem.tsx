@@ -11,7 +11,6 @@ import {
 import { createPortal } from 'react-dom'
 import {
   DEVELOPER_PANEL_KEYBOARD_STEP,
-  DEVELOPER_PANEL_MAX_WIDTH,
   DEVELOPER_PANEL_MIN_WIDTH,
   clampDeveloperPanelWidth,
   clearDeveloperPanelWidthPreference,
