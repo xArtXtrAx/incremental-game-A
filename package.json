@@ -20,7 +20,7 @@
     "test:comparative": "vitest run tests/unit/balanceRuntimeOverride.test.ts tests/unit/comparativeExperiment.test.ts tests/integration/comparativeExperiment.integration.test.ts && playwright test tests/e2e/comparative-experiment.spec.ts",
     "test:templates": "vitest run tests/unit/mathematicalTemplates.test.ts tests/unit/mathematicalTemplateTransfer.test.ts tests/integration/mathematicalTemplates.integration.test.ts && playwright test tests/e2e/mathematical-templates.spec.ts",
     "test:developer-panel": "vitest run tests/unit/developerPanelWidth.test.ts && playwright test tests/e2e/developer-panel-workspace.spec.ts tests/e2e/developer-panel-responsive.spec.ts tests/e2e/developer-panel-width.spec.ts",
-    "test:prestige-observatory": "vitest run tests/unit/prestigeCycleLive.test.ts tests/unit/prestigeCycleObservatory.test.ts tests/unit/prestigeCycleImmediateCrystallization.test.ts tests/integration/prestigeCycleObservatory.integration.test.ts && playwright test tests/e2e/prestige-cycle-observatory.spec.ts",
+    "test:prestige-observatory": "vitest run tests/unit/prestigeCycleLive.test.ts tests/unit/prestigeCycleObservatory.test.ts tests/unit/prestigeCycleImmediateCrystallization.test.ts tests/unit/prestigeCycleScenarios.test.ts tests/integration/prestigeCycleObservatory.integration.test.ts && playwright test tests/e2e/prestige-cycle-observatory.spec.ts",
     "test:all": "npm run lint && npm run test && npm run build && npm run test:e2e",
     "audit:performance": "node scripts/performance-audit.mjs",
     "audit:performance:json": "node scripts/performance-audit.mjs --json"
