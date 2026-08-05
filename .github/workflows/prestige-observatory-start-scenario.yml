@@ -1,0 +1,85 @@
+name: Apply Prestige Observatory Start Scenario
+
+on:
+  push:
+    branches:
+      - Dev-Prestige-Cycle-Observatory
+    paths:
+      - .github/workflows/prestige-observatory-start-scenario.yml
+
+permissions:
+  contents: write
+
+jobs:
+  patch:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: Dev-Prestige-Cycle-Observatory
+          fetch-depth: 0
+
+      - name: Connect start-of-cycle scenario
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+
+          path = Path('src/PrestigeCycleObservatorySystem.tsx')
+          text = path.read_text(encoding='utf-8')
+
+          import_anchor = """} from './prestigeCycleObservatory'
+          import {
+            advanceLivePrestigeCycleState,
+          """
+          import_replacement = """} from './prestigeCycleObservatory'
+          import {
+            PRESTIGE_CYCLE_START_P5_SCENARIO_ID,
+            createPrestigeCycleObservatoryScenarios,
+          } from './prestigeCycleScenarios'
+          import {
+            advanceLivePrestigeCycleState,
+          """
+          if import_anchor not in text:
+              raise SystemExit('Import anchor not found')
+          text = text.replace(import_anchor, import_replacement, 1)
+
+          text = text.replace(
+              "const [scenarioId, setScenarioId] = useState('builtin-p5')",
+              "const [scenarioId, setScenarioId] = useState(\n    PRESTIGE_CYCLE_START_P5_SCENARIO_ID,\n  )",
+              1,
+          )
+          text = text.replace(
+              'const [manualClicksPerSecond, setManualClicksPerSecond] = useState(0)',
+              'const [manualClicksPerSecond, setManualClicksPerSecond] = useState(2)',
+              1,
+          )
+
+          old_scenarios = """    const nextScenarios = [
+                ...createBuiltInDeveloperScenarios(
+                  DEFAULT_BALANCE_CONFIG.core.sphereClickCapacity,
+                ),
+                ...scenarioResult.value,
+              ]
+          """
+          new_scenarios = """    const nextScenarios = createPrestigeCycleObservatoryScenarios(
+                createBuiltInDeveloperScenarios(
+                  DEFAULT_BALANCE_CONFIG.core.sphereClickCapacity,
+                ),
+                scenarioResult.value,
+              )
+          """
+          if old_scenarios not in text:
+              raise SystemExit('Scenario list anchor not found')
+          text = text.replace(old_scenarios, new_scenarios, 1)
+
+          path.write_text(text, encoding='utf-8')
+          Path('.github/workflows/prestige-observatory-start-scenario.yml').unlink()
+          PY
+
+      - name: Commit scenario integration
+        run: |
+          git config user.name "xArtXtrAx"
+          git config user.email "132019928+xArtXtrAx@users.noreply.github.com"
+          git add src/PrestigeCycleObservatorySystem.tsx .github/workflows/prestige-observatory-start-scenario.yml
+          git commit -m "Integra escenario de inicio real del ciclo P5"
+          git push origin HEAD:Dev-Prestige-Cycle-Observatory
