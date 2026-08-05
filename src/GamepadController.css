@@ -177,7 +177,7 @@
   .gamepad-panel {
     right: calc(
       max(24px, (100vw - 1800px) / 2) +
-      clamp(360px, 30vw, 560px) +
+      clamp(400px, 33vw, 640px) +
       36px
     );
   }
