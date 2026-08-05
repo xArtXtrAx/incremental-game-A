@@ -2,7 +2,7 @@
 
 > Bitácora compartida entre Arturo y GPT.
 >
-> **Regla para nuevos chats:** leer primero este archivo, `TESTING_POLICY.md`, `PLAN_MAESTRO.md`, `MODELO_MATEMATICO.md`, `BALANCE_LABORATORY.md`, `EXPERIMENTAL_CONTROL_CENTER.md`, `COMPARATIVE_EXPERIMENT_RUNNER.md`, `MATHEMATICAL_TEMPLATES.md`, `DEVELOPER_PANEL_WORKSPACE.md`, `PERFORMANCE_AUDIT.md` y `GAMEPAD_DEVICE_SELECTION.md`; después comprobar el estado real del repositorio antes de modificarlo.
+> **Regla para nuevos chats:** leer primero este archivo, `TESTING_POLICY.md`, `PLAN_MAESTRO.md`, `MODELO_MATEMATICO.md`, `BALANCE_LABORATORY.md`, `EXPERIMENTAL_CONTROL_CENTER.md`, `COMPARATIVE_EXPERIMENT_RUNNER.md`, `MATHEMATICAL_TEMPLATES.md`, `DEVELOPER_PANEL_WORKSPACE.md`, `PRESTIGE_CYCLE_OBSERVATORY.md`, `PERFORMANCE_AUDIT.md` y `GAMEPAD_DEVICE_SELECTION.md`; después comprobar el estado real del repositorio antes de modificarlo.
 
 ## 0. PRIORIDAD CENTRAL — Automatización de pruebas
 
@@ -21,15 +21,15 @@ La política completa está en `TESTING_POLICY.md`.
 
 ## 1. Estado real del repositorio
 
-Estado comprobado el **4 de agosto de 2026, después del merge del PR #12**:
+Estado comprobado el **5 de agosto de 2026, después del merge del PR #13**:
 
 - Repositorio: `xArtXtrAx/incremental-game-A`.
 - Rama estable: `main`.
-- Último merge funcional: `6e88c5f481cc030f76bc963db495265d030b1e3c`.
-- Integración funcional más reciente: **PR #12 — Panel DEV acoplado, no bloqueante y redimensionable**.
-- Estado del PR #12: **fusionado**.
-- Rama integrada: `Dev-Developer-Panel-Viewport`.
-- HEAD validado de la rama: `b276ed039f06a4dfe9e9ceca57adbbd7cf1f7492`.
+- Último merge funcional: `82c139b7039fd2f31021c11d636ffeb0f8f96577`.
+- Integración funcional más reciente: **PR #13 — Observatorio de Ciclos y Prestigio**.
+- Estado del PR #13: **fusionado**.
+- Rama integrada: `Dev-Prestige-Cycle-Observatory`.
+- HEAD validado de la rama: `e0a8c1b5d3ba9baddcd0f042807aa9e6d30b128c`.
 - La rama se conserva como respaldo y no debe eliminarse sin autorización explícita de Arturo.
 - No hay pull requests abiertos al cerrar la integración.
 - Entorno: React 19 + TypeScript 6 + Vite 8 + Motion.
@@ -50,6 +50,7 @@ Estado comprobado el **4 de agosto de 2026, después del merge del PR #12**:
 | #10 | `Dev-Comparative-Experiment-Runner` | `217d94c2daa03c137351b651f78e8c5812b9c296` | Comparador A/B determinista, métricas reproducibles y exportación JSON/CSV |
 | #11 | `Dev-Balance-Mathematical-Templates` | `1449d2284d3fdcfec46fdc7c0ed80b28ab88cce1` | Plantillas matemáticas seguras, perfiles DEV, transferencia al Laboratorio y comparación A/B transitoria |
 | #12 | `Dev-Developer-Panel-Viewport` | `6e88c5f481cc030f76bc963db495265d030b1e3c` | Panel DEV acoplado, no bloqueante, responsive y con anchura configurable |
+| #13 | `Dev-Prestige-Cycle-Observatory` | `82c139b7039fd2f31021c11d636ffeb0f8f96577` | Monitor de prestigio en vivo, simulación multiciclo, recuperación post-reset y métricas de Zafiro |
 
 ## 2. Estado jugable integrado en `main`
 
@@ -66,6 +67,7 @@ Estado comprobado el **4 de agosto de 2026, después del merge del PR #12**:
 - Centro de Control Experimental DEV.
 - Comparador de Experimentos A/B.
 - Plantillas Matemáticas Seguras.
+- Observatorio de Ciclos y Prestigio.
 - Navegación por mouse, teclado y gamepad.
 
 ### Prestigio y Zafiro oficiales
@@ -140,8 +142,6 @@ Pestañas integradas:
 4. **Métricas** — producción, clic, Autoclicker, llenado y estimaciones.
 5. **Herramientas** — Laboratorio de Balance, Perfiles DEV y Cámara Cromática.
 
-Los accesos anteriores del Panel DEV se conservan temporalmente para mantener compatibilidad mientras la navegación unificada obtiene paridad completa.
-
 ### Escenarios base
 
 Los escenarios se regeneran con la capacidad activa del núcleo:
@@ -153,6 +153,8 @@ Los escenarios se regeneran con la capacidad activa del núcleo:
 5. Ciclo P1.
 6. Ciclo P3.
 7. Ciclo P5.
+
+El Observatorio añade de forma aislada el escenario **Inicio de ciclo P5**, que representa el segundo posterior al reset con energía cero, núcleo vacío y evoluciones reiniciadas.
 
 ### Snapshots personalizados
 
@@ -181,8 +183,6 @@ Al aplicar un escenario:
 4. se reemplaza el estado visible;
 5. se pausa el reloj principal;
 6. se suspenden las escrituras automáticas de la partida normal.
-
-Aplicar otros escenarios durante la misma sesión no sustituye la línea base original.
 
 `Restaurar sesión original` devuelve exactamente el estado previo al primer experimento, reanuda el reloj real y conserva el guardado normal.
 
@@ -253,32 +253,6 @@ Cada recorrido reutiliza `gameReducer()` para clics, ticks, compras y cristaliza
 
 Esta estrategia es una línea base reproducible, no un optimizador global.
 
-### Métricas disponibles
-
-- tiempo ejecutado;
-- tiempo al núcleo lleno;
-- tiempo a la primera cristalización;
-- energía final;
-- producción efectiva estimada;
-- compras y acciones ejecutadas;
-- tiempo total sin decisiones;
-- mayor intervalo sin decisiones;
-- cristalizaciones finales;
-- primer acceso y nivel final por evolución;
-- retorno promedio estimado por evolución;
-- delta absoluto, porcentual y ventaja A/B.
-
-### Límites de seguridad
-
-```text
-Duración máxima:        7,200 segundos por recorrido
-Clics manuales:         20 por segundo
-Acciones máximas:       250,000 por recorrido
-Compras registradas:    2,000 como máximo
-```
-
-El límite efectivo también respeta `engineLimits.maximumBulkPurchaseIterations` del perfil evaluado.
-
 ## 6. Fase 6 integrada — Plantillas Matemáticas Seguras
 
 Documentación técnica:
@@ -315,213 +289,7 @@ Playwright Chromium         17/17
 
 El merge autorizado se realizó mediante PR #11 y produjo `1449d2284d3fdcfec46fdc7c0ed80b28ab88cce1`.
 
-## 7. Persistencia separada
-
-| Sistema | Clave |
-|---|---|
-| Partida normal | `incremental-game-a:save:v1` |
-| Ajustes de mando | `incremental-game-a:gamepad:v1` |
-| Reserva del Gatillo | `incremental-game-a:pulse-trigger:v1` |
-| Perfil de balance heredado | `incremental-game-a:balance-dev:v1` |
-| Perfiles de balance | `incremental-game-a:balance-dev-profiles:v2` |
-| Escenarios experimentales | `incremental-game-a:developer-scenarios:v1` |
-| Anchura visual del Panel DEV | `incremental-game-a:developer-panel-width:v1` |
-
-El comparador solo lee perfiles y escenarios. No escribe en estas colecciones ni en la partida normal. La anchura del Panel DEV es una preferencia exclusivamente visual y tampoco se mezcla con partida, perfiles, escenarios ni balance.
-
-## 8. Infraestructura y resultados de pruebas
-
-Componentes integrados:
-
-- Vitest.
-- Playwright.
-- GitHub Actions.
-- `TESTING_POLICY.md`.
-- `TESTING_SETUP.md`.
-- instalación reproducible mediante `npm ci`.
-- reportes, capturas, video y trazas al fallar.
-
-### Cobertura total integrada después del PR #12
-
-```text
-129 pruebas Vitest
-25 pruebas Playwright
-154 comprobaciones automatizadas
-```
-
-### Quality Gate final del Panel DEV
-
-Ejecución **Quality Gate #217**, run `30965419533`, sobre el HEAD validado `b276ed039f06a4dfe9e9ceca57adbbd7cf1f7492`:
-
-```text
-npm ci                     APROBADO
-Lint                       APROBADO — 0 errores
-Vitest                     129/129
-Build de producción        APROBADO
-Playwright Chromium         25/25
-```
-
-El merge autorizado se realizó mediante PR #12 y produjo `6e88c5f481cc030f76bc963db495265d030b1e3c`.
-
-### Quality Gate histórico del Comparador A/B
-
-Ejecución **Quality Gate #96**, run `30890096807`, sobre el HEAD validado `4a380dcf8e12c584195766275b69975d3707a7b0`:
-
-```text
-npm ci                     APROBADO
-Lint                       APROBADO — 0 errores
-Vitest                     92/92
-Build de producción        APROBADO
-Playwright Chromium         13/13
-```
-
-Lint conserva únicamente tres advertencias históricas de Fast Refresh. No se introdujeron advertencias nuevas.
-
-Incidencias detectadas y corregidas durante los Quality Gates recientes:
-
-- métricas no alcanzadas representadas como `null`, no como cero;
-- contrato de prueba que asumía incorrectamente qué perfil debía ganar;
-- importaciones sin uso bloqueadas por TypeScript;
-- selectores Playwright mal delimitados;
-- interacción legítima entre compra automática y tiempo exacto al núcleo;
-- selector de restauración del ancho confundido con `Restaurar actuales`;
-- contrato responsive corregido para verificar presets ocultos en modo apilado.
-
-No se ocultaron fallos ni se redujo cobertura para conseguir resultados verdes.
-
-### Comandos oficiales
-
-```bash
-npm run test
-npm run test:unit
-npm run test:integration
-npm run test:e2e
-npm run test:phase4
-npm run test:phase5
-npm run test:control-center
-npm run test:comparative
-npm run test:templates
-npm run test:developer-panel
-npm run test:all
-```
-
-### Validación de Arturo
-
-Arturo validó visualmente en Windows el Panel DEV acoplado y su anchura configurable, confirmó que el resultado se veía correctamente y autorizó explícitamente el merge del PR #12.
-
-Para recibir esta integración en la copia local debe seleccionar `main` en GitHub Desktop y usar `Fetch origin` / `Pull origin`.
-
-## 9. Arquitectura relevante
-
-### Juego
-
-- `src/game.ts`: estado, reducer, costos, guardado y consultas de balance.
-- `src/App.tsx`: estado autoritativo, ticks, efectos, aislamiento y reloj experimental.
-- `src/DeveloperPanel.tsx`: controles directos de estado y hosts visuales DEV.
-- `src/refraction.ts`: Matriz y PRISMA.
-- `src/pulseTrigger.ts`: Gatillo de pulso.
-- `src/bulkPurchase.ts`: Comprar todo.
-
-### Panel DEV acoplado
-
-- `DEVELOPER_PANEL_WORKSPACE.md`: contrato visual, responsive, rendimiento y pruebas.
-- `src/developerPanelWorkspace.ts`: resolución compartida de hosts de herramientas.
-- `src/DeveloperPanelWorkspace.css`: confinamiento y presentación de herramientas acopladas.
-- `src/developerPanelWidth.ts`: límites, presets, persistencia y cálculo responsive.
-- `src/DeveloperPanelWidthSystem.tsx`: estado visual, portales, arrastre y teclado.
-- `src/DeveloperPanelWidthSystem.css`: controles y tirador de redimensionamiento.
-
-### Laboratorio y perfiles
-
-- `src/balanceConfig.ts`
-- `src/balanceDraft.ts`
-- `src/balanceValidation.ts`
-- `src/balanceRuntime.ts`
-- `src/balanceSimulation.ts`
-- `src/balanceParity.ts`
-- `src/balanceStateNormalization.ts`
-- `src/balanceNormalizationParity.ts`
-- `src/balanceUnlockPolicy.ts`
-- `src/balanceSessionPolicy.ts`
-- `src/balanceSessionBridge.ts`
-- `src/BalanceLaboratorySystem.tsx`
-- `src/balanceProfiles.ts`
-- `src/BalanceProfileSystem.tsx`
-
-### Centro de Control DEV
-
-- `src/DeveloperControlCenterSystem.tsx`
-- `src/DeveloperControlCenterSystem.css`
-- `src/developerExperimentBridge.ts`
-- `src/developerScenarios.ts`
-- `src/developerSimulation.ts`
-- `src/DeveloperToolLaunchBridge.tsx`
-- `src/DeveloperControlCompatibility.css`
-
-### Comparador A/B
-
-- `src/balanceRuntime.ts`: override transitorio mediante `runWithBalanceConfig()`.
-- `src/comparativeExperiment.ts`: motor determinista, políticas, métricas y exportación.
-- `src/ComparativeExperimentSystem.tsx`: interfaz del comparador.
-- `src/ComparativeExperimentSystem.css`: presentación responsive.
-
-### Plantillas matemáticas
-
-- `src/mathematicalTemplates.ts`: contratos, evaluadores, destinos, validación y serialización.
-- `src/mathematicalTemplateTransfer.ts`: candidato transitorio en memoria.
-- `src/MathematicalTemplateSystem.tsx`: editor, previsualización y acciones de transferencia.
-- `src/MathematicalTemplateSystem.css`: presentación de la herramienta.
-
-### Pruebas
-
-- `vitest.config.ts`
-- `playwright.config.ts`
-- `.github/workflows/quality-gate.yml`
-- `tests/unit/`
-- `tests/integration/`
-- `tests/e2e/`
-
-## 10. Controles DualSense / Gamepad integrados
-
-- X/A pulsa la esfera.
-- R2/RT activa el Gatillo.
-- L1/LB selecciona Núcleo y R1/RB Evoluciones.
-- Cruceta y joystick permanecen confinados en la zona activa.
-- El juego detecta el dispositivo realmente activo.
-- El foco del gamepad se dibuja explícitamente después de usar el mouse.
-- Las vibraciones se suspenden al entrar en modalidad mouse.
-- El Panel DEV mantiene el control flotante separado incluso al cambiar su anchura.
-- BUG-001 está validado físicamente.
-- BUG-002 tiene corrección integrada y validación formal pendiente.
-
-## 11. Forma de trabajo obligatoria
-
-- Trabajar de forma directa y evitar microcomprobaciones redundantes.
-- Usar GitHub Desktop para el flujo local normal.
-- Crear ramas nuevas para cambios importantes; no reutilizar ramas integradas.
-- Diseñar las pruebas junto con cada funcionalidad.
-- Agrupar validaciones.
-- No mezclar refactorizaciones de rendimiento con fases funcionales salvo necesidad explícita.
-- No hacer `force push` ni resets agresivos.
-- No preparar ZIP, hashes o manifiestos salvo necesidad técnica clara.
-- No eliminar ramas.
-- No integrar a `main` sin autorización explícita de Arturo.
-- Antes de integrar: confirmar CI en verde, comparar contra `main`, resumir cambios y esperar permiso.
-- Mantener gameplay, fórmulas y visuales idénticos durante cambios exclusivamente documentales o de infraestructura salvo aprobación específica.
-
-## 12. Riesgos y advertencias vigentes
-
-- `localStorage` todavía funciona parcialmente como bus interno.
-- Existen varios bucles de sondeo del gamepad.
-- El estado completo se guarda con cada cambio principal.
-- Conviven varios relojes, WebGL y Web Animations API.
-- El bundle de producción supera la advertencia de 500 kB minificados; la última cifra documentada antes del PR #12 fue aproximadamente 565.87 kB.
-- Conviene aplicar lazy loading o code splitting a herramientas DEV en una rama independiente.
-- GitHub Actions puede advertir que acciones internas orientadas a Node 20 se ejecutan con Node 24; no ha producido fallos del proyecto.
-
-No mezclar la optimización del bundle con el diseño o implementación de Esmeralda. Deben permanecer como trabajos separados.
-
-## 13. Panel DEV acoplado, no bloqueante y redimensionable integrado
+## 7. Panel DEV acoplado, no bloqueante y redimensionable
 
 Documentación técnica:
 
@@ -563,7 +331,278 @@ Rango      400–760 px
 - no se ejecutan simulaciones;
 - no se modifica gameplay, balance ni guardado de partida.
 
-## 14. Siguiente paso recomendado — Diseño formal de Esmeralda
+## 8. Observatorio de Ciclos y Prestigio integrado
+
+Documentación técnica:
+
+```text
+PRESTIGE_CYCLE_OBSERVATORY.md
+```
+
+### Monitor en vivo
+
+- observa la sesión real mediante el puente experimental;
+- muestra ciclo actual, prestigio, duración y multiplicador de Zafiro;
+- calcula ritmo reciente de clics, clics restantes y estimación al núcleo;
+- muestra producción pasiva, potencia por clic y aporte directo estimado de Zafiro;
+- conserva el historial únicamente en memoria;
+- continúa observando aunque la ventana esté cerrada;
+- permite exportación JSON;
+- no modifica la partida ni crea nuevas claves persistentes.
+
+### Simulación multiciclo
+
+- compara dos balances bajo un escenario idéntico;
+- admite hasta 10 ciclos, 6 horas simuladas y 500,000 acciones por perfil;
+- reutiliza `gameReducer()` y `runWithBalanceConfig()` como autoridades;
+- usa una política determinista de compra más barata;
+- registra duración, energía generada y gastada, compras y tiempos sin decisiones;
+- registra primer Generador, Autoclicker y evolución avanzada;
+- captura recuperación a 10, 30 y 60 segundos;
+- produce cronología, gráfica relativa y exportaciones JSON/CSV;
+- no modifica `GameState`, runtime visible, perfiles ni guardado normal.
+
+### Escenario Inicio de ciclo P5
+
+Representa exactamente el estado posterior al reset:
+
+```text
+Prestigio: P5
+Energía: 0
+Núcleo: vacío
+Evoluciones: reiniciadas
+```
+
+El valor predeterminado de clics manuales es 2/s para permitir el bootstrap del primer Generador. Para experimentos de pasividad pura debe utilizarse un snapshot que ya tenga producción autónoma.
+
+### Aporte directo de Zafiro
+
+```text
+AporteDirecto = Ganancia × (1 − 1 / MultiplicadorZafiro)
+```
+
+Esta métrica representa la contribución multiplicativa instantánea manteniendo fija la ruta de compras alcanzada. No debe presentarse como contrafactual causal completo.
+
+### Incidencias cubiertas
+
+- un escenario con núcleo lleno ahora cristaliza antes de comprar y perder mejoras en el reset;
+- una regresión exige duración, gasto y compras iguales a cero para la cristalización inmediata;
+- el escenario `Inicio de ciclo P5` evita confundir un estado avanzado con el comienzo real del ciclo;
+- el recorrido E2E exige completar P5→P6 sin modificar el guardado normal.
+
+## 9. Persistencia separada
+
+| Sistema | Clave |
+|---|---|
+| Partida normal | `incremental-game-a:save:v1` |
+| Ajustes de mando | `incremental-game-a:gamepad:v1` |
+| Reserva del Gatillo | `incremental-game-a:pulse-trigger:v1` |
+| Perfil de balance heredado | `incremental-game-a:balance-dev:v1` |
+| Perfiles de balance | `incremental-game-a:balance-dev-profiles:v2` |
+| Escenarios experimentales | `incremental-game-a:developer-scenarios:v1` |
+| Anchura visual del Panel DEV | `incremental-game-a:developer-panel-width:v1` |
+
+El Comparador y el Observatorio solo leen perfiles y escenarios. No escriben en estas colecciones ni en la partida normal. El historial del Observatorio se descarta al recargar.
+
+## 10. Infraestructura y resultados de pruebas
+
+Componentes integrados:
+
+- Vitest.
+- Playwright.
+- GitHub Actions.
+- `TESTING_POLICY.md`.
+- `TESTING_SETUP.md`.
+- instalación reproducible mediante `npm ci`.
+- reportes, capturas, video y trazas al fallar.
+
+### Cobertura total integrada después del PR #13
+
+```text
+151 pruebas Vitest
+27 pruebas Playwright
+178 comprobaciones automatizadas
+```
+
+### Quality Gate final del Observatorio
+
+Ejecución **Quality Gate #248**, run `30979238920`, sobre el HEAD validado `e0a8c1b5d3ba9baddcd0f042807aa9e6d30b128c`:
+
+```text
+npm ci                     APROBADO
+Lint                       APROBADO — 0 errores
+Vitest                     151/151
+Build de producción        APROBADO
+Playwright Chromium         27/27
+```
+
+El merge autorizado se realizó mediante PR #13 y produjo `82c139b7039fd2f31021c11d636ffeb0f8f96577`.
+
+### Quality Gate final del Panel DEV
+
+Ejecución **Quality Gate #217**, run `30965419533`, sobre el HEAD validado `b276ed039f06a4dfe9e9ceca57adbbd7cf1f7492`:
+
+```text
+npm ci                     APROBADO
+Lint                       APROBADO — 0 errores
+Vitest                     129/129
+Build de producción        APROBADO
+Playwright Chromium         25/25
+```
+
+Lint conserva únicamente tres advertencias históricas de Fast Refresh. No se introdujeron advertencias nuevas.
+
+No se ocultaron fallos ni se redujo cobertura para conseguir resultados verdes.
+
+### Comandos oficiales
+
+```bash
+npm run test
+npm run test:unit
+npm run test:integration
+npm run test:e2e
+npm run test:phase4
+npm run test:phase5
+npm run test:control-center
+npm run test:comparative
+npm run test:templates
+npm run test:developer-panel
+npm run test:prestige-observatory
+npm run test:all
+```
+
+### Validación y autorización de Arturo
+
+- Arturo validó visualmente en Windows el Panel DEV acoplado y su anchura configurable.
+- Arturo aprobó el enfoque del Observatorio y autorizó explícitamente el merge del PR #13.
+- Para recibir la integración local debe seleccionar `main` en GitHub Desktop y usar `Fetch origin` / `Pull origin`.
+
+## 11. Arquitectura relevante
+
+### Juego
+
+- `src/game.ts`: estado, reducer, costos, guardado y consultas de balance.
+- `src/App.tsx`: estado autoritativo, ticks, efectos, aislamiento y reloj experimental.
+- `src/DeveloperPanel.tsx`: controles directos de estado y hosts visuales DEV.
+- `src/refraction.ts`: Matriz y PRISMA.
+- `src/pulseTrigger.ts`: Gatillo de pulso.
+- `src/bulkPurchase.ts`: Comprar todo.
+
+### Panel DEV acoplado
+
+- `DEVELOPER_PANEL_WORKSPACE.md`
+- `src/developerPanelWorkspace.ts`
+- `src/DeveloperPanelWorkspace.css`
+- `src/developerPanelWidth.ts`
+- `src/DeveloperPanelWidthSystem.tsx`
+- `src/DeveloperPanelWidthSystem.css`
+
+### Laboratorio y perfiles
+
+- `src/balanceConfig.ts`
+- `src/balanceDraft.ts`
+- `src/balanceValidation.ts`
+- `src/balanceRuntime.ts`
+- `src/balanceSimulation.ts`
+- `src/balanceParity.ts`
+- `src/balanceStateNormalization.ts`
+- `src/balanceNormalizationParity.ts`
+- `src/balanceUnlockPolicy.ts`
+- `src/balanceSessionPolicy.ts`
+- `src/balanceSessionBridge.ts`
+- `src/BalanceLaboratorySystem.tsx`
+- `src/balanceProfiles.ts`
+- `src/BalanceProfileSystem.tsx`
+
+### Centro de Control DEV
+
+- `src/DeveloperControlCenterSystem.tsx`
+- `src/DeveloperControlCenterSystem.css`
+- `src/developerExperimentBridge.ts`
+- `src/developerScenarios.ts`
+- `src/developerSimulation.ts`
+- `src/DeveloperToolLaunchBridge.tsx`
+- `src/DeveloperControlCompatibility.css`
+
+### Comparador A/B
+
+- `src/balanceRuntime.ts`
+- `src/comparativeExperiment.ts`
+- `src/ComparativeExperimentSystem.tsx`
+- `src/ComparativeExperimentSystem.css`
+
+### Plantillas matemáticas
+
+- `src/mathematicalTemplates.ts`
+- `src/mathematicalTemplateTransfer.ts`
+- `src/MathematicalTemplateSystem.tsx`
+- `src/MathematicalTemplateSystem.css`
+
+### Observatorio de Prestigio
+
+- `PRESTIGE_CYCLE_OBSERVATORY.md`
+- `src/prestigeCycleLive.ts`
+- `src/prestigeCycleObservatory.ts`
+- `src/prestigeCycleScenarios.ts`
+- `src/PrestigeCycleObservatorySystem.tsx`
+- `src/PrestigeCycleObservatorySystem.css`
+- `tests/unit/prestigeCycleLive.test.ts`
+- `tests/unit/prestigeCycleObservatory.test.ts`
+- `tests/unit/prestigeCycleImmediateCrystallization.test.ts`
+- `tests/unit/prestigeCycleScenarios.test.ts`
+- `tests/integration/prestigeCycleObservatory.integration.test.ts`
+- `tests/e2e/prestige-cycle-observatory.spec.ts`
+
+### Pruebas
+
+- `vitest.config.ts`
+- `playwright.config.ts`
+- `.github/workflows/quality-gate.yml`
+- `tests/unit/`
+- `tests/integration/`
+- `tests/e2e/`
+
+## 12. Controles DualSense / Gamepad integrados
+
+- X/A pulsa la esfera.
+- R2/RT activa el Gatillo.
+- L1/LB selecciona Núcleo y R1/RB Evoluciones.
+- Cruceta y joystick permanecen confinados en la zona activa.
+- El juego detecta el dispositivo realmente activo.
+- El foco del gamepad se dibuja explícitamente después de usar el mouse.
+- Las vibraciones se suspenden al entrar en modalidad mouse.
+- El Panel DEV mantiene el control flotante separado incluso al cambiar su anchura.
+- BUG-001 está validado físicamente.
+- BUG-002 tiene corrección integrada y validación formal pendiente.
+
+## 13. Forma de trabajo obligatoria
+
+- Trabajar de forma directa y evitar microcomprobaciones redundantes.
+- Usar GitHub Desktop para el flujo local normal.
+- Crear ramas nuevas para cambios importantes; no reutilizar ramas integradas.
+- Diseñar las pruebas junto con cada funcionalidad.
+- Agrupar validaciones.
+- No mezclar refactorizaciones de rendimiento con fases funcionales salvo necesidad explícita.
+- No hacer `force push` ni resets agresivos.
+- No preparar ZIP, hashes o manifiestos salvo necesidad técnica clara.
+- No eliminar ramas.
+- No integrar a `main` sin autorización explícita de Arturo.
+- Antes de integrar: confirmar CI en verde, comparar contra `main`, resumir cambios y esperar permiso.
+- Mantener gameplay, fórmulas y visuales idénticos durante cambios exclusivamente documentales o de infraestructura salvo aprobación específica.
+
+## 14. Riesgos y advertencias vigentes
+
+- `localStorage` todavía funciona parcialmente como bus interno.
+- Existen varios bucles de sondeo del gamepad.
+- El estado completo se guarda con cada cambio principal.
+- Conviven varios relojes, WebGL y Web Animations API.
+- El bundle de producción del PR #13 mide aproximadamente 601.84 kB minificados y 177.29 kB gzip.
+- Conviene aplicar lazy loading o code splitting a herramientas DEV en una rama independiente.
+- GitHub Actions puede advertir que acciones internas orientadas a Node 20 se ejecutan con Node 24; no ha producido fallos del proyecto.
+
+No mezclar la optimización del bundle con el diseño o implementación de Esmeralda. Deben permanecer como trabajos separados.
+
+## 15. Siguiente paso recomendado — Diseño experimental de Esmeralda
 
 Rama nueva propuesta:
 
@@ -571,7 +610,17 @@ Rama nueva propuesta:
 Dev-Emerald-Design
 ```
 
-La siguiente entrega debe ser una **fase de diseño y especificación**, todavía sin programar gameplay. Las herramientas matemáticas, el comparador A/B y el Panel DEV ya permiten evaluar propuestas antes de convertirlas en una expansión persistente.
+La siguiente entrega debe ser una fase de diseño y especificación, todavía sin programar gameplay oficial. El Observatorio permite ahora evaluar no solo fórmulas aisladas, sino su efecto a través de varios prestigios y durante la recuperación posterior a cada reset.
+
+### Primera campaña experimental recomendada
+
+1. ejecutar Oficial contra Oficial desde `Inicio de ciclo P5` para fijar la línea base;
+2. crear un perfil con Zafiro congelado en ×3.05 después de P5;
+3. crear uno o más perfiles que representen beneficios hipotéticos de Esmeralda;
+4. simular P5→P6, P6→P7 y P7→P8 bajo condiciones idénticas;
+5. comparar duración, recuperación a 10/30/60 s, energía, gasto y tiempos sin decisiones;
+6. repetir con snapshots que ya tengan producción pasiva para medir rutas sin clics manuales;
+7. conservar los resultados JSON/CSV como evidencia del diseño.
 
 ### Decisiones que deben cerrarse
 
@@ -597,31 +646,32 @@ La siguiente entrega debe ser una **fase de diseño y especificación**, todaví
 - actualización de `MODELO_MATEMATICO.md` con fórmulas propuestas claramente marcadas;
 - perfiles y plantillas experimentales para comparar alternativas;
 - matriz pequeña de escenarios A/B reproducibles;
+- resultados exportados de la línea base y variantes;
 - plan de migración y pruebas antes de crear código de producción.
 
 La idea de regeneración, reciclaje, conservación o renacimiento continúa siendo una hipótesis. No debe tratarse como especificación aprobada hasta completar esta fase.
 
-## 15. Prompt de continuidad para un nuevo chat
+## 16. Prompt de continuidad para un nuevo chat
 
 ```text
 Quiero continuar el desarrollo del repositorio xArtXtrAx/incremental-game-A.
 
 Antes de modificarlo:
-1. Lee HISTORIAL_GPT.MD, TESTING_POLICY.md, PLAN_MAESTRO.md, MODELO_MATEMATICO.md, BALANCE_LABORATORY.md, EXPERIMENTAL_CONTROL_CENTER.md, COMPARATIVE_EXPERIMENT_RUNNER.md, MATHEMATICAL_TEMPLATES.md, DEVELOPER_PANEL_WORKSPACE.md, PERFORMANCE_AUDIT.md y GAMEPAD_DEVICE_SELECTION.md.
+1. Lee HISTORIAL_GPT.MD, TESTING_POLICY.md, PLAN_MAESTRO.md, MODELO_MATEMATICO.md, BALANCE_LABORATORY.md, EXPERIMENTAL_CONTROL_CENTER.md, COMPARATIVE_EXPERIMENT_RUNNER.md, MATHEMATICAL_TEMPLATES.md, DEVELOPER_PANEL_WORKSPACE.md, PRESTIGE_CYCLE_OBSERVATORY.md, PERFORMANCE_AUDIT.md y GAMEPAD_DEVICE_SELECTION.md.
 2. Comprueba el estado real de main, ramas, PRs y CI.
 3. No reutilices ramas ya integradas.
 4. No elimines ramas.
 5. No hagas merge sin mi autorización explícita.
 6. Diseña pruebas automatizadas junto con cada cambio.
 
-Estado conocido al 4 de agosto de 2026:
-- PR #12 Panel DEV acoplado, no bloqueante y redimensionable está integrado.
-- Último merge funcional: 6e88c5f481cc030f76bc963db495265d030b1e3c.
-- Main incluye Laboratorio de Balance, perfiles DEV, Centro de Control Experimental, Comparador A/B, Plantillas Matemáticas Seguras y Panel DEV acoplado con anchura configurable.
-- Cobertura integrada validada: 129 Vitest + 25 Playwright = 154 comprobaciones.
-- Quality Gate #217, run 30965419533, terminó completamente en verde sobre b276ed039f06a4dfe9e9ceca57adbbd7cf1f7492.
-- La rama Dev-Developer-Panel-Viewport se conserva como respaldo.
+Estado conocido al 5 de agosto de 2026:
+- PR #13 Observatorio de Ciclos y Prestigio está integrado.
+- Último merge funcional: 82c139b7039fd2f31021c11d636ffeb0f8f96577.
+- Main incluye Laboratorio de Balance, perfiles DEV, Centro de Control Experimental, Comparador A/B, Plantillas Matemáticas Seguras, Panel DEV acoplado y Observatorio de Prestigio.
+- Cobertura integrada validada: 151 Vitest + 27 Playwright = 178 comprobaciones.
+- Quality Gate #248, run 30979238920, terminó completamente en verde sobre e0a8c1b5d3ba9baddcd0f042807aa9e6d30b128c.
+- La rama Dev-Prestige-Cycle-Observatory se conserva como respaldo.
 
 Siguiente trabajo recomendado:
-Crear una rama nueva Dev-Emerald-Design y diseñar formalmente Esmeralda antes de programarla. Definir identidad, activación, recurso persistente, fórmulas, cinco niveles, relación con Zafiro, migración, métricas y pruebas. No mezclar esta fase con optimización del bundle.
+Crear una rama nueva Dev-Emerald-Design y diseñar formalmente Esmeralda usando el Observatorio. Primero establecer una línea base Oficial contra Oficial desde Inicio de ciclo P5; después comparar Zafiro congelado en P5 y variantes hipotéticas de Esmeralda a través de varios prestigios. No mezclar esta fase con optimización del bundle.
 ```
