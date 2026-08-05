@@ -69,6 +69,12 @@ test.describe('Panel DEV acoplado', () => {
       Math.abs((gameBox?.height ?? 0) - (developerBox?.height ?? 0)),
     ).toBeLessThanOrEqual(1)
 
+    if (gameBox && developerBox) {
+      expect(developerBox.width).toBeGreaterThanOrEqual(520)
+      expect(developerBox.width).toBeLessThanOrEqual(642)
+      expect(gameBox.width).toBeGreaterThanOrEqual(760)
+    }
+
     const gamepadBox = await page
       .getByLabel('Configuración del control')
       .boundingBox()
