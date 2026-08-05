@@ -94,6 +94,7 @@ test.describe('Anchura configurable del Panel DEV', () => {
   }) => {
     await openCleanGame(page)
     const panel = page.getByLabel('Panel de desarrollador')
+    const controls = page.getByTestId('developer-panel-width-controls')
 
     await panel.getByRole('button', { name: 'Amplio' }).click()
     await expectPanelWidth(page, 640)
@@ -104,7 +105,9 @@ test.describe('Anchura configurable del Panel DEV', () => {
     await page.reload()
     await expectPanelWidth(page, 640)
 
-    await panel.getByRole('button', { name: 'Restaurar' }).click()
+    await controls
+      .getByRole('button', { name: 'Restaurar', exact: true })
+      .click()
     await expectPanelWidth(page, 528)
     expect(
       await page.evaluate((key) => localStorage.getItem(key), WIDTH_STORAGE_KEY),
@@ -148,11 +151,11 @@ test.describe('Anchura configurable del Panel DEV', () => {
     await openCleanGame(page, 1100)
 
     const panel = page.getByLabel('Panel de desarrollador')
+    const controls = page.getByTestId('developer-panel-width-controls')
     const handle = page.getByTestId('developer-panel-resize-handle')
     await expect(handle).toBeHidden()
     await expect(panel.getByText('Automático', { exact: true })).toBeVisible()
-    await expect(panel.getByRole('button', { name: 'Compacto' })).toBeDisabled()
-    await expect(panel.getByRole('button', { name: 'Amplio' })).toBeDisabled()
+    await expect(controls.locator('.developer-panel-width-presets')).toBeHidden()
 
     const pageWidth = await page.evaluate(() => ({
       client: document.documentElement.clientWidth,
