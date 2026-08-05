@@ -20,7 +20,9 @@
   width: min(100%, 1800px);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(760px, 1fr) clamp(400px, 33vw, 640px);
+  grid-template-columns:
+    minmax(760px, 1fr)
+    var(--developer-panel-width, clamp(400px, 33vw, 640px));
   gap: 18px;
   align-items: start;
 }
@@ -90,7 +92,8 @@
 }
 
 .developer-panel-header {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: start;
   justify-content: space-between;
   gap: 12px;
