@@ -37,6 +37,10 @@ import {
   type PrestigeCycleRun,
 } from './prestigeCycleObservatory'
 import {
+  PRESTIGE_CYCLE_START_P5_SCENARIO_ID,
+  createPrestigeCycleObservatoryScenarios,
+} from './prestigeCycleScenarios'
+import {
   advanceLivePrestigeCycleState,
   createLivePrestigeCycleState,
   getLiveAverageCycleSeconds,
@@ -317,11 +321,13 @@ function ObservatoryWindow({
   const [tab, setTab] = useState<ObservatoryTab>('live')
   const [profiles, setProfiles] = useState<BalanceDevProfile[]>([])
   const [scenarios, setScenarios] = useState<DeveloperScenario[]>([])
-  const [scenarioId, setScenarioId] = useState('builtin-p5')
+  const [scenarioId, setScenarioId] = useState(
+    PRESTIGE_CYCLE_START_P5_SCENARIO_ID,
+  )
   const [candidateAId, setCandidateAId] = useState('official')
   const [candidateBId, setCandidateBId] = useState('official')
   const [durationSeconds, setDurationSeconds] = useState(7_200)
-  const [manualClicksPerSecond, setManualClicksPerSecond] = useState(0)
+  const [manualClicksPerSecond, setManualClicksPerSecond] = useState(2)
   const [targetCycles, setTargetCycles] = useState(3)
   const [autoPurchase, setAutoPurchase] = useState(true)
   const [comparison, setComparison] =
@@ -351,12 +357,12 @@ function ObservatoryWindow({
     }
 
     const nextProfiles = profileResult.value
-    const nextScenarios = [
-      ...createBuiltInDeveloperScenarios(
+    const nextScenarios = createPrestigeCycleObservatoryScenarios(
+      createBuiltInDeveloperScenarios(
         DEFAULT_BALANCE_CONFIG.core.sphereClickCapacity,
       ),
-      ...scenarioResult.value,
-    ]
+      scenarioResult.value,
+    )
     const candidateIds = nextProfiles.map((item) => `profile:${item.id}`)
     setProfiles(nextProfiles)
     setScenarios(nextScenarios)
