@@ -568,10 +568,10 @@ function runSingle(
       return true
     }
 
-    purchaseAffordableUpgrades()
     if (crystallizeIfReady() && cycles.length >= settings.targetCycles) {
       endedBy = 'target-cycles'
     } else {
+      purchaseAffordableUpgrades()
       for (
         elapsedSeconds = 1;
         elapsedSeconds <= settings.durationSeconds;
