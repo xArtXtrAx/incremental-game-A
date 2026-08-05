@@ -20,7 +20,7 @@
   width: min(100%, 1800px);
   margin: 0 auto;
   display: grid;
-  grid-template-columns: minmax(780px, 1fr) clamp(360px, 30vw, 560px);
+  grid-template-columns: minmax(760px, 1fr) clamp(400px, 33vw, 640px);
   gap: 18px;
   align-items: start;
 }
