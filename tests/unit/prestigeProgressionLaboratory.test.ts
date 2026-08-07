@@ -49,14 +49,16 @@ function request(overrides: Partial<PrestigeLabRequest> = {}): PrestigeLabReques
 }
 
 describe('Laboratorio de Progresión de Prestigio', () => {
-  it('construye políticas de Zafiro sin mutar el balance base', () => {
+  it('construye políticas válidas sin mutar el balance base', () => {
     const original = structuredClone(DEFAULT_BALANCE_CONFIG)
     const neutralized = applySapphirePolicy(original, { mode: 'neutralized' })
     const frozen = applySapphirePolicy(original, { mode: 'frozen-p5' })
-    const custom = applySapphirePolicy(original, { mode: 'custom-post-p5', increment: 0.3 })
+    const custom = applySapphirePolicy(original, {
+      mode: 'custom-post-p5',
+      increment: 0.3,
+    })
 
-    expect(neutralized.sapphire.multipliers).toEqual([1, 1, 1, 1, 1, 1])
-    expect(neutralized.sapphire.postMaximumLevelIncrement).toBe(0)
+    expect(neutralized).toEqual(original)
     expect(frozen.sapphire.multipliers).toEqual(original.sapphire.multipliers)
     expect(frozen.sapphire.postMaximumLevelIncrement).toBe(0)
     expect(custom.sapphire.postMaximumLevelIncrement).toBe(0.3)
@@ -67,7 +69,26 @@ describe('Laboratorio de Progresión de Prestigio', () => {
     expect(describeSapphirePolicy({ mode: 'official' })).toBe('Oficial')
     expect(describeSapphirePolicy({ mode: 'neutralized' })).toContain('×1.00')
     expect(describeSapphirePolicy({ mode: 'frozen-p5' })).toContain('P5')
-    expect(describeSapphirePolicy({ mode: 'custom-post-p5', increment: 0.25 })).toContain('+0.25')
+    expect(
+      describeSapphirePolicy({ mode: 'custom-post-p5', increment: 0.25 }),
+    ).toContain('+0.25')
+  })
+
+  it('neutraliza Zafiro solo dentro de la corrida experimental', () => {
+    const result = runPrestigeLab(
+      request({
+        settings: {
+          ...request().settings,
+          sapphirePolicy: { mode: 'neutralized' },
+        },
+      }),
+    )
+
+    expect(result.ok).toBe(true)
+    if (!result.ok) return
+    expect(result.value.completedCycles[0].sapphireMultiplier).toBe(1)
+    expect(result.value.completedCycles[0].nextSapphireMultiplier).toBe(1)
+    expect(candidate.config).toEqual(DEFAULT_BALANCE_CONFIG)
   })
 
   it('ejecuta un recorrido determinista con el reducer autoritativo', () => {
@@ -78,7 +99,11 @@ describe('Laboratorio de Progresión de Prestigio', () => {
     expect(first.ok).toBe(true)
     if (!first.ok) return
     expect(first.value.completedCycles[0]).toEqual(
-      expect.objectContaining({ prestigeBefore: 5, prestigeAfter: 6, durationSeconds: 100 }),
+      expect.objectContaining({
+        prestigeBefore: 5,
+        prestigeAfter: 6,
+        durationSeconds: 100,
+      }),
     )
   })
 
@@ -87,8 +112,14 @@ describe('Laboratorio de Progresión de Prestigio', () => {
       scenario: request().scenario,
       candidate,
       startedAt: 1_000,
-      settingsA: { ...request().settings, sapphirePolicy: { mode: 'official' } },
-      settingsB: { ...request().settings, sapphirePolicy: { mode: 'frozen-p5' } },
+      settingsA: {
+        ...request().settings,
+        sapphirePolicy: { mode: 'official' },
+      },
+      settingsB: {
+        ...request().settings,
+        sapphirePolicy: { mode: 'frozen-p5' },
+      },
     })
 
     expect(result.ok).toBe(true)
@@ -104,7 +135,11 @@ describe('Laboratorio de Progresión de Prestigio', () => {
           id: 'funded-p5',
           name: 'P5 con capital',
           capturedAt: 0,
-          state: { ...initialGameState, prestigeCount: 5, energy: 1_000_000 },
+          state: {
+            ...initialGameState,
+            prestigeCount: 5,
+            energy: 1_000_000,
+          },
         },
         settings: {
           durationSeconds: 20,
@@ -122,7 +157,12 @@ describe('Laboratorio de Progresión de Prestigio', () => {
     expect(result.value.purchaseEvents.length).toBeGreaterThan(0)
     const summary = analyzePrestigePath(result.value)
     expect(summary.dominantUpgrade).not.toBeNull()
-    expect(Object.values(summary.purchaseCountByUpgrade).reduce((a, b) => a + b, 0)).toBe(result.value.purchaseEvents.length)
+    expect(
+      Object.values(summary.purchaseCountByUpgrade).reduce(
+        (a, b) => a + b,
+        0,
+      ),
+    ).toBe(result.value.purchaseEvents.length)
   })
 
   it('compara cinco estrategias de compra reproducibles', () => {
@@ -131,7 +171,11 @@ describe('Laboratorio de Progresión de Prestigio', () => {
         id: 'funded-p5',
         name: 'P5 con capital',
         capturedAt: 0,
-        state: { ...initialGameState, prestigeCount: 5, energy: 1_000_000 },
+        state: {
+          ...initialGameState,
+          prestigeCount: 5,
+          energy: 1_000_000,
+        },
       },
       candidate,
       startedAt: 1_000,
@@ -147,7 +191,13 @@ describe('Laboratorio de Progresión de Prestigio', () => {
 
     expect(result.ok).toBe(true)
     if (!result.ok) return
-    expect(result.value.map((row) => row.strategy)).toEqual(['cheapest', 'production', 'manual', 'automation', 'roi'])
+    expect(result.value.map((row) => row.strategy)).toEqual([
+      'cheapest',
+      'production',
+      'manual',
+      'automation',
+      'roi',
+    ])
   })
 
   it('barre una familia de incrementos post-P5', () => {
@@ -167,8 +217,15 @@ describe('Laboratorio de Progresión de Prestigio', () => {
 
     expect(result.ok).toBe(true)
     if (!result.ok) return
-    expect(result.value.points.map((point) => point.increment)).toEqual([0, 0.1, 0.3, 0.5])
-    expect(result.value.points.every((point) => point.completedCycles === 1)).toBe(true)
+    expect(result.value.points.map((point) => point.increment)).toEqual([
+      0,
+      0.1,
+      0.3,
+      0.5,
+    ])
+    expect(
+      result.value.points.every((point) => point.completedCycles === 1),
+    ).toBe(true)
   })
 
   it('ejecuta lotes combinatorios sin contaminar resultados entre corridas', () => {
