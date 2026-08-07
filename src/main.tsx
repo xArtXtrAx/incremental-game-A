@@ -19,6 +19,7 @@ import { GamepadController } from './GamepadController'
 import { GamepadEventHaptics } from './GamepadEventHaptics'
 import { MathematicalTemplateSystem } from './MathematicalTemplateSystem'
 import { PrestigeCycleObservatorySystem } from './PrestigeCycleObservatorySystem'
+import { PrestigeProgressionLaboratorySystem } from './PrestigeProgressionLaboratorySystem'
 import { PulseTriggerSystem } from './PulseTriggerSystem'
 import { RegionFocusGuide } from './RegionFocusGuide'
 import { UpgradeProgressSystem } from './UpgradeProgressSystem'
@@ -51,6 +52,7 @@ createRoot(document.getElementById('root')!).render(
     <DeveloperComparativeExperimentSystem />
     <MathematicalTemplateSystem />
     <PrestigeCycleObservatorySystem />
+    <PrestigeProgressionLaboratorySystem />
     <DeveloperPanelWidthSystem />
     <DeveloperToolLaunchBridge />
     <GamepadController />
