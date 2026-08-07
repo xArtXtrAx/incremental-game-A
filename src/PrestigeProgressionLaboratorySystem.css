@@ -1,0 +1,424 @@
+.prestige-lab-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 8;
+  display: grid;
+  min-width: 0;
+  min-height: 0;
+  background: rgba(5, 10, 20, 0.94);
+}
+
+.prestige-lab-window {
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  min-width: 0;
+  min-height: 100%;
+  max-height: 100%;
+  color: #e7edf8;
+  background:
+    radial-gradient(circle at 92% 0%, rgba(72, 196, 255, 0.12), transparent 34%),
+    linear-gradient(180deg, rgba(12, 19, 33, 0.98), rgba(6, 11, 21, 0.98));
+  border: 1px solid rgba(132, 184, 255, 0.18);
+}
+
+.prestige-lab-header,
+.prestige-lab-footer,
+.prestige-lab-section-heading,
+.prestige-lab-result-heading,
+.prestige-lab-run-row,
+.prestige-lab-export-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.prestige-lab-header {
+  padding: 1rem 1.1rem 0.9rem;
+  border-bottom: 1px solid rgba(150, 190, 255, 0.13);
+}
+
+.prestige-lab-header > div:first-child,
+.prestige-lab-section-heading > div,
+.prestige-lab-result-heading > div {
+  min-width: 0;
+}
+
+.prestige-lab-header span,
+.prestige-lab-section-heading span,
+.prestige-lab-result-heading span,
+.developer-prestige-lab-access > span {
+  display: block;
+  color: #70c8ff;
+  font-size: 0.66rem;
+  font-weight: 800;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+}
+
+.prestige-lab-header h2,
+.prestige-lab-section-heading h3,
+.prestige-lab-result-heading h3,
+.prestige-lab-summary-grid h4,
+.prestige-lab-empty-state h3 {
+  margin: 0;
+}
+
+.prestige-lab-header h2 {
+  margin-top: 0.18rem;
+  font-size: 1.15rem;
+}
+
+.prestige-lab-header p,
+.prestige-lab-run-row p,
+.prestige-lab-empty-state p {
+  margin: 0.3rem 0 0;
+  color: #a6b2c6;
+  font-size: 0.78rem;
+  line-height: 1.45;
+}
+
+.prestige-lab-header > div:last-child {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.prestige-lab-header b {
+  color: #92dcff;
+  font-size: 0.65rem;
+  letter-spacing: 0.1em;
+}
+
+.prestige-lab-header button,
+.prestige-lab-section-heading button,
+.prestige-lab-export-row button,
+.prestige-lab-run-row button,
+.prestige-lab-tabs button {
+  border: 1px solid rgba(137, 184, 248, 0.22);
+  color: #dce9fa;
+  background: rgba(19, 32, 52, 0.82);
+  cursor: pointer;
+}
+
+.prestige-lab-header button {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.45rem;
+  font-size: 1.2rem;
+}
+
+.prestige-lab-tabs {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  border-bottom: 1px solid rgba(150, 190, 255, 0.13);
+}
+
+.prestige-lab-tabs button {
+  padding: 0.7rem 0.4rem;
+  border-width: 0 1px 0 0;
+  border-radius: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.prestige-lab-tabs button[data-active='true'] {
+  color: #8edaff;
+  background: rgba(48, 133, 188, 0.18);
+  box-shadow: inset 0 -2px #65c6ff;
+}
+
+.prestige-lab-content {
+  min-height: 0;
+  overflow: auto;
+  padding: 0.9rem;
+}
+
+.prestige-lab-card,
+.prestige-lab-result-card,
+.prestige-lab-empty-state {
+  border: 1px solid rgba(137, 184, 248, 0.16);
+  border-radius: 0.7rem;
+  background: rgba(13, 23, 39, 0.86);
+}
+
+.prestige-lab-card,
+.prestige-lab-result-card {
+  padding: 0.85rem;
+}
+
+.prestige-lab-result-card,
+.prestige-lab-empty-state {
+  margin-top: 0.85rem;
+}
+
+.prestige-lab-section-heading h3,
+.prestige-lab-result-heading h3 {
+  margin-top: 0.14rem;
+  font-size: 0.9rem;
+}
+
+.prestige-lab-section-heading button,
+.prestige-lab-export-row button,
+.prestige-lab-run-row button {
+  padding: 0.48rem 0.7rem;
+  border-radius: 0.45rem;
+  font-size: 0.72rem;
+}
+
+.prestige-lab-form-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.85rem;
+}
+
+.prestige-lab-form-grid label {
+  display: grid;
+  gap: 0.28rem;
+  min-width: 0;
+}
+
+.prestige-lab-form-grid label > span {
+  color: #9eabc0;
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+
+.prestige-lab-form-grid select,
+.prestige-lab-form-grid input {
+  min-width: 0;
+  width: 100%;
+  padding: 0.5rem 0.55rem;
+  border: 1px solid rgba(130, 175, 235, 0.22);
+  border-radius: 0.42rem;
+  color: #eef6ff;
+  background: #101b2d;
+  font: inherit;
+  font-size: 0.74rem;
+}
+
+.prestige-lab-form-grid input:disabled {
+  opacity: 0.52;
+}
+
+.prestige-lab-run-row {
+  align-items: flex-end;
+  margin-top: 0.85rem;
+}
+
+.prestige-lab-run-row .is-primary {
+  flex: 0 0 auto;
+  border-color: rgba(87, 198, 255, 0.48);
+  color: #06131c;
+  background: #6acbff;
+  font-weight: 850;
+}
+
+.prestige-lab-run-row button:disabled {
+  cursor: default;
+  opacity: 0.45;
+}
+
+.prestige-lab-export-row {
+  justify-content: flex-end;
+  margin-top: 0.8rem;
+}
+
+.prestige-lab-summary-grid,
+.prestige-lab-path-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.65rem;
+  margin-top: 0.75rem;
+}
+
+.prestige-lab-summary-grid article,
+.prestige-lab-path-grid article {
+  padding: 0.7rem;
+  border: 1px solid rgba(137, 184, 248, 0.12);
+  border-radius: 0.55rem;
+  background: rgba(7, 14, 25, 0.7);
+}
+
+.prestige-lab-summary-grid article > span,
+.prestige-lab-path-grid article > span {
+  color: #8ea0b9;
+  font-size: 0.62rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+
+.prestige-lab-summary-grid h4 {
+  margin-top: 0.25rem;
+  color: #cdeeff;
+  font-size: 0.85rem;
+}
+
+.prestige-lab-summary-grid dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.4rem;
+  margin: 0.65rem 0 0;
+}
+
+.prestige-lab-summary-grid dl div {
+  display: grid;
+  gap: 0.12rem;
+}
+
+.prestige-lab-summary-grid dt {
+  color: #8290a5;
+  font-size: 0.62rem;
+}
+
+.prestige-lab-summary-grid dd {
+  margin: 0;
+  font-size: 0.76rem;
+  font-weight: 750;
+}
+
+.prestige-lab-path-grid {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+.prestige-lab-path-grid article {
+  display: grid;
+  gap: 0.28rem;
+}
+
+.prestige-lab-path-grid strong {
+  color: #d9f3ff;
+  font-size: 0.82rem;
+}
+
+.prestige-lab-table-scroll {
+  overflow: auto;
+  margin-top: 0.8rem;
+  border: 1px solid rgba(137, 184, 248, 0.11);
+  border-radius: 0.5rem;
+}
+
+.prestige-lab-table-scroll table {
+  width: 100%;
+  border-collapse: collapse;
+  min-width: 650px;
+  font-size: 0.68rem;
+}
+
+.prestige-lab-table-scroll th,
+.prestige-lab-table-scroll td {
+  padding: 0.48rem 0.5rem;
+  text-align: left;
+  border-bottom: 1px solid rgba(137, 184, 248, 0.09);
+  white-space: nowrap;
+}
+
+.prestige-lab-table-scroll thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  color: #9fdcff;
+  background: #0c1727;
+}
+
+.prestige-lab-batch-table {
+  max-height: 24rem;
+}
+
+.prestige-lab-empty-state {
+  padding: 1.4rem 1rem;
+  text-align: center;
+}
+
+.prestige-lab-empty-state > span {
+  display: inline-grid;
+  place-items: center;
+  width: 3.2rem;
+  height: 3.2rem;
+  margin-bottom: 0.65rem;
+  border: 1px solid rgba(98, 199, 255, 0.35);
+  border-radius: 50%;
+  color: #76d1ff;
+  background: rgba(50, 139, 194, 0.1);
+  font-weight: 900;
+}
+
+.prestige-lab-footer {
+  padding: 0.65rem 0.9rem;
+  border-top: 1px solid rgba(150, 190, 255, 0.13);
+  color: #7f8ca0;
+  font-size: 0.65rem;
+}
+
+.prestige-lab-footer span[data-error='true'] {
+  color: #ff9eaa;
+}
+
+.developer-prestige-lab-access {
+  display: grid;
+  gap: 0.42rem;
+  margin-top: 0.65rem;
+}
+
+.developer-prestige-lab-access > button {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 0.65rem;
+  width: 100%;
+  padding: 0.7rem;
+  border: 1px solid rgba(83, 198, 255, 0.28);
+  border-radius: 0.58rem;
+  color: #dff5ff;
+  text-align: left;
+  background: linear-gradient(135deg, rgba(17, 46, 67, 0.9), rgba(10, 25, 42, 0.9));
+  cursor: pointer;
+}
+
+.developer-prestige-lab-access > button > span:first-child,
+.developer-prestige-lab-tool-button > span {
+  color: #70ccff;
+  font-weight: 900;
+}
+
+.developer-prestige-lab-access strong,
+.developer-prestige-lab-access small {
+  display: block;
+}
+
+.developer-prestige-lab-access small,
+.developer-prestige-lab-tool-button small {
+  margin-top: 0.15rem;
+  color: #8ea0b7;
+  font-size: 0.65rem;
+}
+
+.developer-prestige-lab-access b {
+  color: #68c9ff;
+  font-size: 0.62rem;
+}
+
+.developer-prestige-lab-tool-button {
+  display: grid;
+  gap: 0.18rem;
+}
+
+@media (max-width: 560px) {
+  .prestige-lab-tabs {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .prestige-lab-form-grid,
+  .prestige-lab-summary-grid,
+  .prestige-lab-path-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .prestige-lab-run-row,
+  .prestige-lab-header,
+  .prestige-lab-footer {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
